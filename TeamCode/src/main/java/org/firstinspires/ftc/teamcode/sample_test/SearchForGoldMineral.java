@@ -26,7 +26,7 @@ import java.util.ArrayList;
 /**
  * Created by Sarthak on 9/11/2018.
  */
-@Autonomous(name = "Search for Gold Mineral", group = "Test")
+@Autonomous(name = "Search for Gold Mineral", group = "Autonomous")
 public class SearchForGoldMineral extends LinearOpMode{
 
     IDrivetrain drive;
@@ -37,7 +37,7 @@ public class SearchForGoldMineral extends LinearOpMode{
     BNO055IMU boschIMU;
 
     ITeamMarker teamMarker;
-    Servo teamMarkerArm;
+    Servo teamMarkerServo;
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -60,8 +60,8 @@ public class SearchForGoldMineral extends LinearOpMode{
         setMotorBehaviors();
 
         //Set up team marker hardware
-        teamMarkerArm = hardwareMap.servo.get("marker");
-        teamMarker = new ServoArmDrop(teamMarkerArm);
+        teamMarkerServo = hardwareMap.servo.get("marker");
+        teamMarker = new ServoArmDrop(teamMarkerServo);
         teamMarker.hold();
         telemetry.addData("Status", "Team Marker Hardware Initialized");
 
@@ -75,6 +75,7 @@ public class SearchForGoldMineral extends LinearOpMode{
         genericDetector.stretch = true;
         genericDetector.stretchKernal = new Size(2,50);
         genericDetector.enable();
+
         centertimer = new ElapsedTime();
 
         telemetry.addData("Status", "Vision Initialized.");
@@ -96,8 +97,11 @@ public class SearchForGoldMineral extends LinearOpMode{
 
 
         //Get block in frame
-        scanBlock(45);
+        boolean blockFound = scanBlock(45);
 
+        if(!blockFound){
+            while (opModeIsActive());
+        }
         //Center block in frame
         centerBlock(1000);
 
@@ -107,7 +111,7 @@ public class SearchForGoldMineral extends LinearOpMode{
         double driveAngle = imu.getZAngle();
 
         drive.resetEncoders();
-        while(drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 16*COUNTS_PER_INCH, 0, 36*COUNTS_PER_INCH, 0.3,
+        while(drive.move(drive.getEncoderDistance(), 42*COUNTS_PER_INCH, 21*COUNTS_PER_INCH, 0, 36*COUNTS_PER_INCH, 0.3,
                 0.2, 0, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
         drive.stop();
 
@@ -122,47 +126,87 @@ public class SearchForGoldMineral extends LinearOpMode{
         }
 
         //Move to Alliance Depot and place team marker
-        switch(mineralLocation){
+        switch(mineralLocation) {
             case CENTER:
                 drive.resetEncoders();
-                while(drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 16*COUNTS_PER_INCH, 0, 36*COUNTS_PER_INCH, 0.6,
-                        0.25, 0, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
+                while (drive.move(drive.getEncoderDistance(), 13 * COUNTS_PER_INCH, 16 * COUNTS_PER_INCH, 0, 25 * COUNTS_PER_INCH, 0.6,
+                        0.25, 0, DEFAULT_PID, driveAngle, 50, 0) && opModeIsActive()) ;
                 drive.stop();
+                runtime.reset();
+                while (runtime.milliseconds() < 500 & opModeIsActive()) ;
 
                 //Deposit team marker
                 teamMarker.drop();
+                runtime.reset();
+                while (runtime.milliseconds() < 1000 & opModeIsActive()) ;
+
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
+                        0.2, 180, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive()) ;
+                drive.stop();
+
+                while(drive.pivot(-115, -90, 0.4, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
+                drive.stop();
+
                 break;
 
             case LEFT:
-                while(drive.pivot(75, 30, 0.4, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
+                int pivotAngleLeft = 20;
+                while (drive.pivot(pivotAngleLeft, 30, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive())
+                    ;
                 drive.stop();
 
                 drive.resetEncoders();
-                while(drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 16*COUNTS_PER_INCH, 0, 30*COUNTS_PER_INCH, 0.6,
-                        0.25, 0, DEFAULT_PID, 25, 50, 250) && opModeIsActive());
+                while (drive.move(drive.getEncoderDistance(), 15 * COUNTS_PER_INCH, 16 * COUNTS_PER_INCH, 0, 25 * COUNTS_PER_INCH, 0.4,
+                        0.2, 0, DEFAULT_PID, pivotAngleLeft, 50, 0) && opModeIsActive()) ;
                 drive.stop();
 
                 //Deposit team marker
                 teamMarker.drop();
+                runtime.reset();
+                while (runtime.milliseconds() < 1000 & opModeIsActive()) ;
+
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
+                        0.2, 180, DEFAULT_PID, pivotAngleLeft, 50, 250) && opModeIsActive()) ;
+                drive.stop();
+
+                while(drive.pivot(-135, -90, 0.4, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
+
                 break;
 
             case RIGHT:
-                while(drive.pivot(-75, 0, 0.4, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
+                int pivotAngleRight = -20;
+                while (drive.pivot(-22, 0, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive())
+                    ;
                 drive.stop();
 
                 drive.resetEncoders();
-                while(drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 16*COUNTS_PER_INCH, 0, 30*COUNTS_PER_INCH, 0.6,
-                        0.25, 0, DEFAULT_PID, -25, 50, 250) && opModeIsActive());
+                while (drive.move(drive.getEncoderDistance(), 15 * COUNTS_PER_INCH, 16 * COUNTS_PER_INCH, 0, 25 * COUNTS_PER_INCH, 0.4,
+                        0.2, 0, DEFAULT_PID, pivotAngleRight, 50, 0) && opModeIsActive()) ;
                 drive.stop();
 
                 //Deposit team marker
                 teamMarker.drop();
+                runtime.reset();
+                while (runtime.milliseconds() < 1000 & opModeIsActive()) ;
+
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
+                        0.2, 180, DEFAULT_PID, pivotAngleRight, 50, 250) && opModeIsActive());
+                drive.stop();
+
+                while(drive.pivot(-115, -90, 0.4, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
+                drive.stop();
+
                 break;
 
             case UNKNOWN:
                 //Do nothing
+                while (opModeIsActive()) ;
                 break;
         }
+
 
         while(opModeIsActive()){
             drive.stop();
@@ -174,7 +218,7 @@ public class SearchForGoldMineral extends LinearOpMode{
 
     }
 
-    private void scanBlock(double scanRadius){
+    private boolean scanBlock(double scanRadius){
         boolean blockFound = genericDetector.getFound();
 
         while(drive.pivot(-scanRadius, -30, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
@@ -198,6 +242,8 @@ public class SearchForGoldMineral extends LinearOpMode{
                 telemetry.update();
             }
         }
+
+        return blockFound;
     }
 
     private void centerBlock(double correctionTime){
