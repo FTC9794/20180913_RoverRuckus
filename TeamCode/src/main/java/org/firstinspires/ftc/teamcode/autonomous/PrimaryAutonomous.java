@@ -29,37 +29,44 @@ import java.util.ArrayList;
 @Autonomous(name = "Primary Auto", group = "Autonomous")
 public class PrimaryAutonomous extends LinearOpMode{
 
+    //Drivetrain object and hardware
     IDrivetrain drive;
     DcMotor right, left;
     ArrayList motors;
 
+    //IMU object and hardware
     IIMU imu;
     BNO055IMU boschIMU;
 
+    //Team Marker object and hardware
     ITeamMarker teamMarker;
     Servo teamMarkerServo;
 
-    // Declare OpMode members.
+    //Declare OpMode timers
     private ElapsedTime runtime = new ElapsedTime();
     private ElapsedTime centertimer;
 
+    //Declare constants
     final double[] DEFAULT_PID = {.025};
     final double COUNTS_PER_INCH = 47.75;
 
+    //Define possible mineral locations in enum
     enum location {
         LEFT, CENTER, RIGHT, UNKNOWN
     };
 
+    //Create location object to store the mineral location data
     location mineralLocation;
 
+    //Create detector to be used for the gold mineral
     private GenericDetector genericDetector = null;
 
     @Override
     public void runOpMode() throws InterruptedException {
-
+        //Init motor hardware map and behaviors
         setMotorBehaviors();
 
-        //Set up team marker hardware
+        //Set up team marker hardware map and object implementation
         teamMarkerServo = hardwareMap.servo.get("marker");
         teamMarker = new ServoArmDrop(teamMarkerServo);
         teamMarker.hold();
@@ -96,9 +103,10 @@ public class PrimaryAutonomous extends LinearOpMode{
         waitForStart();
 
 
-        //Get block in frame
+        //Get block in frame, scan in 60 degrees in each direction
         boolean blockFound = scanBlock(60);
 
+        //If the block isn't in the frame after the scan, remain still for the rest of auto
         if(!blockFound){
             while (opModeIsActive());
         }
@@ -108,8 +116,10 @@ public class PrimaryAutonomous extends LinearOpMode{
         //Disable detector
         genericDetector.disable();
 
+        //Get the current orientation of the robot to determine the whether the mineral was left, center, or right
         double driveAngle = imu.getZAngle();
 
+        //Determine the mineral location based on the imu angle
         if(driveAngle < -13){
             mineralLocation = location.LEFT;
         }else if (Math.abs(driveAngle) <= 10){
@@ -120,22 +130,27 @@ public class PrimaryAutonomous extends LinearOpMode{
             mineralLocation = location.UNKNOWN;
         }
 
+        //Wait 750 milliseconds before next action
         wait(750, runtime);
 
-        //Move to Alliance Depot and place team marker
+        //Move to Alliance Depot and place team marker. Take different paths based on mineral location
         switch(mineralLocation) {
+            //If the mineral is located in the center
             case CENTER:
 
-                //Drive to knock off gold mineral
+                //Drive 32 inches straight to knock off the gold mineral. Maintain the orientation used to center the block in the frame
                 drive.resetEncoders();
                 while(drive.move(drive.getEncoderDistance(), 32*COUNTS_PER_INCH, 21*COUNTS_PER_INCH, 0, 36*COUNTS_PER_INCH, 0.3,
                         0.2, 0, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
                 drive.stop();
 
+                //Drive 20 inches straight, keeping the same orientation, to move to the alliance depot
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 20 * COUNTS_PER_INCH, 10 * COUNTS_PER_INCH, 0, 20 * COUNTS_PER_INCH, 0.3,
                         0.25, 0, DEFAULT_PID, driveAngle, 50, 0) && opModeIsActive()) ;
                 drive.stop();
+
+                //Wait 750 milliseconds before the next action
                 runtime.reset();
                 wait(750, runtime);
 
@@ -144,26 +159,32 @@ public class PrimaryAutonomous extends LinearOpMode{
                 runtime.reset();
                 wait(750, runtime);
 
+                //Drive backwards 4 inches to give some clearance from the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
                         0.2, 180, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive()) ;
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
-                while(drive.pivot(-95, -45, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive());
+                //Pivot to -85 degrees to position robot to drive around silver minerals
+                while(drive.pivot(-85, -45, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive());
                 drive.stop();
 
+                //Drive towards perimeter to distance robot from silver minerals
                 drive.resetEncoders();
                 runtime.reset();
                 while (drive.move(drive.getEncoderDistance(), 20 * COUNTS_PER_INCH, 8 * COUNTS_PER_INCH, 0, 16 * COUNTS_PER_INCH, 0.2,
-                        0.2, 0, DEFAULT_PID, -95, 50, 250) && opModeIsActive() && runtime.milliseconds() < 3000) ;
+                        0.2, 0, DEFAULT_PID, -85, 50, 250) && opModeIsActive() && runtime.milliseconds() < 3000) ;
                 drive.stop();
 
+                //Pivot to face the crater
                 while(drive.pivot(-127, -115, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive());
 
                 wait(750, runtime);
 
+                //Drive towards the crater to park
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 12 * COUNTS_PER_INCH, 12 * COUNTS_PER_INCH, 0, 12 * COUNTS_PER_INCH, 0.4,
                         0.3, 0, DEFAULT_PID, -127, 50, 250) && opModeIsActive()) ;
@@ -175,24 +196,28 @@ public class PrimaryAutonomous extends LinearOpMode{
 
             case LEFT:
 
-                //Drive to knock off gold mineral
+                //Drive 44 inches to knock off the gold mineral
                 drive.resetEncoders();
                 while(drive.move(drive.getEncoderDistance(), 44*COUNTS_PER_INCH, 22*COUNTS_PER_INCH, 0, 44*COUNTS_PER_INCH, 0.3,
                         0.2, 0, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
                 drive.stop();
 
+                //Pivot to face the alliance depot
                 int pivotAngleLeft = 40;
                 while (drive.pivot(pivotAngleLeft, 30, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive())
                     ;
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
+                //Drive 19 inches to move the robot into the depot, to get into position to drop the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 19 * COUNTS_PER_INCH, 16 * COUNTS_PER_INCH, 0, 19 * COUNTS_PER_INCH, 0.3,
                         0.2, 0, DEFAULT_PID, pivotAngleLeft, 50, 0) && opModeIsActive()) ;
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
                 //Deposit team marker
@@ -200,42 +225,51 @@ public class PrimaryAutonomous extends LinearOpMode{
                 runtime.reset();
                 wait(750, runtime);
 
+                //Drive backwards 4 inches to give some clearance from the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
                         0.2, 180, DEFAULT_PID, pivotAngleLeft, 50, 250) && opModeIsActive()) ;
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
+                //Pivot so that the back of the robot faces the crater
                 while(drive.pivot(45, -90, 0.4, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
 
+                //Drive backwards towards the crater
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 24 * COUNTS_PER_INCH, 12 * COUNTS_PER_INCH, 0, 24 * COUNTS_PER_INCH, 0.4,
-                        0.3, 0, DEFAULT_PID, 45, 50, 250) && opModeIsActive()) ;
+                        0.3, 180, DEFAULT_PID, 45, 50, 250) && opModeIsActive()) ;
                 drive.stop();
 
                 break;
 
+            //If the mineral is located on the right
             case RIGHT:
 
-                //Drive to knock off gold mineral
+                //Drive 42 inches to knock off the gold mineral
                 drive.resetEncoders();
                 while(drive.move(drive.getEncoderDistance(), 42*COUNTS_PER_INCH, 21*COUNTS_PER_INCH, 0, 42*COUNTS_PER_INCH, 0.3,
                         0.2, 0, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
                 drive.stop();
 
+                //Pivot to face the alliance depot (angle = -25 degrees)
                 int pivotAngleRight = -25;
                 while (drive.pivot(pivotAngleRight, 0, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive())
                     ;
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
+                //Drive into the alliance depot to get into position to drop the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 16 * COUNTS_PER_INCH, 8 * COUNTS_PER_INCH, 0, 16 * COUNTS_PER_INCH, 0.3,
                         0.2, 0, DEFAULT_PID, pivotAngleRight, 50, 0) && opModeIsActive()) ;
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
                 //Deposit team marker
@@ -243,16 +277,20 @@ public class PrimaryAutonomous extends LinearOpMode{
                 runtime.reset();
                 wait(750, runtime);
 
+                //Drive backwards 4 inches to give some clearance from the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
                         0.2, 180, DEFAULT_PID, pivotAngleRight, 50, 250) && opModeIsActive());
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
+                //Pivot so that the back of the robot faces the crater
                 while(drive.pivot(-50, 0, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive());
                 drive.stop();
 
+                //Drive to the crater to park
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 12 * COUNTS_PER_INCH, 12 * COUNTS_PER_INCH, 0, 12 * COUNTS_PER_INCH, 0.2,
                         0.2, 180, DEFAULT_PID, -50, 50, 250) && opModeIsActive()) ;
@@ -263,7 +301,7 @@ public class PrimaryAutonomous extends LinearOpMode{
                 break;
 
             case UNKNOWN:
-                //Do nothing
+                //Do nothing, mineral location is unknown
                 while (opModeIsActive()) ;
                 break;
         }
@@ -279,11 +317,18 @@ public class PrimaryAutonomous extends LinearOpMode{
 
     }
 
+    /**
+     * Pivot the robot so that the robot can find the gold mineral. The robot wants to get the gold mineral in the camera frame
+     * @param scanRadius degrees to pivot, to scan for the mineral in each direction
+     * @return true if the block was found, false if the block was not found
+     */
     private boolean scanBlock(double scanRadius){
+        //Determine if the block is already in the frame
         boolean blockFound = genericDetector.getFound();
 
+        //Pivot to -scanRadius degrees. If the block is in the frame as the robot pivots, the pivot will stop
         while(drive.pivot(-scanRadius, -30, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
-            if(genericDetector.getFound()){
+            if(genericDetector.getFound()){ //Record whether the gold mineral is in the frame
                 blockFound = true;
             }
             telemetry.addData("IMU Angle", imu.getZAngle());
@@ -293,6 +338,7 @@ public class PrimaryAutonomous extends LinearOpMode{
 
         drive.stop();
 
+        //If the block wasn't in the frame after the first pivot, pivot to scanRadius degrees
         if(!blockFound){
             while(drive.pivot(scanRadius, -30, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
                 if(genericDetector.getFound()){
@@ -304,25 +350,41 @@ public class PrimaryAutonomous extends LinearOpMode{
             }
         }
 
+        //Return whether the block was found after the scan
         return blockFound;
     }
 
+    /**
+     * If the block is in the frame, the robot will center the block in the camera frame. This allows the robot to align to the mineral and get into a position
+     * to knock the mineral off its spot in autonomous
+     * @param correctionTime amound of time to spend correcting the alignment of the robot, once it the mineral is in a certain x coordinate range
+     */
     private void centerBlock(double correctionTime){
+        //Reset timer
         centertimer.reset();
 
+        //Create point object to keep track of the gold mineral location
         Point blockLocation = null;
 
+        //Create boolean variables to keep track of the phase of centering the mineral in the frame
         boolean centered = false;
         boolean centertimerstarted = false;
         boolean centertimerfinished = false;
+        //Variables to keep track of x position
         double x = 0;
+        //Target x position to center the gold mineral
         double targetX = 275;
+
+        //Loop to center the block
         while(opModeIsActive() && !centertimerfinished){
+            //Get the location of the gold mineral
             blockLocation = genericDetector.getLocation();
+            //Extract the x-value from the blockLocation object
             if(blockLocation != null){
                 x = blockLocation.x;
             }
 
+            //Check if the gold mineral is within the frame
             if(Math.abs(x - targetX) <= 25){
                 right.setPower(0);
                 left.setPower(0);
@@ -337,6 +399,7 @@ public class PrimaryAutonomous extends LinearOpMode{
                     }
                 }
                 centered = true;
+            //Set motor powers to pivot based on block location
             }else if(((x-targetX)/1000)<.175 && ((x-targetX)/1000)>0) {
                 right.setPower(-.175);
                 left.setPower(.175);
@@ -357,6 +420,9 @@ public class PrimaryAutonomous extends LinearOpMode{
         drive.stop();
     }
 
+    /**
+     * Setup the hardware map and the motor modes, zero power behaviors, and direction
+     */
     private void setMotorBehaviors(){
         //Hardware Map
         right = hardwareMap.dcMotor.get("right");
@@ -372,15 +438,24 @@ public class PrimaryAutonomous extends LinearOpMode{
         //Reverse Right Motor
         right.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        //Put drive motors in ArrayList to pass into drivetrain object
         motors = new ArrayList<>();
         motors.add(right);
         motors.add(left);
+        //Status update
         telemetry.addData("Status", "Motor Hardware Initialized");
         telemetry.update();
     }
 
+    /**
+     * Stop all actions for a specified amount of time (in milliseconds)
+     * @param milliseconds amount of time to wait
+     * @param timer ElapsedTimer object to keep track of the time
+     */
     private void wait(double milliseconds, ElapsedTime timer){
+        //Reset the timer
         timer.reset();
+        //Wait until the time inputted has fully elapsed
         while(opModeIsActive() && timer.milliseconds() < milliseconds);
     }
 
