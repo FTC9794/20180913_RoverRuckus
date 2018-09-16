@@ -13,5 +13,5 @@ apply from: '../build.common.gradle'
 dependencies {
     implementation project(':openCVLibrary320')
     implementation project(':FtcRobotController')
-    compile project(path: ':DogeCV')
+    implementation project(path: ':DogeCV')
 }
