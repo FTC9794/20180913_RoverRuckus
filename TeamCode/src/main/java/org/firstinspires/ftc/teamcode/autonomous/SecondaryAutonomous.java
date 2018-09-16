@@ -45,6 +45,8 @@ public class SecondaryAutonomous extends LinearOpMode {
 
     Servo delatch;
 
+    DcMotor intakeArm;
+
     //Declare OpMode timers
     private ElapsedTime runtime = new ElapsedTime();
     private ElapsedTime centertimer;
@@ -115,6 +117,10 @@ public class SecondaryAutonomous extends LinearOpMode {
         //Pivot so that the back of the robot faces the crater
         while(drive.pivot(0, 0, 0.2, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive()
                 && runtime.milliseconds() < 2000);
+
+        intakeArm.setTargetPosition(1000);
+        intakeArm.setPower(1);
+        wait(1000, runtime);
 
         //Get block in frame, scan in 60 degrees in each direction
         boolean blockFound = scanBlock(60);
@@ -355,6 +361,11 @@ public class SecondaryAutonomous extends LinearOpMode {
         left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         //Reverse Right Motor
         right.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        intakeArm = hardwareMap.dcMotor.get("intake_arm");
+        intakeArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //Put drive motors in ArrayList to pass into drivetrain object
         motors = new ArrayList<>();
