@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.subsystems.vision.GoldMineralDetector;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
 
@@ -19,21 +20,21 @@ public class GoldMineralDetectionTest extends LinearOpMode
     private ElapsedTime runtime = new ElapsedTime();
 
 
-    private GenericDetector genericDetector = null;
+    private GoldMineralDetector genericDetector = null;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry.addData("Status", "Initialized");
 
 
-        genericDetector = new GenericDetector();
+        genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
         genericDetector.colorFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW);
         genericDetector.debugContours = false;
         genericDetector.minArea = 700;
         genericDetector.perfectRatio = 1.8;
         genericDetector.stretch = true;
-        genericDetector.stretchKernal = new Size(2,50);
+        genericDetector.stretchKernal = new Size(2,30);
         genericDetector.enable();
 
         telemetry.addData("Status", "Initialized.");
