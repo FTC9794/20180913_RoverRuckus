@@ -10,7 +10,7 @@ public class ServoArmDrop implements ITeamMarker {
     Servo arm;
 
     final double DROP_POSITION = 0;
-    final double HOLD_POSITION = 0.75;
+    final double HOLD_POSITION = 1;
 
     public ServoArmDrop(Servo teamMarkerArm){
         this.arm = teamMarkerArm;

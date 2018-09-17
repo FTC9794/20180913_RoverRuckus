@@ -48,6 +48,7 @@ public class PrimaryAutonomous extends LinearOpMode{
     Servo delatch;
 
     DcMotor intakeArm;
+    Servo intakeServo;
 
     //Declare OpMode timers
     private ElapsedTime runtime = new ElapsedTime();
@@ -82,6 +83,7 @@ public class PrimaryAutonomous extends LinearOpMode{
         delatch = hardwareMap.servo.get("delatch");
         delatch.setPosition(1);
 
+        intakeServo = hardwareMap.servo.get("intake_rotation");
         //Initialize Vision and Start Detector
         genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
@@ -120,8 +122,10 @@ public class PrimaryAutonomous extends LinearOpMode{
         while(drive.pivot(0, 0, 0.2, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive()
                 && runtime.milliseconds() < 2000);
 
-        intakeArm.setTargetPosition(1000);
+        intakeArm.setTargetPosition(150);
         intakeArm.setPower(1);
+        intakeServo.setPosition(1);
+
         wait(1000, runtime);
 
         //Get block in frame, scan in 60 degrees in each direction
@@ -177,9 +181,11 @@ public class PrimaryAutonomous extends LinearOpMode{
 
                 //Deposit team marker
                 teamMarker.drop();
+
                 runtime.reset();
                 wait(750, runtime);
 
+                teamMarker.hold();
                 //Drive backwards 4 inches to give some clearance from the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 10 * COUNTS_PER_INCH, 5 * COUNTS_PER_INCH, 0, 10 * COUNTS_PER_INCH, 0.2,
@@ -244,6 +250,7 @@ public class PrimaryAutonomous extends LinearOpMode{
                 runtime.reset();
                 wait(750, runtime);
 
+                teamMarker.hold();
                 //Drive backwards 4 inches to give some clearance from the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
@@ -296,6 +303,7 @@ public class PrimaryAutonomous extends LinearOpMode{
                 runtime.reset();
                 wait(750, runtime);
 
+                teamMarker.hold();
                 //Drive backwards 4 inches to give some clearance from the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
