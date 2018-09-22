@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems.vision;
+package org.firstinspires.ftc.teamcode.subsystems.sampling;
 
 
 import com.disnodeteam.dogecv.OpenCVPipeline;

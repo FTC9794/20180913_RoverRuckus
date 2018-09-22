@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.disnodeteam.dogecv.CameraViewDisplay;
-import com.disnodeteam.dogecv.detectors.GenericDetector;
 import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -18,7 +17,7 @@ import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 import org.firstinspires.ftc.teamcode.subsystems.team_marker.ITeamMarker;
 import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
-import org.firstinspires.ftc.teamcode.subsystems.vision.GoldMineralDetector;
+import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
 

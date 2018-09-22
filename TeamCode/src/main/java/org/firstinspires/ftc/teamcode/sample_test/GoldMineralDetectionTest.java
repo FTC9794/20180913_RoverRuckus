@@ -2,13 +2,12 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
 import com.disnodeteam.dogecv.CameraViewDisplay;
-import com.disnodeteam.dogecv.detectors.GenericDetector;
 import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.subsystems.vision.GoldMineralDetector;
+import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
 

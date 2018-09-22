@@ -8,7 +8,7 @@ import org.firstinspires.ftc.teamcode.Enums.Direction;
 public interface IDrivetrain {
 
     /**
-     * Moves the robot in any lateral direction while maintaining a certain orientation.
+     * Moves the robot in a direction while maintaining a certain orientation
      * @param currentPosition The current position of robot in any unit eg. encoder counts, sensor distances...
      * @param targetPosition The target position of the robot in the same unit as current position
      * @param rampDownTargetPosition Position at which the robot will start ramping down
