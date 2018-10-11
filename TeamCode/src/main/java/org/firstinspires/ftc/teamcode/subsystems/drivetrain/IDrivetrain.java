@@ -20,7 +20,8 @@ public interface IDrivetrain {
      * @param endOrientationAngle The Direction the robot is facing
      * @return true if the motion is complete, false is the motion is ongoing
      */
-    boolean move(double currentPosition, double targetPosition, double rampDownTargetPosition, double rampUpTargetPosition, double rampDownEnd, double maxPower, double lowPower, double moveAngle, double[] PIDGain, double endOrientationAngle, double allowableDistanceError, double correctiontime);
+    boolean move(double currentPosition, double targetPosition, double rampDownTargetPosition, double rampUpTargetPosition, double rampDownEnd, double maxPower, double lowPower,
+                 double moveAngle, double[] PIDGain, double endOrientationAngle, double allowableDistanceError, double correctiontime);
 
     /**
      * Pivots the robot to a desired angle. It uses a proportional control loop to maintain the robot's speed

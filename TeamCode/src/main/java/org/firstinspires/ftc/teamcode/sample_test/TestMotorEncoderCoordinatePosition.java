@@ -14,6 +14,7 @@ import org.opencv.core.Mat;
 public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
     DcMotor verticalRight, verticalLeft, horizontal;
+
     double vrPos = 0, vlPos = 0, hPos = 0;
 
 
