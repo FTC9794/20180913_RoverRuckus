@@ -13,8 +13,7 @@ import org.opencv.core.Size;
 
 
 @Autonomous(name="Gold Mineral Detection Test", group="Test")
-public class GoldMineralDetectionTest extends LinearOpMode
-{
+public class GoldMineralDetectionTest extends LinearOpMode {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
 
