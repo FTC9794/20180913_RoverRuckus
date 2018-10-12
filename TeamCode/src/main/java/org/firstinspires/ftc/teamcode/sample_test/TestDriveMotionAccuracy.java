@@ -28,7 +28,7 @@ public class TestDriveMotionAccuracy extends LinearOpMode {
     BNO055IMU boschIMU;
 
     final double[] DEFAULT_PID = {.025};
-    final double COUNTS_PER_INCH = 47.75;
+    final double COUNTS_PER_INCH = 45;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -66,44 +66,6 @@ public class TestDriveMotionAccuracy extends LinearOpMode {
 
         drive.resetEncoders();
 
-        //Drive forward 24 inches
-        while (drive.move(drive.getEncoderDistance(), 24*COUNTS_PER_INCH, 12*COUNTS_PER_INCH, 0, 24*COUNTS_PER_INCH,
-                0.5, 0.25, 0, DEFAULT_PID, 0, 50, 500) && opModeIsActive());
-
-        //Turn 90 Degrees Clockwise
-        drive.stop();
-        while(drive.pivot(90, 45, 0.5, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
-
-        drive.stop();
-        drive.resetEncoders();
-        //Drive forward 24 inches at 90 degree orientation
-        while (drive.move(drive.getEncoderDistance(), 24*COUNTS_PER_INCH, 12*COUNTS_PER_INCH, 0, 24*COUNTS_PER_INCH,
-                0.5, 0.25, 0, DEFAULT_PID, 90, 50, 500) && opModeIsActive());
-
-        //Turn 90 Degrees Clockwise
-        drive.stop();
-        while(drive.pivot(180, 135, 0.5, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
-        drive.stop();
-        drive.resetEncoders();
-
-        //Drive 24 inches at 180 degree orientation
-        while (drive.move(drive.getEncoderDistance(), 24*COUNTS_PER_INCH, 12*COUNTS_PER_INCH, 0, 24*COUNTS_PER_INCH,
-                0.5, 0.25, 0, DEFAULT_PID, 180, 50, 500) && opModeIsActive());
-        drive.stop();
-
-        //Pivot 90 degrees clockwise
-        while(drive.pivot(270, 225, 0.5, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
-        drive.stop();
-        drive.resetEncoders();
-
-        //Drive 24 inches at 270 degree orientation
-        while (drive.move(drive.getEncoderDistance(), 24*COUNTS_PER_INCH, 12*COUNTS_PER_INCH, 0, 24*COUNTS_PER_INCH,
-                0.5, 0.25, 0, DEFAULT_PID, 270, 50, 500) && opModeIsActive());
-        drive.stop();
-
-        //Pivot to face original orientation
-        while(drive.pivot(0, 315, 0.5, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
-        drive.stop();
 
     }
 }

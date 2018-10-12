@@ -91,7 +91,7 @@ public abstract class OpenCVPipeline implements CameraBridgeViewBase.CvCameraVie
                 if(isVuforia){
                     rawView = new DrawViewSource(finalContext);
                 }else{
-                    cameraView = new CustomCameraView(finalContext, cameraIndex);
+                    //cameraView = new CustomCameraView(finalContext, cameraIndex);
                     cameraView.setCameraIndex(cameraIndex);
                     cameraView.setCvCameraViewListener(self);
                     cameraView.enableFpsMeter();
