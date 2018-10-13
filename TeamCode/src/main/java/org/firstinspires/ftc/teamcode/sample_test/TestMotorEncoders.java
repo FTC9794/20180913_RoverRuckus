@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.directional.TankDrive2W;
+import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 
@@ -19,26 +20,40 @@ import java.util.ArrayList;
 @Autonomous(name = "Test Motor Encoders", group = "Test")
 public class TestMotorEncoders extends LinearOpMode {
     IDrivetrain drive;
-    DcMotor right, left;
+    DcMotor right_front, right_back, left_front, left_back;
     ArrayList motors;
 
     IIMU imu;
     BNO055IMU boschIMU;
 
+    final double[] DEFAULT_PID = {.05};
+    final double COUNTS_PER_INCH = 45;
+
     @Override
     public void runOpMode() throws InterruptedException {
-        right = hardwareMap.dcMotor.get("right");
-        left = hardwareMap.dcMotor.get("left");
+        right_front = hardwareMap.dcMotor.get("right_front");
+        right_back = hardwareMap.dcMotor.get("right_back");
+        left_front = hardwareMap.dcMotor.get("left_front");
+        left_back = hardwareMap.dcMotor.get("left_back");
 
-        right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        right.setDirection(DcMotorSimple.Direction.REVERSE);
+        right_front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        right_back.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        left_front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        left_back.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        right_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        right_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        left_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        left_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+        left_front.setDirection(DcMotorSimple.Direction.REVERSE);
+        left_back.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motors = new ArrayList<>();
-        motors.add(right);
-        motors.add(left);
+        motors.add(right_front);
+        motors.add(right_back);
+        motors.add(left_front);
+        motors.add(left_back);
         telemetry.addData("Status", "Motor Hardware Initialized");
         telemetry.update();
 
@@ -49,10 +64,11 @@ public class TestMotorEncoders extends LinearOpMode {
         telemetry.addData("Status", "IMU Instantiated");
         telemetry.update();
 
-        drive = new TankDrive2W(motors, imu, telemetry);
+        drive = new MecanumDrive(motors, imu, telemetry);
         telemetry.addData("Status", "Init Complete");
         telemetry.update();
 
+        //Program starts here
         waitForStart();
 
         while (opModeIsActive()){

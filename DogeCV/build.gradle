@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 19
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
 
@@ -19,8 +19,13 @@ android {
         }
     }
 }
-
+repositories {
+    flatDir {
+        dirs '../libs'
+    }
+}
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(path: ':openCVLibrary320')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(path: ':openCVLibrary3')
+    implementation (name: 'RobotCore-release', ext: 'aar')
 }
