@@ -28,11 +28,7 @@ public class GoldMineralDetectionTest extends LinearOpMode {
         genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
         genericDetector.colorFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW);
-        genericDetector.debugContours = false;
-        genericDetector.minArea = 700;
-        genericDetector.perfectRatio = 1.8;
-        genericDetector.stretch = true;
-        genericDetector.stretchKernal = new Size(2,30);
+
         genericDetector.enable();
 
         telemetry.addData("Status", "Initialized.");
@@ -43,10 +39,10 @@ public class GoldMineralDetectionTest extends LinearOpMode {
         Point blockLocation = null;
 
         while(opModeIsActive()){
-            if(genericDetector.getFound() == true){
-                telemetry.addData("Location", genericDetector.getLocation().toString());
+            if(genericDetector.isFound() == true){
+                telemetry.addData("Location", genericDetector.getScreenPosition());
                 //telemetry.addData("Rect", genericDetector.getRect().toString());
-                blockLocation = genericDetector.getLocation();
+                blockLocation = genericDetector.getScreenPosition();
                 if(blockLocation != null) {
                     telemetry.addData("X Value", blockLocation.x);
                     if (blockLocation.x < 100) {

@@ -15,9 +15,9 @@ import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.directional.TankDrive2W;
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
+import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
 import org.firstinspires.ftc.teamcode.subsystems.team_marker.ITeamMarker;
 import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
-import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
 
@@ -83,11 +83,6 @@ public class SecondaryAutonomous extends LinearOpMode {
         genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
         genericDetector.colorFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW);
-        genericDetector.debugContours = false;
-        genericDetector.minArea = 700;
-        genericDetector.perfectRatio = 1.8;
-        genericDetector.stretch = true;
-        genericDetector.stretchKernal = new Size(2,50);
         genericDetector.enable();
 
         centertimer = new ElapsedTime();
@@ -247,15 +242,15 @@ public class SecondaryAutonomous extends LinearOpMode {
      */
     private boolean scanBlock(double scanRadius){
         //Determine if the block is already in the frame
-        boolean blockFound = genericDetector.getFound();
+        boolean blockFound = genericDetector.isFound();
 
         //Pivot to -scanRadius degrees. If the block is in the frame as the robot pivots, the pivot will stop
         while(drive.pivot(-scanRadius, -30, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
-            if(genericDetector.getFound()){ //Record whether the gold mineral is in the frame
+            if(genericDetector.isFound()){ //Record whether the gold mineral is in the frame
                 blockFound = true;
             }
             telemetry.addData("IMU Angle", imu.getZAngle());
-            telemetry.addData("Block Detected", genericDetector.getFound());
+            telemetry.addData("Block Detected", genericDetector.isFound());
             telemetry.update();
         }
 
@@ -264,11 +259,11 @@ public class SecondaryAutonomous extends LinearOpMode {
         //If the block wasn't in the frame after the first pivot, pivot to scanRadius degrees
         if(!blockFound){
             while(drive.pivot(scanRadius, -30, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
-                if(genericDetector.getFound()){
+                if(genericDetector.isFound()){
                     blockFound = true;
                 }
                 telemetry.addData("IMU Angle", imu.getZAngle());
-                telemetry.addData("Block Detected", genericDetector.getFound());
+                telemetry.addData("Block Detected", genericDetector.isFound());
                 telemetry.update();
             }
         }
@@ -301,7 +296,7 @@ public class SecondaryAutonomous extends LinearOpMode {
         //Loop to center the block
         while(opModeIsActive() && !centertimerfinished){
             //Get the location of the gold mineral
-            blockLocation = genericDetector.getLocation();
+            blockLocation = genericDetector.getScreenPosition();
             //Extract the x-value from the blockLocation object
             if(blockLocation != null){
                 x = blockLocation.x;
