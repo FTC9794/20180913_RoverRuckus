@@ -5,8 +5,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-import org.opencv.core.Mat;
-
 /**
  * Created by Sarthak on 10/1/2018.
  */
@@ -25,7 +23,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
     //Orientation, Magnitude, X, Y
     double x = 0, y = 0;
 
-    double prevRight = 0, prevLeft = 0;
+    double prevRight = 0, prevLeft = 0, prevHorizontal = 0;
     double length = 13.25 * COUNTS_PER_INCH;
 
     double changeInPosition = 0, changeInAngle = 0;
@@ -56,9 +54,11 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
             //Get Current Positions
             vlPos = verticalLeft.getCurrentPosition();
             vrPos = verticalRight.getCurrentPosition();
+            hPos = horizontal.getCurrentPosition();
 
             double leftChange = vlPos - prevLeft;
             double rightChange = vrPos - prevRight;
+            double horizontalChange = hPos - prevHorizontal;
 
             //Calculate Angle
             changeInAngle = (leftChange - rightChange) / (length);
@@ -67,8 +67,8 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
             //Calculate x and y position
             changeInPosition = (leftChange + rightChange) / 2;
-            changeInX = changeInPosition * Math.sin(angle + (changeInAngle/2));
-            changeInY = changeInPosition * Math.cos(angle + (changeInAngle/2));
+            changeInX = (changeInPosition * Math.sin(angle + (changeInAngle/2))) + (horizontalChange * Math.cos(angle + (changeInAngle/2)));
+            changeInY = (changeInPosition * Math.cos(angle + (changeInAngle/2))) + (-horizontalChange * Math.sin(angle + (changeInAngle/2)));
 
             x += changeInX;
             y += changeInY;
@@ -76,10 +76,12 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
             //Update vars
             prevLeft = vlPos;
             prevRight = vrPos;
+            prevHorizontal = hPos;
 
             //Display calculations
             telemetry.addData("Vertical Right Position", vrPos);
             telemetry.addData("Vertical Left Position", vlPos);
+            telemetry.addData("Horizontal Position", hPos);
             telemetry.addData("Angle Radians", angle);
             telemetry.addData("Angle to Degrees", Math.toDegrees(angle));
             telemetry.addData("X Position", x / COUNTS_PER_INCH);
