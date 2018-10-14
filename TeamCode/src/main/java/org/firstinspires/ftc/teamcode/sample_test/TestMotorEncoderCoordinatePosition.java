@@ -18,12 +18,19 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
     double vrPos = 0, vlPos = 0, hPos = 0;
 
 
-    final double COUNTS_PER_INCH_Y = 307.699557;
-    final double COUNTS_PER_INCH_X = 307.699557;
+    final double COUNTS_PER_INCH = 307.699557;
+    final double UNITS_TO_DEGREES = 0.0064033333;
 
 
     //Orientation, Magnitude, X, Y
     double x = 0, y = 0;
+
+    double prevRight = 0, prevLeft = 0;
+    double length = 13.25 * COUNTS_PER_INCH;
+
+    double changeInPosition = 0, changeInAngle = 0;
+    double changeInX = 0, changeInY = 0;
+    double position = 0, angle = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -46,24 +53,63 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         waitForStart();
 
         while(opModeIsActive()){
+            //Get Current Positions
             vlPos = verticalLeft.getCurrentPosition();
             vrPos = verticalRight.getCurrentPosition();
-            hPos = horizontal.getCurrentPosition();
 
-            y = ((vlPos + vrPos) / 2) / COUNTS_PER_INCH_Y;
-            x = hPos / COUNTS_PER_INCH_X;
+            double leftChange = vlPos - prevLeft;
+            double rightChange = vrPos - prevRight;
 
-            double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+            //Calculate Angle
+            changeInAngle = (leftChange - rightChange) / (length);
+            //Add change in angle to cumulative angle
+            angle = ((angle + changeInAngle) % 360);
 
+            //Calculate x and y position
+            changeInPosition = (leftChange + rightChange) / 2;
+            changeInX = changeInPosition * Math.sin(angle + (changeInAngle/2));
+            changeInY = changeInPosition * Math.cos(angle + (changeInAngle/2));
 
+            x += changeInX;
+            y += changeInY;
+
+            //Update vars
+            prevLeft = vlPos;
+            prevRight = vrPos;
+
+            //Display calculations
             telemetry.addData("Vertical Right Position", vrPos);
             telemetry.addData("Vertical Left Position", vlPos);
-            telemetry.addData("Horizontal Position", hPos);
-            telemetry.addData("x position", x);
-            telemetry.addData("y position", y);
-            telemetry.addData("Distance traveled", distance);
-
+            telemetry.addData("Angle Radians", angle);
+            telemetry.addData("Angle to Degrees", Math.toDegrees(angle));
+            telemetry.addData("X Position", x / COUNTS_PER_INCH);
+            telemetry.addData("Y Position", y / COUNTS_PER_INCH);
             telemetry.update();
         }
+    }
+
+    void distanceFormula(){
+        //Get Current Positions
+        vlPos = verticalLeft.getCurrentPosition();
+        vrPos = verticalRight.getCurrentPosition();
+        hPos = horizontal.getCurrentPosition();
+
+        //Average the Vertical Wheels
+        y = ((vlPos + vrPos) / 2) / COUNTS_PER_INCH;
+        //Convert the horizontal wheel counts into inches
+        x = hPos / COUNTS_PER_INCH;
+
+        //Calculate distance
+        double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+
+        //Display calculations
+        telemetry.addData("Vertical Right Position", vrPos);
+        telemetry.addData("Vertical Left Position", vlPos);
+        telemetry.addData("Horizontal Position", hPos);
+        telemetry.addData("x position", x);
+        telemetry.addData("y position", y);
+        telemetry.addData("Distance traveled", distance);
+
+        telemetry.update();
     }
 }
