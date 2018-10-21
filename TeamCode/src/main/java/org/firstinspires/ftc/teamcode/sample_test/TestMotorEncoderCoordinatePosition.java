@@ -51,7 +51,8 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         waitForStart();
 
         while(opModeIsActive()){
-            //Get Current Positions
+            algorithm1();
+            /*//Get Current Positions
             vlPos = verticalLeft.getCurrentPosition();
             vrPos = verticalRight.getCurrentPosition();
             hPos = horizontal.getCurrentPosition();
@@ -60,25 +61,23 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
             double rightChange = vrPos - prevRight;
             double horizontalChange = hPos - prevHorizontal;
 
-            //Calculate Angle
-            changeInAngle = (leftChange - rightChange) / (length);
-            //Add change in angle to cumulative angle
-            angle = ((angle + changeInAngle) % 360);
+            //Change in angle
+            changeInAngle = (rightChange-leftChange)/length;
+            angle = (angle + changeInAngle) % (2*Math.PI);
 
-            //Calculate x and y position
-            changeInPosition = (leftChange + rightChange) / 2;
-            changeInX = (changeInPosition * Math.sin(angle + (changeInAngle/2))) + (horizontalChange * Math.cos(angle + (changeInAngle/2)));
-            changeInY = (changeInPosition * Math.cos(angle + (changeInAngle/2))) + (-horizontalChange * Math.sin(angle + (changeInAngle/2)));
+            //Calculate x and y changes
+            double p = ((rightChange + leftChange)/2);
+            double n = horizontalChange;
+            changeInX = (p*Math.cos(angle) - (n*Math.sin(angle)));
+            changeInY = (p*Math.sin(angle) + (n*Math.cos(angle)));
 
-            x += changeInX;
+            x+= changeInX;
             y += changeInY;
 
-            //Update vars
             prevLeft = vlPos;
             prevRight = vrPos;
             prevHorizontal = hPos;
 
-            //Display calculations
             telemetry.addData("Vertical Right Position", vrPos);
             telemetry.addData("Vertical Left Position", vlPos);
             telemetry.addData("Horizontal Position", hPos);
@@ -86,8 +85,48 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
             telemetry.addData("Angle to Degrees", Math.toDegrees(angle));
             telemetry.addData("X Position", x / COUNTS_PER_INCH);
             telemetry.addData("Y Position", y / COUNTS_PER_INCH);
-            telemetry.update();
+            telemetry.update();*/
         }
+    }
+
+    void algorithm1(){
+        //Get Current Positions
+        vlPos = verticalLeft.getCurrentPosition();
+        vrPos = verticalRight.getCurrentPosition();
+        hPos = horizontal.getCurrentPosition();
+
+        double leftChange = vlPos - prevLeft;
+        double rightChange = vrPos - prevRight;
+        double horizontalChange = hPos - prevHorizontal;
+
+        //Calculate Angle
+        changeInAngle = (leftChange - rightChange) / (length);
+        //Add change in angle to cumulative angle
+        angle = ((angle + changeInAngle) % (2*Math.PI));
+
+        //Calculate x and y position
+        changeInPosition = (leftChange + rightChange) / 2;
+        changeInX = (changeInPosition * Math.sin(angle + (changeInAngle/2))) + (horizontalChange * Math.cos(angle + (changeInAngle/2)));
+        changeInY = (changeInPosition * Math.cos(angle + (changeInAngle/2))) + (-horizontalChange * Math.sin(angle + (changeInAngle/2)));
+
+
+        x += changeInX;
+        y += changeInY;
+
+        //Update vars
+        prevLeft = vlPos;
+        prevRight = vrPos;
+        prevHorizontal = hPos;
+
+        //Display calculations
+        telemetry.addData("Vertical Right Position", vrPos);
+        telemetry.addData("Vertical Left Position", vlPos);
+        telemetry.addData("Horizontal Position", hPos);
+        telemetry.addData("Angle Radians", angle);
+        telemetry.addData("Angle to Degrees", Math.toDegrees(angle));
+        telemetry.addData("X Position", x / COUNTS_PER_INCH);
+        telemetry.addData("Y Position", y / COUNTS_PER_INCH);
+        telemetry.update();
     }
 
     void distanceFormula(){

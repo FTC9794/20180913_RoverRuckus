@@ -19,6 +19,7 @@ public class MecanumDrive implements IDrivetrain {
 
     //hardware of drivetrain
     private List<DcMotor> motors;
+    private List<DcMotor> encoders;
     private IIMU imu;
 
     private DataLogger data;
@@ -33,10 +34,9 @@ public class MecanumDrive implements IDrivetrain {
     private boolean needsToPivot = false;
 
     //Variables where last encoder value when reset are stored
-    private double rfLastEncoder=0;
-    private double rbLastEncoder=0;
-    private double lfLastEncoder=0;
-    private double lbLastEncoder=0;
+    private double leftVerticalLastEncoder=0;
+    private double rightVerticalLastEncoder=0;
+    private double horizontalLastEncoder=0;
 
     Telemetry telemetry;
 
@@ -50,6 +50,22 @@ public class MecanumDrive implements IDrivetrain {
         this.imu = imu;
         this.imu.initialize();
         this.telemetry = telemetry;
+        pivotTime = new ElapsedTime();
+        distanceCorrectionTimer = new ElapsedTime();
+    }
+
+    /**
+     * Constructor for mecanum drivetrain with free-spinning odometry wheels
+     * @param motors List of motors on drivetrain in order of Right Front, Right Back, Left Front and then Left Back
+     * @param imu the inertial measurement unit or gyro sensor of the robot
+     * @param encoders List of encoders (passed in as DcMotor) on drivetrain to calculate distances and positions
+     */
+    public MecanumDrive(List<DcMotor> motors, IIMU imu, Telemetry telemetry, List<DcMotor> encoders){
+        this.motors = motors;
+        this.imu = imu;
+        this.imu.initialize();
+        this.telemetry = telemetry;
+        this.encoders = encoders;
         pivotTime = new ElapsedTime();
         distanceCorrectionTimer = new ElapsedTime();
     }
@@ -148,27 +164,25 @@ public class MecanumDrive implements IDrivetrain {
      */
     @Override
     public void resetEncoders(){
-        for(DcMotor motor:motors){
+        for(DcMotor motor:encoders){
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
-        rfLastEncoder = 0;
-        rbLastEncoder = 0;
-        lfLastEncoder = 0;
-        lbLastEncoder = 0;
+        leftVerticalLastEncoder = 0;
+        rightVerticalLastEncoder = 0;
+        horizontalLastEncoder = 0;
     }
     /**
      * Resets the drive encoder values to zero
      */
     public void resetEncoders(DcMotor.RunMode endMode){
-        for(DcMotor motor:motors){
+        for(DcMotor motor:encoders){
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             motor.setMode(endMode);
         }
-        rfLastEncoder = 0;
-        rbLastEncoder = 0;
-        lfLastEncoder = 0;
-        lbLastEncoder = 0;
+        leftVerticalLastEncoder = 0;
+        rightVerticalLastEncoder = 0;
+        horizontalLastEncoder = 0;
     }
 
     /**
@@ -304,10 +318,9 @@ public class MecanumDrive implements IDrivetrain {
      */
     @Override
     public void softResetEncoder(){
-        rfLastEncoder = motors.get(0).getCurrentPosition();
-        lfLastEncoder = motors.get(1).getCurrentPosition();
-        rbLastEncoder = motors.get(2).getCurrentPosition();
-        lbLastEncoder = motors.get(3).getCurrentPosition();
+        leftVerticalLastEncoder = encoders.get(0).getCurrentPosition();
+        rightVerticalLastEncoder = encoders.get(1).getCurrentPosition();
+        horizontalLastEncoder = encoders.get(2).getCurrentPosition();
     }
 
 
@@ -316,7 +329,8 @@ public class MecanumDrive implements IDrivetrain {
      * @return the motor encoders in a double array, in the order of right front, right back, left front, left back
      */
     private double[] getEncoderPositions(){
-        double[] encoders = {motors.get(0).getCurrentPosition()-rfLastEncoder, motors.get(1).getCurrentPosition()-rbLastEncoder, motors.get(2).getCurrentPosition()-lfLastEncoder, motors.get(3).getCurrentPosition()-lbLastEncoder};
+        double[] encoders = {this.encoders.get(0).getCurrentPosition()-leftVerticalLastEncoder, this.encoders.get(1).getCurrentPosition()-rightVerticalLastEncoder,
+                this.encoders.get(2).getCurrentPosition()-horizontalLastEncoder};
         return encoders;
     }
 
@@ -325,11 +339,22 @@ public class MecanumDrive implements IDrivetrain {
      * @return distance traveled as a double
      */
     public double getEncoderDistance(){
+
+        //Get Current Positions
         double []encoders = this.getEncoderPositions();
-        double x = ((encoders[2] + encoders[1]) - (encoders[0] + encoders[3])) / 4;
-        double y = (encoders[0] + encoders[1] + encoders[2] + encoders[3]) / 4;
-        double encoderAverage = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-        return encoderAverage;
+
+        double vlPos = encoders[0];
+        double vrPos = encoders[1];
+        double hPos = encoders[2];
+
+        //Average the Vertical Wheels
+        double y = ((vlPos + vrPos) / 2);
+        double x = hPos;
+
+        //Calculate distance
+        double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+
+        return distance;
     }
 
     /**

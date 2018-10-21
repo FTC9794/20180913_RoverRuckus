@@ -24,11 +24,12 @@ import org.opencv.core.Size;
 import java.util.ArrayList;
 
 /**
- * Created by Sarthak on 9/15/2018.
- * This autonomous program scores the sampling and drives into the crater for a park
+ * Created by Sarthak on 9/11/2018.
+ * This autonomous program scores the sampling, deposits the team marker, and parks in a crater
  */
-@Autonomous(name = "Secondary Auto", group = "Autonomous")
-public class SecondaryAutonomous extends LinearOpMode {
+@Autonomous(name = "Primary Auto", group = "Autonomous")
+public class Ri3DPrimaryAutonomous extends LinearOpMode{
+
     //Drivetrain object and hardware
     IDrivetrain drive;
     DcMotor right, left;
@@ -42,9 +43,11 @@ public class SecondaryAutonomous extends LinearOpMode {
     ITeamMarker teamMarker;
     Servo teamMarkerServo;
 
+    //De-latching hardware
     Servo delatch;
 
     DcMotor intakeArm;
+    Servo intakeServo;
 
     //Declare OpMode timers
     private ElapsedTime runtime = new ElapsedTime();
@@ -60,7 +63,7 @@ public class SecondaryAutonomous extends LinearOpMode {
     };
 
     //Create location object to store the mineral location data
-    PrimaryAutonomous.location mineralLocation;
+    location mineralLocation;
 
     //Create detector to be used for the gold mineral
     private GoldMineralDetector genericDetector = null;
@@ -79,6 +82,7 @@ public class SecondaryAutonomous extends LinearOpMode {
         delatch = hardwareMap.servo.get("delatch");
         delatch.setPosition(1);
 
+        intakeServo = hardwareMap.servo.get("intake_rotation");
         //Initialize Vision and Start Detector
         genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
@@ -104,7 +108,7 @@ public class SecondaryAutonomous extends LinearOpMode {
 
         waitForStart();
 
-        //Delatch from lander
+        //Delatch
         delatch.setPosition(0);
 
         runtime.reset();
@@ -112,8 +116,10 @@ public class SecondaryAutonomous extends LinearOpMode {
         while(drive.pivot(0, 0, 0.2, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive()
                 && runtime.milliseconds() < 2000);
 
-        intakeArm.setTargetPosition(1000);
+        intakeArm.setTargetPosition(150);
         intakeArm.setPower(1);
+        intakeServo.setPosition(1);
+
         wait(1000, runtime);
 
         //Get block in frame, scan in 60 degrees in each direction
@@ -134,13 +140,13 @@ public class SecondaryAutonomous extends LinearOpMode {
 
         //Determine the mineral location based on the imu angle
         if(driveAngle < -13){
-            mineralLocation = PrimaryAutonomous.location.LEFT;
+            mineralLocation = location.LEFT;
         }else if (Math.abs(driveAngle) <= 13){
-            mineralLocation = PrimaryAutonomous.location.CENTER;
+            mineralLocation = location.CENTER;
         }else if (driveAngle > 13){
-            mineralLocation = PrimaryAutonomous.location.RIGHT;
+            mineralLocation = location.RIGHT;
         }else{
-            mineralLocation = PrimaryAutonomous.location.UNKNOWN;
+            mineralLocation = location.UNKNOWN;
         }
 
         //Wait 750 milliseconds before next action
@@ -157,10 +163,52 @@ public class SecondaryAutonomous extends LinearOpMode {
                         0.2, 180, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
                 drive.stop();
 
-                //Drive 20 inches straight, keeping the same orientation, to move to the crater
+                //Drive 20 inches straight, keeping the same orientation, to move to the alliance depot
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 20 * COUNTS_PER_INCH, 10 * COUNTS_PER_INCH, 0, 20 * COUNTS_PER_INCH, 0.3,
                         0.25, 180, DEFAULT_PID, driveAngle, 50, 0) && opModeIsActive()) ;
+                drive.stop();
+
+                //Wait 750 milliseconds before the next action
+                runtime.reset();
+                wait(750, runtime);
+
+                //Deposit team marker
+                teamMarker.drop();
+
+                runtime.reset();
+                wait(750, runtime);
+
+                teamMarker.hold();
+                //Drive backwards 4 inches to give some clearance from the team marker
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 10 * COUNTS_PER_INCH, 5 * COUNTS_PER_INCH, 0, 10 * COUNTS_PER_INCH, 0.2,
+                        0.2, 0, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive()) ;
+                drive.stop();
+
+                //Wait 750 milliseconds before the next action
+                wait(750, runtime);
+
+                //Pivot to -85 degrees to position robot to drive around silver minerals
+                while(drive.pivot(-85, -45, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive());
+                drive.stop();
+
+                //Drive towards perimeter to distance robot from silver minerals
+                drive.resetEncoders();
+                runtime.reset();
+                while (drive.move(drive.getEncoderDistance(), 20 * COUNTS_PER_INCH, 8 * COUNTS_PER_INCH, 0, 16 * COUNTS_PER_INCH, 0.2,
+                        0.2, 180, DEFAULT_PID, -85, 50, 250) && opModeIsActive() && runtime.milliseconds() < 3000) ;
+                drive.stop();
+
+                //Pivot to face the crater
+                while(drive.pivot(-135, -115, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive());
+
+                wait(750, runtime);
+
+                //Drive towards the crater to park
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 120 * COUNTS_PER_INCH, 60 * COUNTS_PER_INCH, 0, 120 * COUNTS_PER_INCH, 0.6,
+                        0.4, 180, DEFAULT_PID, -135, 50, 250) && opModeIsActive()) ;
                 drive.stop();
 
                 break;
@@ -173,7 +221,7 @@ public class SecondaryAutonomous extends LinearOpMode {
                         0.2, 180, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
                 drive.stop();
 
-                //Pivot to face the crater
+                //Pivot to face the alliance depot
                 int pivotAngleLeft = 45;
                 while (drive.pivot(pivotAngleLeft, 30, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive())
                     ;
@@ -188,6 +236,33 @@ public class SecondaryAutonomous extends LinearOpMode {
                         0.2, 180, DEFAULT_PID, pivotAngleLeft, 50, 0) && opModeIsActive()) ;
                 drive.stop();
 
+                //Wait 750 milliseconds before the next action
+                wait(750, runtime);
+
+                //Deposit team marker
+                teamMarker.drop();
+                runtime.reset();
+                wait(750, runtime);
+
+                teamMarker.hold();
+                //Drive backwards 4 inches to give some clearance from the team marker
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
+                        0.2, 0, DEFAULT_PID, pivotAngleLeft, 50, 250) && opModeIsActive()) ;
+                drive.stop();
+
+                //Wait 750 milliseconds before the next action
+                wait(750, runtime);
+
+                //Pivot so that the back of the robot faces the crater
+                while(drive.pivot(45, -90, 0.4, 0.2, 500, 5, Direction.FASTEST) && opModeIsActive());
+
+                //Drive backwards towards the crater
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 120 * COUNTS_PER_INCH, 60 * COUNTS_PER_INCH, 0, 120 * COUNTS_PER_INCH, 0.6,
+                        0.4, 0, DEFAULT_PID, 45, 50, 250) && opModeIsActive()) ;
+                drive.stop();
+
                 break;
 
             //If the mineral is located on the right
@@ -199,7 +274,7 @@ public class SecondaryAutonomous extends LinearOpMode {
                         0.2, 180, DEFAULT_PID, driveAngle, 50, 250) && opModeIsActive());
                 drive.stop();
 
-                //Pivot to face the crater (angle = -25 degrees)
+                //Pivot to face the alliance depot (angle = -25 degrees)
                 int pivotAngleRight = -45;
                 while (drive.pivot(pivotAngleRight, 0, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive())
                     ;
@@ -208,10 +283,38 @@ public class SecondaryAutonomous extends LinearOpMode {
                 //Wait 750 milliseconds before the next action
                 wait(750, runtime);
 
-                //Drive into the crater
+                //Drive into the alliance depot to get into position to drop the team marker
                 drive.resetEncoders();
                 while (drive.move(drive.getEncoderDistance(), 30 * COUNTS_PER_INCH, 15 * COUNTS_PER_INCH, 0, 30 * COUNTS_PER_INCH, 0.3,
                         0.2, 180, DEFAULT_PID, pivotAngleRight, 50, 0) && opModeIsActive()) ;
+                drive.stop();
+
+                //Wait 750 milliseconds before the next action
+                wait(750, runtime);
+
+                //Deposit team marker
+                teamMarker.drop();
+                runtime.reset();
+                wait(750, runtime);
+
+                teamMarker.hold();
+                //Drive backwards 4 inches to give some clearance from the team marker
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 4 * COUNTS_PER_INCH, 2 * COUNTS_PER_INCH, 0, 2 * COUNTS_PER_INCH, 0.2,
+                        0.2, 0, DEFAULT_PID, pivotAngleRight, 50, 250) && opModeIsActive());
+                drive.stop();
+
+                //Wait 750 milliseconds before the next action
+                wait(750, runtime);
+
+                //Pivot so that the back of the robot faces the crater
+                while(drive.pivot(-50, 0, 0.3, 0.15, 500, 5, Direction.FASTEST) && opModeIsActive());
+                drive.stop();
+
+                //Drive to the crater to park
+                drive.resetEncoders();
+                while (drive.move(drive.getEncoderDistance(), 120 * COUNTS_PER_INCH, 80 * COUNTS_PER_INCH, 0, 120 * COUNTS_PER_INCH, 0.5,
+                        0.4, 0, DEFAULT_PID, -50, 50, 250) && opModeIsActive()) ;
                 drive.stop();
 
                 break;
