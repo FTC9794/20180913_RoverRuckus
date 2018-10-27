@@ -4,6 +4,7 @@ import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -27,7 +28,8 @@ import java.util.ArrayList;
  * Created by Sarthak on 9/11/2018.
  * This autonomous program scores the sampling, deposits the team marker, and parks in a crater
  */
-@Autonomous(name = "Primary Auto", group = "Autonomous")
+@Autonomous(name = " Ri3DPrimary Auto", group = "Autonomous")
+@Disabled
 public class Ri3DPrimaryAutonomous extends LinearOpMode{
 
     //Drivetrain object and hardware
@@ -83,6 +85,7 @@ public class Ri3DPrimaryAutonomous extends LinearOpMode{
         delatch.setPosition(1);
 
         intakeServo = hardwareMap.servo.get("intake_rotation");
+
         //Initialize Vision and Start Detector
         genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());

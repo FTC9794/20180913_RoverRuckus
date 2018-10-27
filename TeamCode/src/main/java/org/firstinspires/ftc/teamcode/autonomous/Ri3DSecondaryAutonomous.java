@@ -4,6 +4,7 @@ import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -26,7 +27,8 @@ import java.util.ArrayList;
  * Created by Sarthak on 9/15/2018.
  * This autonomous program scores the sampling and drives into the crater for a park
  */
-@Autonomous(name = "Secondary Auto", group = "Autonomous")
+@Autonomous(name = "Ri3D Secondary Auto", group = "Autonomous")
+@Disabled
 public class Ri3DSecondaryAutonomous extends LinearOpMode {
     //Drivetrain object and hardware
     IDrivetrain drive;
