@@ -348,7 +348,7 @@ public class MecanumDrive implements IDrivetrain {
         double hPos = encoders[2];
 
         //Average the Vertical Wheels
-        double y = ((vlPos + vrPos) / 2);
+        double y = ((Math.abs(vlPos) + Math.abs(vrPos)) / 2);
         double x = hPos;
 
         //Calculate distance

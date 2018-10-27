@@ -121,15 +121,17 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         globalCoordinatePositionUpdate();
 
         drive.softResetEncoder();
-        while(goToPosition(0*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+        while(goToPosition(-24*COUNTS_PER_INCH, -24*COUNTS_PER_INCH, 0, 0.2, 0.2)
                 && opModeIsActive()){
             globalCoordinatePositionUpdate();
+            telemetry.addData("Drive Encoder Position", drive.getEncoderDistance()/COUNTS_PER_INCH);
             telemetry.update();
         }
         drive.stop();
 
         while (opModeIsActive()){
             telemetry.addData("Status", "Program Finished");
+            telemetry.addData("Drive Encoder Position", drive.getEncoderDistance()/COUNTS_PER_INCH);
             globalCoordinatePositionUpdate();
             telemetry.update();
         }
@@ -243,31 +245,22 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         double xDistance = targetX - x;
         double yDistance = targetY - y;
 
-
-        double moveAngle = 0;
-        if(xDistance > 0 && yDistance > 0){
-            moveAngle = 90 - Math.toDegrees(Math.atan(yDistance/xDistance));
-        }else if(xDistance < 0 && yDistance > 0){
-            moveAngle = Math.toDegrees(Math.atan(yDistance/xDistance)) + 180;
-        }else if(xDistance < 0 && yDistance < 0){
-            moveAngle = Math.toDegrees(Math.atan(yDistance/xDistance)) + 180;
-        }else if(xDistance > 0 && yDistance < 0){
-            moveAngle = Math.toDegrees(Math.atan(yDistance/xDistance));
-        }
-
-
         double distance = Math.sqrt((Math.pow(yDistance, 2) + Math.pow(xDistance, 2)));
 
-        //if(drive.move(drive.getEncoderDistance(), distance, distance/0.75, 0, distance, maxPower, minPower,
-        //moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500) && distance > 0.5*COUNTS_PER_INCH){
-        if(!(Math.abs(yDistance) < 0.75*COUNTS_PER_INCH && Math.abs(xDistance) < 0.75*COUNTS_PER_INCH)){
+        double moveAngle = 0;
+        moveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
+        if((xDistance < 0 && yDistance < 0) || (xDistance < 0 && yDistance > 0)){
+            moveAngle += 180;
+        }
+        moveAngle = (moveAngle % 360);
+
+        if(drive.move(drive.getEncoderDistance(), 20* distance, distance/0.75, 0, distance, maxPower, minPower,
+                moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500)
+        && !(Math.abs(yDistance) < 1 * COUNTS_PER_INCH && Math.abs(xDistance) < 1 * COUNTS_PER_INCH)){
             telemetry.addData("Distance", distance/COUNTS_PER_INCH);
-            telemetry.addData("X Distance", xDistance);
-            telemetry.addData("Y Distance", yDistance);
-            //telemetry.addData("Method End Condition Y", Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH);
-            //telemetry.addData("Method End Condition X", Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH);
+            telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
+            telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
             telemetry.addData("Move Angle", moveAngle);
-            telemetry.addData("Orientation Difference", targetOrientation - angle);
             return true;
         }else{
             return false;
@@ -287,31 +280,23 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
         //Calculate Angle
         changeInAngle = (leftChange - rightChange) / (length);
-        //Add change in angle to cumulative angle
-        angle = ((angle + changeInAngle) % (2*Math.PI));
+        angle = ((angle + changeInAngle));
 
-        //Calculate x and y position
-        changeInPosition = (leftChange + rightChange) / 2;
-        changeInX = (changeInPosition * Math.sin(angle + (changeInAngle/2))) + (horizontalChange * Math.cos(angle + (changeInAngle/2)));
-        changeInY = -(changeInPosition * Math.cos(angle + (changeInAngle/2))) + (-horizontalChange * Math.sin(angle + (changeInAngle/2)));
+        double p = ((rightChange + leftChange) / 2);
+        double n = horizontalChange;
+        x = x + (p*Math.sin(angle) + n*Math.cos(angle));
+        y = y + -(p*Math.cos(angle) - n*Math.sin(angle));
 
-
-        x += changeInX;
-        y += changeInY;
-
-        //Update vars
         prevLeft = vlPos;
         prevRight = vrPos;
         prevHorizontal = hPos;
 
-        //Display calculations
-//        telemetry.addData("Vertical Right Position", vrPos);
-//        telemetry.addData("Vertical Left Position", vlPos);
-//        telemetry.addData("Horizontal Position", hPos);
-//        telemetry.addData("Angle Radians", angle);
-        telemetry.addData("Angle", Math.toDegrees(angle));
+        //telemetry.addData("Vertical Right Position", vrPos);
+        //telemetry.addData("Vertical Left Position", vlPos);
+        //telemetry.addData("Horizontal Position", hPos);
+        //telemetry.addData("Angle Radians", angle);
+        //telemetry.addData("Angle (Degrees)", Math.toDegrees(angle) % 360);
         telemetry.addData("X Position", x / COUNTS_PER_INCH);
         telemetry.addData("Y Position", y / COUNTS_PER_INCH);
-//        telemetry.update();
     }
 }
