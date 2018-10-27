@@ -32,9 +32,9 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        verticalLeft = hardwareMap.dcMotor.get("vl");
-        verticalRight = hardwareMap.dcMotor.get("vr");
-        horizontal = hardwareMap.dcMotor.get("h");
+        verticalLeft = hardwareMap.dcMotor.get("right_front");
+        verticalRight = hardwareMap.dcMotor.get("right_back");
+        horizontal = hardwareMap.dcMotor.get("left_front");
 
         verticalRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         verticalLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -51,42 +51,41 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         waitForStart();
 
         while(opModeIsActive()){
-            algorithm1();
-            /*//Get Current Positions
-            vlPos = verticalLeft.getCurrentPosition();
-            vrPos = verticalRight.getCurrentPosition();
-            hPos = horizontal.getCurrentPosition();
-
-            double leftChange = vlPos - prevLeft;
-            double rightChange = vrPos - prevRight;
-            double horizontalChange = hPos - prevHorizontal;
-
-            //Change in angle
-            changeInAngle = (rightChange-leftChange)/length;
-            angle = (angle + changeInAngle) % (2*Math.PI);
-
-            //Calculate x and y changes
-            double p = ((rightChange + leftChange)/2);
-            double n = horizontalChange;
-            changeInX = (p*Math.cos(angle) - (n*Math.sin(angle)));
-            changeInY = (p*Math.sin(angle) + (n*Math.cos(angle)));
-
-            x+= changeInX;
-            y += changeInY;
-
-            prevLeft = vlPos;
-            prevRight = vrPos;
-            prevHorizontal = hPos;
-
-            telemetry.addData("Vertical Right Position", vrPos);
-            telemetry.addData("Vertical Left Position", vlPos);
-            telemetry.addData("Horizontal Position", hPos);
-            telemetry.addData("Angle Radians", angle);
-            telemetry.addData("Angle to Degrees", Math.toDegrees(angle));
-            telemetry.addData("X Position", x / COUNTS_PER_INCH);
-            telemetry.addData("Y Position", y / COUNTS_PER_INCH);
-            telemetry.update();*/
+            algorithm2();
+            telemetry.update();
         }
+    }
+
+    void algorithm2(){
+        //Get Current Positions
+        vlPos = verticalLeft.getCurrentPosition();
+        vrPos = verticalRight.getCurrentPosition();
+        hPos = horizontal.getCurrentPosition();
+
+        double leftChange = vlPos - prevLeft;
+        double rightChange = vrPos - prevRight;
+        double horizontalChange = hPos - prevHorizontal;
+
+        //Change in angle
+        changeInAngle = (leftChange - rightChange) / (length);
+        angle = ((angle + changeInAngle));
+
+        double p = ((rightChange + leftChange) / 2);
+        double n = horizontalChange;
+        x = x + (p*Math.sin(angle) + n*Math.cos(angle));
+        y = y + (p*Math.cos(angle) - n*Math.sin(angle));
+
+        prevLeft = vlPos;
+        prevRight = vrPos;
+        prevHorizontal = hPos;
+
+        //telemetry.addData("Vertical Right Position", vrPos);
+        //telemetry.addData("Vertical Left Position", vlPos);
+        //telemetry.addData("Horizontal Position", hPos);
+        //telemetry.addData("Angle Radians", angle);
+        telemetry.addData("Algorithm 2 Angle (Degrees)", Math.toDegrees(angle) % 360);
+        telemetry.addData("Algorithm 2 X Position", x / COUNTS_PER_INCH);
+        telemetry.addData("Algorithm 2 Y Position", y / COUNTS_PER_INCH);
     }
 
     void algorithm1(){
@@ -102,7 +101,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         //Calculate Angle
         changeInAngle = (leftChange - rightChange) / (length);
         //Add change in angle to cumulative angle
-        angle = ((angle + changeInAngle) % (2*Math.PI));
+        angle = ((angle + changeInAngle));
 
         //Calculate x and y position
         changeInPosition = (leftChange + rightChange) / 2;
@@ -122,11 +121,10 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         telemetry.addData("Vertical Right Position", vrPos);
         telemetry.addData("Vertical Left Position", vlPos);
         telemetry.addData("Horizontal Position", hPos);
-        telemetry.addData("Angle Radians", angle);
-        telemetry.addData("Angle to Degrees", Math.toDegrees(angle));
-        telemetry.addData("X Position", x / COUNTS_PER_INCH);
-        telemetry.addData("Y Position", y / COUNTS_PER_INCH);
-        telemetry.update();
+        //telemetry.addData("Angle Radians", angle);
+        telemetry.addData("Algorithm 1 Angle to Degrees", Math.toDegrees(angle) % 360);
+        telemetry.addData("Algorithm 1 X Position", x / COUNTS_PER_INCH);
+        telemetry.addData("Algorithm 1 Y Position", y / COUNTS_PER_INCH);
     }
 
     void distanceFormula(){
