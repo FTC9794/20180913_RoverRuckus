@@ -286,7 +286,7 @@ public class MecanumDrive implements IDrivetrain {
             power = (maxPower-minPower)/(Math.abs(rampDownDifference)) * Math.abs(angleDifference) + minPower;
         }
         //turn clockwise or counterclockwise depending on which side of desired angle current angle is
-        if(direction== Direction.FASTEST||targetReached){
+        if(direction== Direction.FASTEST||needsToPivot){
             if(angleDifference>0){
                 this.setPowerAll(-power, -power, power, power);
             }else{
@@ -300,12 +300,12 @@ public class MecanumDrive implements IDrivetrain {
 
 
         //determine if the pivoting angle is in the desired range
-        if(Math.abs(angleDifference)<correctionAngleError&&!targetReached){
+        if(Math.abs(angleDifference)<correctionAngleError&&!needsToPivot){
             pivotTime.reset();
-            targetReached = true;
+            needsToPivot = true;
         }
-        if(targetReached && pivotTime.milliseconds()>=correctionTime){
-            targetReached = false;
+        if(needsToPivot && pivotTime.milliseconds()>=correctionTime){
+            needsToPivot = false;
             this.stop();
             return false;
         }else{
