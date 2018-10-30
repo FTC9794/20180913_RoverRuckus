@@ -77,7 +77,6 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
         genericDetector.colorFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW);
-        genericDetector.enable();
 
         centertimer = new ElapsedTime();
 
@@ -97,6 +96,8 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
+        genericDetector.enable();
+
         genericDetector.disable();
         runtime.reset();
 
@@ -117,15 +118,15 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         //Scan for mineral
 
         //Determine mineral location
-        mineralLocation = location.RIGHT;
+        mineralLocation = location.LEFT;
 
         //Knock off the mineral based on its location
         switch (mineralLocation){
             case CENTER:
                 drive.softResetEncoder();
                 //Knock gold mineral off
-                while(drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 15*COUNTS_PER_INCH, 0,
-                        30*COUNTS_PER_INCH, 0.35, 0.15, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 24*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0,
+                        24*COUNTS_PER_INCH, 0.5, DEFAULT_MIN_POWER, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Intake mineral
@@ -133,20 +134,21 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
                 //Go back to starting position
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 34*COUNTS_PER_INCH, 17*COUNTS_PER_INCH, 0,
-                        34*COUNTS_PER_INCH, 0.35, 0.15, 180, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 28*COUNTS_PER_INCH, 14*COUNTS_PER_INCH, 0,
+                        28*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 180, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot back to face perimeter
-                while(opModeIsActive() && runtime.milliseconds() < 2500){
-                    drive.pivot(-45, -22.5, 0.25, 0.2, 500, 5, Direction.FASTEST);
+                runtime.reset();
+                while(opModeIsActive() && runtime.milliseconds() < 2000){
+                    drive.pivot(-45, -22.5, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER_PIVOT, 500, 5, Direction.FASTEST);
                 }
                 drive.stop();
 
                 //Drive to perimeter wall
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 23*COUNTS_PER_INCH, 0,
-                        46*COUNTS_PER_INCH, 0.35, 0.15, -45, DEFAULT_PID, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0,
+                        46*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45, DEFAULT_PID, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to face alliance depot
@@ -163,8 +165,8 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
             case LEFT:
                 //Knock gold mineral off
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 15*COUNTS_PER_INCH, 0,
-                        25*COUNTS_PER_INCH, 0.35, 0.15, -45, DEFAULT_PID_STRAFE, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0,
+                        25*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to intake mineral
@@ -192,8 +194,8 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
                 //Drive towards perimeter wall
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 20*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0,
-                        20*COUNTS_PER_INCH, 0.35, 0.15, -45, DEFAULT_PID_STRAFE, 225, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 20*COUNTS_PER_INCH, 8*COUNTS_PER_INCH, 0,
+                        20*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45, DEFAULT_PID, 225, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 break;
@@ -202,7 +204,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 //Knock gold mineral off
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 15*COUNTS_PER_INCH, 0,
-                        25*COUNTS_PER_INCH, 0.35, 0.15, 45, DEFAULT_PID_STRAFE, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        25*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to intake mineral
@@ -229,8 +231,8 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
                 //Move back to original position
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 30*COUNTS_PER_INCH, 0,
-                        30*COUNTS_PER_INCH, 0.35, 0.15, 225, DEFAULT_PID_STRAFE, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 28*COUNTS_PER_INCH, 14*COUNTS_PER_INCH, 0,
+                        28*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 225, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to face perimeter wall
@@ -246,7 +248,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 //Drive towards perimeter wall
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 45*COUNTS_PER_INCH, 22.5*COUNTS_PER_INCH, 0,
-                        45*COUNTS_PER_INCH, 0.35, 0.15, -45, DEFAULT_PID_STRAFE, 225, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        45*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45, DEFAULT_PID, 225, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Drive to alliance depot to deposit team marker

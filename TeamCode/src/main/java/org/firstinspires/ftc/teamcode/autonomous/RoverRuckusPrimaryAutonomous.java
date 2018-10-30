@@ -80,7 +80,6 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         genericDetector = new GoldMineralDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
         genericDetector.colorFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW);
-        genericDetector.enable();
 
         centertimer = new ElapsedTime();
 
@@ -100,6 +99,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
+        genericDetector.enable();
         genericDetector.disable();
         runtime.reset();
 
@@ -127,14 +127,17 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             case CENTER:
                 drive.softResetEncoder();
                 //Knock gold mineral off
-                while(drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 15*COUNTS_PER_INCH, 0,
-                        30*COUNTS_PER_INCH, 0.35, 0.15, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 24*COUNTS_PER_INCH, 12*COUNTS_PER_INCH, 0,
+                        24*COUNTS_PER_INCH, 0.35, DEFAULT_MIN_POWER, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
+
+                //Intake mineral
+                waitMilliseconds(1000, runtime);
 
                 //Go to alliance depot to deposit the team marker
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 20*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0,
-                        20*COUNTS_PER_INCH, 0.35, 0.15, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 26*COUNTS_PER_INCH, 8*COUNTS_PER_INCH, 0,
+                        26*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Deposit team marker
@@ -153,13 +156,13 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 //Maneuver towards crater to park
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 10*COUNTS_PER_INCH, 5*COUNTS_PER_INCH, 0,
-                        11*COUNTS_PER_INCH, 0.25, 0.2, -90, DEFAULT_PID_STRAFE, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        11*COUNTS_PER_INCH, 0.4, DEFAULT_MIN_POWER, -90, DEFAULT_PID, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Park on crater
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 60*COUNTS_PER_INCH, 50*COUNTS_PER_INCH, 0,
-                        60*COUNTS_PER_INCH, 0.5, 0.2, -135, DEFAULT_PID_STRAFE, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135, DEFAULT_PID, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 break;
@@ -167,8 +170,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             case LEFT:
                 //Knock gold mineral off
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 15*COUNTS_PER_INCH, 0,
-                        25*COUNTS_PER_INCH, 0.35, 0.15, -45, DEFAULT_PID_STRAFE, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0,
+                        25*COUNTS_PER_INCH, 0.35, DEFAULT_MIN_POWER, -45, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to intake mineral
@@ -195,8 +198,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
                 //Go to alliance depot to deposit team marker
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 9*COUNTS_PER_INCH, 0,
-                        18*COUNTS_PER_INCH, 0.35, 0.15, -45, DEFAULT_PID_STRAFE, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 6*COUNTS_PER_INCH, 0,
+                        18*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to face alliance depot
@@ -212,7 +215,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 //Go to alliance depot to deposit team marker
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 35*COUNTS_PER_INCH, 18*COUNTS_PER_INCH, 0,
-                        35*COUNTS_PER_INCH, 0.35, 0.15, 45, DEFAULT_PID_STRAFE, 45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        35*COUNTS_PER_INCH, 0.5, DEFAULT_MIN_POWER, 45, DEFAULT_PID, 45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Deposit team marker
@@ -221,7 +224,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 //Go to crater to park
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 65*COUNTS_PER_INCH, 38*COUNTS_PER_INCH, 0,
-                        65*COUNTS_PER_INCH, 0.35, 0.15, -135, DEFAULT_PID_STRAFE, 45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        65*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135, DEFAULT_PID, 45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 break;
@@ -229,8 +232,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             case RIGHT:
                 //Knock gold mineral off
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 15*COUNTS_PER_INCH, 0,
-                        25*COUNTS_PER_INCH, 0.35, 0.15, 45, DEFAULT_PID_STRAFE, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0,
+                        25*COUNTS_PER_INCH, 0.35, DEFAULT_MIN_POWER, 45, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to intake mineral
@@ -257,8 +260,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
                 //Go to alliance depot to deposit team marker
                 drive.softResetEncoder();
-                while(drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 9*COUNTS_PER_INCH, 0,
-                        18*COUNTS_PER_INCH, 0.35, 0.15, 45, DEFAULT_PID_STRAFE, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                while(drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 6*COUNTS_PER_INCH, 0,
+                        18*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Pivot to face alliance depot
@@ -274,7 +277,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 //Go to alliance depot to deposit team marker
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 35*COUNTS_PER_INCH, 18*COUNTS_PER_INCH, 0,
-                        35*COUNTS_PER_INCH, 0.35, 0.15, -45, DEFAULT_PID_STRAFE, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        35*COUNTS_PER_INCH, 0.5, DEFAULT_MIN_POWER, -45, DEFAULT_PID, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 //Deposit team marker
@@ -283,7 +286,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 //Go to crater to park
                 drive.softResetEncoder();
                 while(drive.move(drive.getEncoderDistance(), 65*COUNTS_PER_INCH, 38*COUNTS_PER_INCH, 0,
-                        65*COUNTS_PER_INCH, 0.35, 0.15, 135, DEFAULT_PID_STRAFE, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
+                        65*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 135, DEFAULT_PID, -45, DEFAULT_ERROR_DISTANCE, 250) && opModeIsActive());
                 drive.stop();
 
                 break;
