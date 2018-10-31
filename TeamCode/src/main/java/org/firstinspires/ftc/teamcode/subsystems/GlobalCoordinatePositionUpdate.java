@@ -70,11 +70,11 @@ public class GlobalCoordinatePositionUpdate implements Runnable {
     }
 
     public double getXCoord(){
-        return x/COUNTS_PER_INCH;
+        return x;
     }
 
     public double getYCoord(){
-        return y/COUNTS_PER_INCH;
+        return y;
     }
 
     public double getOrienation(){
