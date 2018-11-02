@@ -17,7 +17,6 @@ import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.Meca
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
-import org.opencv.core.Mat;
 
 import java.util.ArrayList;
 
@@ -64,7 +63,15 @@ public class AutonomousTesting extends LinearOpMode {
 
     final double[] DEFAULT_PID = {.05};
     final double[] DEFAULT_PID_STRAFE = {.03};
+
+    private double vlPos, vrPos, hPos;
+    private double prevLeft, prevRight, prevHorizontal;
+
     final double COUNTS_PER_INCH = 307.699557;
+    private final double length = 13.25 * COUNTS_PER_INCH;
+
+    private double changeInAngle = 0, angle = 0;
+    private double x = 0, y = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -84,18 +91,19 @@ public class AutonomousTesting extends LinearOpMode {
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
 
-        //Initialize Global Coordinate Position Thread
+        /*//Initialize Global Coordinate Position Thread
         coordinate = new GlobalCoordinatePositionUpdate(verticalLeft, verticalRight, horizontal, telemetry);
-        positionThread = new Thread(coordinate);
+        positionThread = new Thread(coordinate);*/
 
         telemetry.addData("Status", "Init Complete");
         telemetry.update();
 
         waitForStart();
+        globalCoordinatePositionUpdate();
         runtime.reset();
 
-        positionThread.start();
-        coordinate.enableTelemetry();
+        //positionThread.start();
+        //coordinate.enableTelemetry();
 
         /**
          * *****************************************************************************************
@@ -104,18 +112,68 @@ public class AutonomousTesting extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
+        globalCoordinatePositionUpdate();
+        while(goToPosition(0*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, 0, 0.35, 0.15)
+                && opModeIsActive()){
+            globalCoordinatePositionUpdate();
+        }
+        drive.stop();
 
-        drive.softResetEncoder();
-        double distance = distanceFormula((coordinate.getXCoord()-0) * COUNTS_PER_INCH, (coordinate.getYCoord() + 24) * COUNTS_PER_INCH);
-        while(goToPosition(0*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, 0, 0.35, 0.15, distance)
-                && opModeIsActive());
+        waitMilliseconds(1000, runtime);
+
+        globalCoordinatePositionUpdate();
+        while(goToPosition(24*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 0, 0.35, 0.15)
+                && opModeIsActive()){
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+        }
+        drive.stop();
+
+        waitMilliseconds(1000, runtime);
+
+        globalCoordinatePositionUpdate();
+        while(goToPosition(24*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, 0, 0.35, 0.15)
+                && opModeIsActive()){
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+        }
+        drive.stop();
+
+        waitMilliseconds(1000, runtime);
+
+        globalCoordinatePositionUpdate();
+        while(goToPosition(0*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 90, 0.35, 0.15)
+                && opModeIsActive()){
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+        }
+        drive.stop();
+
+        waitMilliseconds(1000, runtime);
+
+        globalCoordinatePositionUpdate();
+        while(goToPosition(24*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, -45, 0.35, 0.15)
+                && opModeIsActive()){
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+        }
+        drive.stop();
+
+        waitMilliseconds(1000, runtime);
+
+        globalCoordinatePositionUpdate();
+        while(goToPosition(-24*COUNTS_PER_INCH, 48*COUNTS_PER_INCH, 180, 0.35, 0.15)
+                && opModeIsActive()){
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+        }
         drive.stop();
 
         while (opModeIsActive()){
-            telemetry.addData("X Position", coordinate.getXCoord());
-            telemetry.addData("Y Position", coordinate.getYCoord());
-            telemetry.addData("Orientation", coordinate.getOrienation());
-            telemetry.addData("Thread Active", positionThread.isAlive());
+            telemetry.addData("X Position", x/COUNTS_PER_INCH);
+            telemetry.addData("Y Position", y/COUNTS_PER_INCH);
+            telemetry.addData("Orientation", Math.toDegrees(angle));
+            //telemetry.addData("Thread Active", positionThread.isAlive());
             telemetry.update();
         }
 
@@ -228,22 +286,29 @@ public class AutonomousTesting extends LinearOpMode {
         telemetry.update();
     }
 
-    private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower, double travelDistance){
+    private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower){
 
-        double xDistance = targetX - coordinate.getXCoord();
-        double yDistance = targetY - coordinate.getYCoord();
+        double xDistance = targetX - x;
+        double yDistance = targetY - y;
 
         double distance = distanceFormula(xDistance, yDistance);
+        double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
+
+        if (Math.abs(power) > maxPower){
+            power = maxPower;
+        }else if(Math.abs(power) < minPower){
+            power = minPower;
+        }
 
         double moveAngle = 0;
         moveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
-        if((xDistance < 0 && yDistance < 0) || (xDistance < 0 && yDistance > 0)){
+        if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
             moveAngle += 180;
         }
-        moveAngle = (moveAngle % 360);
+        moveAngle = (moveAngle % 360) - angle;
 
-        if(!(Math.abs(yDistance) < 0.5 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.5 * COUNTS_PER_INCH)){
-            drive.move(distance, travelDistance, travelDistance/0.75, 0, travelDistance, maxPower, minPower,
+        if(!(Math.abs(yDistance) < 0.25 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.25 * COUNTS_PER_INCH)){
+            drive.move(0, distance, distance, 0, distance, power, power,
                     moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
             telemetry.addData("Distance", distance/COUNTS_PER_INCH);
             telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
@@ -259,6 +324,38 @@ public class AutonomousTesting extends LinearOpMode {
     public double distanceFormula(double x, double y){
         double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
         return distance;
+    }
+
+    private void globalCoordinatePositionUpdate(){
+        //Get Current Positions
+        vlPos = verticalLeft.getCurrentPosition();
+        vrPos = verticalRight.getCurrentPosition();
+        hPos = horizontal.getCurrentPosition();
+
+        double leftChange = vlPos - prevLeft;
+        double rightChange = vrPos - prevRight;
+        double horizontalChange = hPos - prevHorizontal;
+
+        //Calculate Angle
+        changeInAngle = (leftChange - rightChange) / (length);
+        angle = ((angle + changeInAngle));
+
+        double p = ((rightChange + leftChange) / 2);
+        double n = horizontalChange;
+        x = x + (p*Math.sin(angle) + n*Math.cos(angle));
+        y = y + -(p*Math.cos(angle) - n*Math.sin(angle));
+
+        prevLeft = vlPos;
+        prevRight = vrPos;
+        prevHorizontal = hPos;
+
+        //telemetry.addData("Vertical Right Position", vrPos);
+        //telemetry.addData("Vertical Left Position", vlPos);
+        //telemetry.addData("Horizontal Position", hPos);
+        //telemetry.addData("Angle Radians", angle);
+        //telemetry.addData("Angle (Degrees)", Math.toDegrees(angle) % 360);
+        telemetry.addData("X Position", x / COUNTS_PER_INCH);
+        telemetry.addData("Y Position", y / COUNTS_PER_INCH);
     }
 
 }
