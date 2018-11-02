@@ -291,6 +291,8 @@ public class AutonomousTesting extends LinearOpMode {
         double xDistance = targetX - x;
         double yDistance = targetY - y;
 
+        double orientationDifference = targetOrientation - angle;
+
         double distance = distanceFormula(xDistance, yDistance);
         double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
 
@@ -307,7 +309,8 @@ public class AutonomousTesting extends LinearOpMode {
         }
         moveAngle = (moveAngle % 360) - angle;
 
-        if(!(Math.abs(yDistance) < 0.25 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.25 * COUNTS_PER_INCH)){
+        if(!(Math.abs(yDistance) < 0.25 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.25 * COUNTS_PER_INCH
+                && Math.abs(orientationDifference) < 2)){
             drive.move(0, distance, distance, 0, distance, power, power,
                     moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
             telemetry.addData("Distance", distance/COUNTS_PER_INCH);
