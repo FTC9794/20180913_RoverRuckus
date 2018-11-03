@@ -58,7 +58,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
     final double DEFAULT_ERROR_DISTANCE = 10;
 
-    final double[] DEFAULT_PID = {.05};
+    final double[] DEFAULT_PID = {.02};
     final double[] DEFAULT_PID_STRAFE = {.03};
     final double COUNTS_PER_INCH = 307.699557;
 
@@ -111,18 +111,163 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
          * *****************************************************************************************
          */
 
-        //Pivot back to calibration point
-        while(opModeIsActive() && runtime.milliseconds() < 1000){
-            drive.pivot(0, 0, 0.25, 0.2, 500, 5, Direction.FASTEST);
-        }
-        drive.stop();
+        globalCoordinatePositionUpdate();
 
         //Scan for mineral
 
-        //Determine mineral location
-        mineralLocation = location.RIGHT;
+        globalCoordinatePositionUpdate();
 
-        //Knock off the mineral based on its location
+        //Determine mineral location
+        mineralLocation = location.CENTER;
+        globalCoordinatePositionUpdate();
+
+        switch (mineralLocation){
+            case CENTER:
+                globalCoordinatePositionUpdate();
+
+                //Knock gold mineral
+                while(goToPosition(0*COUNTS_PER_INCH, 21*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(0, 21)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Intake mineral
+                waitMilliseconds(1000, runtime);
+
+                //Go to alliance depot to deposit the team marker
+                globalCoordinatePositionUpdate();
+                while (goToPosition(0*COUNTS_PER_INCH, 50*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(0, 50)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Deposit team marker
+                waitMilliseconds(1000, timer);
+
+                //Move to perimeter wall
+                globalCoordinatePositionUpdate();
+                while (goToPosition(-15*COUNTS_PER_INCH, 50*COUNTS_PER_INCH, -45, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(0, 50)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Park at crater
+                globalCoordinatePositionUpdate();
+                while (goToPosition(-54*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, -45, 0.4, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-54, 10)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                break;
+
+            case LEFT:
+                //Knock off gold mineral
+                globalCoordinatePositionUpdate();
+                while(goToPosition(-17.678*COUNTS_PER_INCH, 17.678*COUNTS_PER_INCH, 10, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-17.768, 17.678)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Intake Mineral
+                waitMilliseconds(1000, runtime);
+
+                //Move towards perimeter wall
+                globalCoordinatePositionUpdate();
+                while(goToPosition(-30.406*COUNTS_PER_INCH, 30.406*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-17.768, 17.678)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Go to alliance depot to deposit team marker
+                globalCoordinatePositionUpdate();
+                while(goToPosition(-5.657*COUNTS_PER_INCH, 55.154*COUNTS_PER_INCH, 45, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-17.768, 17.678)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Deposit team marker
+                waitMilliseconds(1000, runtime);
+
+                //Go to crater to park
+                globalCoordinatePositionUpdate();
+                while (goToPosition(-54*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 45, 0.4, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-54, 10)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+            case RIGHT:
+                //Knock off gold mineral
+                globalCoordinatePositionUpdate();
+                while(goToPosition(17.678*COUNTS_PER_INCH, 17.678*COUNTS_PER_INCH, -10, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-17.768, 17.678)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Intake Mineral
+                waitMilliseconds(1000, runtime);
+
+                //Move towards perimeter wall
+                globalCoordinatePositionUpdate();
+                while(goToPosition(30.406*COUNTS_PER_INCH, 30.406*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-17.768, 17.678)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Go to alliance depot to deposit team marker
+                globalCoordinatePositionUpdate();
+                while(goToPosition(5.657*COUNTS_PER_INCH, 55.154*COUNTS_PER_INCH, -45, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-17.768, 17.678)");
+                    telemetry.update();
+                }
+                drive.stop();
+
+                //Deposit team marker
+                waitMilliseconds(1000, runtime);
+
+                //Go to crater to park
+                globalCoordinatePositionUpdate();
+                while (goToPosition(54*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, -45, 0.4, DEFAULT_MIN_POWER)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-54, 10)");
+                    telemetry.update();
+                }
+                drive.stop();
+        }
+
+        /*//Knock off the mineral based on its location
         switch (mineralLocation){
             case CENTER:
                 drive.softResetEncoder();
@@ -290,7 +435,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 drive.stop();
 
                 break;
-        }
+        }*/
 
         while (opModeIsActive()){
             drive.stop();
@@ -346,7 +491,9 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         //Reset the timer
         timer.reset();
         //Wait until the time inputted has fully elapsed
-        while(opModeIsActive() && timer.milliseconds() < milliseconds);
+        while(opModeIsActive() && timer.milliseconds() < milliseconds){
+            globalCoordinatePositionUpdate();
+        }
     }
 
     /**
@@ -407,23 +554,33 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         telemetry.update();
     }
 
-    private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower, double travelDistance){
+    private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower){
 
         double xDistance = targetX - x;
         double yDistance = targetY - y;
 
-        double distance = Math.sqrt((Math.pow(yDistance, 2) + Math.pow(xDistance, 2)));
+        double orientationDifference = targetOrientation - imu.getZAngle();
+
+        double distance = distanceFormula(xDistance, yDistance);
+        double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
+
+        if (Math.abs(power) > maxPower){
+            power = maxPower;
+        }else if(Math.abs(power) < minPower){
+            power = minPower;
+        }
 
         double moveAngle = 0;
         moveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
-        if((xDistance < 0 && yDistance < 0) || (xDistance < 0 && yDistance > 0)){
+        if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
             moveAngle += 180;
         }
-        moveAngle = (moveAngle % 360);
+        moveAngle = (moveAngle % 360) - angle;
 
-        if(drive.move(drive.getEncoderDistance(), travelDistance, distance/0.75, 0, distance, maxPower, minPower,
-                moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500)
-        && !(Math.abs(yDistance) < 0.5 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.5 * COUNTS_PER_INCH)){
+        if(!(Math.abs(yDistance) < 0.3 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.3 * COUNTS_PER_INCH
+                && Math.abs(orientationDifference) < 2)){
+            drive.move(0, distance, distance, 0, distance, power, power,
+                    moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
             telemetry.addData("Distance", distance/COUNTS_PER_INCH);
             telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
             telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
@@ -458,12 +615,13 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         prevRight = vrPos;
         prevHorizontal = hPos;
 
-        //telemetry.addData("Vertical Right Position", vrPos);
-        //telemetry.addData("Vertical Left Position", vlPos);
-        //telemetry.addData("Horizontal Position", hPos);
-        //telemetry.addData("Angle Radians", angle);
-        //telemetry.addData("Angle (Degrees)", Math.toDegrees(angle) % 360);
         telemetry.addData("X Position", x / COUNTS_PER_INCH);
         telemetry.addData("Y Position", y / COUNTS_PER_INCH);
     }
+
+    public double distanceFormula(double x, double y){
+        double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        return distance;
+    }
+
 }

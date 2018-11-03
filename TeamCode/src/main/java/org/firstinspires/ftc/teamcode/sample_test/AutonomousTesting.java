@@ -112,7 +112,17 @@ public class AutonomousTesting extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
+
         globalCoordinatePositionUpdate();
+
+        globalCoordinatePositionUpdate();
+        while(goToPosition(0*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0, 0.35, 0.15)
+                && opModeIsActive()){
+            globalCoordinatePositionUpdate();
+        }
+        drive.stop();
+
+        /*globalCoordinatePositionUpdate();
         while(goToPosition(0*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, 0, 0.35, 0.15)
                 && opModeIsActive()){
             globalCoordinatePositionUpdate();
@@ -168,7 +178,7 @@ public class AutonomousTesting extends LinearOpMode {
             telemetry.update();
         }
         drive.stop();
-
+*/
         while (opModeIsActive()){
             telemetry.addData("X Position", x/COUNTS_PER_INCH);
             telemetry.addData("Y Position", y/COUNTS_PER_INCH);
