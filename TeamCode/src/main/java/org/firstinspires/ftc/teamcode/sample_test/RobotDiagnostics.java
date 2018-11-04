@@ -17,7 +17,7 @@ public class RobotDiagnostics extends LinearOpMode {
     final int maxDiagnosticSelection = 0;
 
     final String[] diagnosticTests = {
-        "Drivetrain Motor"
+        "Drivetrain Motors Test", "Lift Mechanism Test"
     };
 
     @Override
