@@ -71,7 +71,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         angle = ((angle + changeInAngle));
 
         double p = ((rightChange + leftChange) / 2);
-        double n = horizontalChange;
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(0));
         x = x + (p*Math.sin(angle) + n*Math.cos(angle));
         y = y + (p*Math.cos(angle) - n*Math.sin(angle));
 
@@ -79,9 +79,9 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         prevRight = vrPos;
         prevHorizontal = hPos;
 
-        //telemetry.addData("Vertical Right Position", vrPos);
-        //telemetry.addData("Vertical Left Position", vlPos);
-        //telemetry.addData("Horizontal Position", hPos);
+        telemetry.addData("Vertical Right Position", vrPos);
+        telemetry.addData("Vertical Left Position", vlPos);
+        telemetry.addData("Horizontal Position", hPos);
         //telemetry.addData("Angle Radians", angle);
         telemetry.addData("Algorithm 2 Angle (Degrees)", Math.toDegrees(angle) % 360);
         telemetry.addData("Algorithm 2 X Position", x / COUNTS_PER_INCH);
