@@ -28,6 +28,7 @@ import java.util.ArrayList;
  * This autonomous program scores the sampling and drives into the crater for a park
  */
 @Autonomous(name = "Ri3D Secondary Auto", group = "Autonomous")
+@Deprecated
 @Disabled
 public class Ri3DSecondaryAutonomous extends LinearOpMode {
     //Drivetrain object and hardware

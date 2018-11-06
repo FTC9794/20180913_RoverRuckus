@@ -29,6 +29,7 @@ import java.util.ArrayList;
  * This autonomous program scores the sampling, deposits the team marker, and parks in a crater
  */
 @Autonomous(name = " Ri3DPrimary Auto", group = "Autonomous")
+@Deprecated
 @Disabled
 public class Ri3DPrimaryAutonomous extends LinearOpMode{
 
