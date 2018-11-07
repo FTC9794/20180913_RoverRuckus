@@ -46,7 +46,7 @@ public class GoldMineralDetector extends DogeCVDetector {
     public PerfectAreaScorer perfectAreaScorer = new PerfectAreaScorer(5000,0.05); // Used to find objects near a tuned area value
 
     /**
-     * Simple constructor
+     * Simple constructor for the Gold Mineral Detector
      */
     public GoldMineralDetector() {
         super();
@@ -54,6 +54,11 @@ public class GoldMineralDetector extends DogeCVDetector {
     }
 
 
+    /**
+     * Processes the image frame to find the location of the gold mineral
+     * @param input Mat that is inputted from the camera
+     * @return Mat object
+     */
     @Override
     public Mat process(Mat input) {
 
@@ -113,6 +118,9 @@ public class GoldMineralDetector extends DogeCVDetector {
 
     }
 
+    /**
+     * Sets detector to use default settings
+     */
     @Override
     public void useDefaults() {
         addScorer(ratioScorer);
