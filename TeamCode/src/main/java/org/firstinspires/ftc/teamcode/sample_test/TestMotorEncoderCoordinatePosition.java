@@ -1,9 +1,14 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
+import android.media.AudioManager;
+import android.media.SoundPool;
+
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
+import org.firstinspires.ftc.teamcode.R;
 
 /**
  * Created by Sarthak on 10/1/2018.
@@ -14,7 +19,10 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
     DcMotor verticalRight, verticalLeft, horizontal;
 
     double vrPos = 0, vlPos = 0, hPos = 0;
+    final double alpha = 53.13;
 
+    SoundPool sound;
+    int beepID;
 
     final double COUNTS_PER_INCH = 307.699557;
     final double UNITS_TO_DEGREES = 0.0064033333;
@@ -32,6 +40,9 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+        sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
+        beepID = sound.load(hardwareMap.appContext, R.raw.supermariobros, 1);
+
         verticalLeft = hardwareMap.dcMotor.get("right_front");
         verticalRight = hardwareMap.dcMotor.get("right_back");
         horizontal = hardwareMap.dcMotor.get("left_front");
@@ -49,6 +60,8 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         horizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         waitForStart();
+
+        sound.play(beepID, 1, 1, 1, 0, 1);
 
         while(opModeIsActive()){
             algorithm2();
@@ -71,7 +84,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         angle = ((angle + changeInAngle));
 
         double p = ((rightChange + leftChange) / 2);
-        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(0));
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(alpha));
         x = x + (p*Math.sin(angle) + n*Math.cos(angle));
         y = y + (p*Math.cos(angle) - n*Math.sin(angle));
 

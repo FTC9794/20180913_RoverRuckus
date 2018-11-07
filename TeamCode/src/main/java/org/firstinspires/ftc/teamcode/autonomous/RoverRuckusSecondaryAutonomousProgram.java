@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
+import android.media.AudioManager;
+import android.media.SoundPool;
+
 import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.hardware.bosch.BNO055IMU;
@@ -10,6 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Enums.Direction;
+import org.firstinspires.ftc.teamcode.R;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
@@ -63,6 +67,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
     //Position variables
     double vrPos = 0, vlPos = 0, hPos = 0;
     double x = 0, y = 0, angle = 0;
+    final double alpha = 53.13;
 
     double prevRight = 0, prevLeft = 0, prevHorizontal = 0;
     double length = 13.25 * COUNTS_PER_INCH;
@@ -70,8 +75,13 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
     double changeInPosition = 0, changeInAngle = 0;
     double changeInX = 0, changeInY = 0;
 
+    SoundPool sound;
+    int beepID;
+
     @Override
     public void runOpMode() throws InterruptedException {
+        sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
+        beepID = sound.load(hardwareMap.appContext, R.raw.supermariobros, 1);
         //Init motor hardware map and behaviors
         setMotorBehaviors();
 
@@ -224,13 +234,13 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
             telemetry.addData("Moving to Position", "(-17, -50)");
             telemetry.update();
         }
-        while(goToPosition(0*COUNTS_PER_INCH, -66*COUNTS_PER_INCH, -135, 0.5, DEFAULT_MIN_POWER)
+        while(goToPosition(0*COUNTS_PER_INCH, -63*COUNTS_PER_INCH, -135, 0.5, DEFAULT_MIN_POWER)
                 && opModeIsActive()){
             globalCoordinatePositionUpdate();
             telemetry.addData("Moving to Position", "(0, -66)");
             telemetry.update();
         }
-        while(goToPosition(11*COUNTS_PER_INCH, -77*COUNTS_PER_INCH, -135, 0.35, DEFAULT_MIN_POWER)
+        while(goToPosition(11*COUNTS_PER_INCH, -73*COUNTS_PER_INCH, -135, 0.35, DEFAULT_MIN_POWER)
                 && opModeIsActive()){
             globalCoordinatePositionUpdate();
             telemetry.addData("Moving to Position", "(11, -77)");
@@ -243,7 +253,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         waitMilliseconds(1000, runtime);
 
         //Go to crater to park
-        while(goToPosition(0*COUNTS_PER_INCH, -66*COUNTS_PER_INCH, -135, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+        while(goToPosition(0*COUNTS_PER_INCH, -63*COUNTS_PER_INCH, -135, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
                 && opModeIsActive()){
             globalCoordinatePositionUpdate();
             telemetry.addData("Moving to Position", "(0, -66)");
@@ -255,7 +265,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
             telemetry.addData("Moving to Position", "(-17, -50)");
             telemetry.update();
         }
-        while(goToPosition(-35*COUNTS_PER_INCH, -35*COUNTS_PER_INCH, -135, 0.35, DEFAULT_MIN_POWER)
+        while(goToPosition(-35*COUNTS_PER_INCH, -33*COUNTS_PER_INCH, -135, 0.35, DEFAULT_MIN_POWER)
                 && opModeIsActive()){
             globalCoordinatePositionUpdate();
             telemetry.addData("Moving to Position", "(-17, -50)");
@@ -411,13 +421,10 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 break;
         }
 */
+        sound.play(beepID, 1, 1, 1, 0, 1);
         while (opModeIsActive()){
             drive.stop();
             globalCoordinatePositionUpdate();
-            right_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-            right_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-            left_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-            left_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             telemetry.addData("Status", "Program Finished");
             telemetry.addData("X Position", x/COUNTS_PER_INCH);
             telemetry.addData("Y Position", y/COUNTS_PER_INCH);
@@ -600,7 +607,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         angle = ((angle + changeInAngle));
 
         double p = ((rightChange + leftChange) / 2);
-        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(0));
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(alpha));
         x = x + (p*Math.sin(angle) + n*Math.cos(angle));
         y = y + -(p*Math.cos(angle) - n*Math.sin(angle));
 
