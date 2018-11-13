@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+import org.firstinspires.ftc.teamcode.subsystems.GamepadWrapper;
+
 /**
  * Created by Sarthak on 10/26/2018.
  */
@@ -12,28 +14,49 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 public class Master_Teleop extends LinearOpMode {
     DcMotor rf, rb, lf, lb;
 
+    DcMotor hang;
+    int hangPosition = 0;
+
+    GamepadWrapper Gamepad1 = new GamepadWrapper(gamepad1);
+    GamepadWrapper Gamepad2 = new GamepadWrapper(gamepad2);
+
     @Override
     public void runOpMode() throws InterruptedException {
-        rf = hardwareMap.dcMotor.get("right_front");
-        rb = hardwareMap.dcMotor.get("right_back");
-        lf = hardwareMap.dcMotor.get("left_front");
-        lb = hardwareMap.dcMotor.get("left_back");
+        rf = hardwareMap.dcMotor.get("rf");
+        rb = hardwareMap.dcMotor.get("rb");
+        lf = hardwareMap.dcMotor.get("lf");
+        lb = hardwareMap.dcMotor.get("lb");
 
         rf.setDirection(DcMotorSimple.Direction.REVERSE);
         rb.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        hang = hardwareMap.dcMotor.get("hang");
+        hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         waitForStart();
 
         while (opModeIsActive()){
-            double pitch = -gamepad1.left_stick_y;
-            double roll = gamepad1.left_stick_x;
-            double pivot = gamepad1.right_stick_x;
+            //Drivetrain controls
+            double pitch = Gamepad1.leftStickY();
+            double roll = Gamepad1.leftStickX();
+            double pivot = Gamepad1.rightStickX();;
 
             rf.setPower(pitch-roll+pivot);
             rb.setPower(pitch+roll+pivot);
             lf.setPower(pitch+roll-pivot);
             lb.setPower(pitch-roll-pivot);
 
+            //Hanging mechanism controls
+            if(Gamepad2.rightTrigger() > 0.2){
+                hangPosition += 10;
+            }else if(Gamepad2.leftTrigger() > 0.2){
+                hangPosition -= 10;
+            }
+            if(hangPosition < 0){
+                hangPosition = 0;
+            }
+            hang.setTargetPosition(hangPosition);
         }
     }
 }
