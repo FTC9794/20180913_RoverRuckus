@@ -237,7 +237,7 @@ public class RoverRuckusPrimaryAutonomousArchitected extends LinearOpMode {
         boschIMU = hardwareMap.get(BNO055IMU.class, "imu");
         imu = new BoschIMU(boschIMU);
         imu.initialize();
-        imu.setOffset(0);
+        imu.setOffset(45);
         telemetry.addData("Status", "IMU Instantiated");
         telemetry.update();
 
@@ -259,6 +259,7 @@ public class RoverRuckusPrimaryAutonomousArchitected extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
+
 
         //Lower from the lander
 
@@ -339,6 +340,14 @@ public class RoverRuckusPrimaryAutonomousArchitected extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
+        runtime.reset();
+        while(opModeIsActive() && runtime.milliseconds() < 1500){
+            drive.pivot(0, -25, 0.75, 0.35, 500, 5, Direction.FASTEST);
+            globalCoordinatePositionUpdate();
+        }
+        drive.stop();
+        globalCoordinatePositionUpdate();
+
         //Move to the depot
         switch (mineralLocation){
             case LEFT:
@@ -394,6 +403,8 @@ public class RoverRuckusPrimaryAutonomousArchitected extends LinearOpMode {
         }
         drive.stop();
         globalCoordinatePositionUpdate();
+
+
 
         //Deposit team marker
         waitMilliseconds(1000, runtime);
@@ -494,7 +505,7 @@ public class RoverRuckusPrimaryAutonomousArchitected extends LinearOpMode {
         horizontal = hardwareMap.dcMotor.get("lf");
         horizontal2 = hardwareMap.dcMotor.get("lb");
 
-        verticalLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        horizontal.setDirection(DcMotorSimple.Direction.REVERSE);
 
         //Set motor behaviors
         right_front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -544,7 +555,7 @@ public class RoverRuckusPrimaryAutonomousArchitected extends LinearOpMode {
         double xDistance = targetX - x;
         double yDistance = targetY - y;
 
-        double orientationDifference = targetOrientation - imu.getZAngle();
+        double orientationDifference = targetOrientation - angle;
 
         double distance = distanceFormula(xDistance, yDistance);
         double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
@@ -593,8 +604,8 @@ public class RoverRuckusPrimaryAutonomousArchitected extends LinearOpMode {
     private void globalCoordinatePositionUpdate(){
         //Get Current Positions
         vlPos = verticalLeft.getCurrentPosition();
-        vrPos = verticalRight.getCurrentPosition();
-        hPos = horizontal.getCurrentPosition();
+        vrPos = -verticalRight.getCurrentPosition();
+        hPos = -horizontal.getCurrentPosition();
 
         double leftChange = vlPos - prevLeft;
         double rightChange = vrPos - prevRight;

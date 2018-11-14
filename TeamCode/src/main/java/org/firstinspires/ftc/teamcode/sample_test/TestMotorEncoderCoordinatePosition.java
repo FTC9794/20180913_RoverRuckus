@@ -29,14 +29,14 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
 
     //Orientation, Magnitude, X, Y
-    double x = 85.5*COUNTS_PER_INCH, y = 85.5*COUNTS_PER_INCH;
+    double x = 0*COUNTS_PER_INCH, y = 0*COUNTS_PER_INCH;
 
     double prevRight = 0, prevLeft = 0, prevHorizontal = 0;
     double length = 12.75 * COUNTS_PER_INCH;
 
     double changeInPosition = 0, changeInAngle = 0;
     double changeInX = 0, changeInY = 0;
-    double position = 0, angle = -(Math.PI/4);
+    double position = 0, angle = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -69,7 +69,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
     void algorithm2(){
         //Get Current Positions
-        vlPos = verticalLeft.getCurrentPosition();
+        vlPos = -verticalLeft.getCurrentPosition();
         vrPos = verticalRight.getCurrentPosition();
         hPos = horizontal.getCurrentPosition();
 
@@ -77,18 +77,19 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         double rightChange = vrPos - prevRight;
         double horizontalChange = hPos - prevHorizontal;
 
-        //Change in angle
+        //Calculate Angle
         changeInAngle = (leftChange - rightChange) / (length);
         angle = ((angle + changeInAngle));
 
         double p = ((rightChange + leftChange) / 2);
         double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(alpha));
-        x = x + (p*Math.cos(angle) - n*Math.sin(angle));
-        y = y + (p*Math.sin(angle) + n*Math.cos(angle));
+        x = x + (p*Math.sin(angle) + n*Math.cos(angle));
+        y = y + -(p*Math.cos(angle) - n*Math.sin(angle));
 
         prevLeft = vlPos;
         prevRight = vrPos;
         prevHorizontal = hPos;
+
 
         telemetry.addData("Vertical Right Position", vrPos);
         telemetry.addData("Vertical Left Position", vlPos);
