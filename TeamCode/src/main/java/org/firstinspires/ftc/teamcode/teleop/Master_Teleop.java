@@ -262,7 +262,7 @@ d
 
             mineralRotationPower = -gamepad2.right_stick_y;
             if(mineralRotationPower!=0){
-                if(mineralRotationPower<0&&rotationLimit.getState()){
+                if(mineralRotationPower<0&&!rotationLimit.getState()){
                     mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     mineralRotation.setPower(0);
                     mineralRotationPosition = 0;
