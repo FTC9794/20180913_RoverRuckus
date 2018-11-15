@@ -55,7 +55,8 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionDumpPosition = 2570, extensionInPosition = 0, extensionMaxPosition = 2700, rotationUpPosition = 850, mineralExtensionPower = 0;
+    final int extensionDumpPosition = 2570, extensionInPosition = 0, extensionMaxPosition = 2700, rotationUpPosition = 850;
+    final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
 
@@ -127,8 +128,10 @@ public class Master_Teleop extends LinearOpMode {
         mineralExtension = hardwareMap.dcMotor.get("mineral_extension");
         rotationLimit = hardwareMap.digitalChannel.get("rotation_limit");
 
+        mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         /*
 
@@ -137,6 +140,8 @@ public class Master_Teleop extends LinearOpMode {
          */
         intake = hardwareMap.crservo.get("intake");
         intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+
+        intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         waitForStart();
@@ -276,9 +281,13 @@ d
             }else{
                 if(!mineralRotation.getMode().equals(DcMotor.RunMode.RUN_TO_POSITION)){
                     mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    mineralRotation.setTargetPosition(mineralExtensionPosition);
+                    mineralRotation.setTargetPosition(mineralRotationPosition);
                 }
                 mineralRotation.setPower(1);
+            }
+
+            if(gamepad2.right_bumper){
+                mineralRotation.setTargetPosition(rotationUpPosition);
             }
             telemetry.addData("rotation position", mineralRotationPosition);
 
@@ -290,10 +299,11 @@ d
 
              */
 
-            intakeRotationPower = gamepad2.left_stick_y;
+            intakeRotationPower = -gamepad2.left_stick_y;
             if(intakeRotationPower!=0){
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 intakeCurrentPosition = intakeRotation.getCurrentPosition();
+                intakeRotation.setPower(intakeRotationPower);
             }else{
                 if(intakeRotation.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
                     intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -314,6 +324,8 @@ d
             }else if(gamepad1.left_bumper){
                 intake.setPower(intakeOutPower);
 
+            }else{
+                intake.setPower(0);
             }
 
 
