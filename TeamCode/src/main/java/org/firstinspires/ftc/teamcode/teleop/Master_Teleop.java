@@ -34,7 +34,7 @@ public class Master_Teleop extends LinearOpMode {
     Servo hangStopper;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 6000, hangHighPosition = 0, hangHungPosition = 0;
+    final int hangReadyPosition = 6000, hangMaxPosition = 9600, hangHungPosition = 0;
     final double hangStopperStoredPosition = 1;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
@@ -55,7 +55,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionDumpPosition = 0, extensionInPosition = 0, extensionMaxPosition = 0, rotationUpPosition = 0, mineralExtensionPower = 0;
+    final int extensionDumpPosition = 2570, extensionInPosition = 0, extensionMaxPosition = 2700, rotationUpPosition = 850, mineralExtensionPower = 0;
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
 
@@ -88,6 +88,11 @@ public class Master_Teleop extends LinearOpMode {
         lf.setDirection(DcMotorSimple.Direction.REVERSE);
         lb.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        rf.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rb.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        lf.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        lb.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -118,12 +123,20 @@ public class Master_Teleop extends LinearOpMode {
         Mineral rotation and extension initialization
 
          */
+        mineralRotation = hardwareMap.dcMotor.get("mineral_rotation");
+        mineralExtension = hardwareMap.dcMotor.get("mineral_extension");
+        rotationLimit = hardwareMap.digitalChannel.get("rotation_limit");
+
+        mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         /*
 
         Mineral Intake initialization
 
          */
+        intake = hardwareMap.crservo.get("intake");
+        intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         waitForStart();
@@ -138,7 +151,7 @@ public class Master_Teleop extends LinearOpMode {
             /*
 
             Drivetrain code
-
+d
              */
 
             //Get gamepad values
@@ -181,13 +194,23 @@ public class Master_Teleop extends LinearOpMode {
 
 
             if(hangUpPower>0){
-                hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                hang.setPower(hangUpPower);
                 hangCurrentPosition = hang.getCurrentPosition();
+                hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                if(hangCurrentPosition>hangMaxPosition){
+                    hang.setPower(0);
+                }else{
+                    hang.setPower(hangUpPower);
+                }
+
             }else if(hangDownPower>0){
-                hang.setPower(-hangDownPower);
-                hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 hangCurrentPosition = hang.getCurrentPosition();
+                hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                if(hangCurrentPosition>0){
+                    hang.setPower(-hangDownPower);
+                }else{
+                    hang.setPower(0);
+                }
+
             }else{
 
                 if(hang.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
