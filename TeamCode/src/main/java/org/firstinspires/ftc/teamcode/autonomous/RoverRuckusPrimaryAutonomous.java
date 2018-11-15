@@ -123,25 +123,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
-        boolean selected = false;
-        while(!selected){
-            if(gamepad1.a){
-                mineralLocation = location.CENTER;
-                selected = true;
-            }else if(gamepad1.b){
-                mineralLocation = location.LEFT;
-                selected = true;
-            }else if(gamepad1.x){
-                mineralLocation = location.RIGHT;
-                selected = true;
-            }
-            telemetry.addData("Gamepad 1 A", "Center Mineral");
-            telemetry.addData("Gamepad 1 B", "Left Mineral");
-            telemetry.addData("Gamepad 1 X", "Right Mineral");
-            telemetry.update();
-        }
         telemetry.addData("Status", "Init Complete");
-        telemetry.addData("Mineral Location", mineralLocation);
         telemetry.update();
 
         teamMarker.hold();
@@ -415,7 +397,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         }
 
 
-        //Go to crater to park
+        /*//Go to crater to park
         globalCoordinatePositionUpdate();
         while (goToPosition(-30*COUNTS_PER_INCH, -34*COUNTS_PER_INCH, -45, 0.4, DEFAULT_MIN_POWER)
                 && opModeIsActive()){
@@ -430,7 +412,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             telemetry.update();
         }
         drive.stop();
-        sound.play(beepID, 1, 1, 1, 0, 1);
+        sound.play(beepID, 1, 1, 1, 0, 1);*/
         while (opModeIsActive()){
             drive.stop();
             globalCoordinatePositionUpdate();

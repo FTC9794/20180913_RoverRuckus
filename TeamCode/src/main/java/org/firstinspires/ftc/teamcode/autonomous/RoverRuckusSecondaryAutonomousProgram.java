@@ -122,26 +122,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
-
-        boolean selected = false;
-        while(!selected){
-            if(gamepad1.a){
-                mineralLocation = location.CENTER;
-                selected = true;
-            }else if(gamepad1.b){
-                mineralLocation = location.LEFT;
-                selected = true;
-            }else if(gamepad1.x){
-                mineralLocation = location.RIGHT;
-                selected = true;
-            }
-            telemetry.addData("Gamepad 1 A", "Center Mineral");
-            telemetry.addData("Gamepad 1 B", "Left Mineral");
-            telemetry.addData("Gamepad 1 X", "Right Mineral");
-            telemetry.update();
-        }
         telemetry.addData("Status", "Init Complete");
-        telemetry.addData("Mineral Location", mineralLocation);
         telemetry.update();
 
         waitForStart();
@@ -355,8 +336,8 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         //Drive to alliance depot
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 10*COUNTS_PER_INCH,
-                0, 40*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -223 , DEFAULT_PID, -45
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -220 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
 
@@ -381,7 +362,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
 
 
-        //Maneuver towards alliance depot
+        /*//Maneuver towards alliance depot
         while(goToPosition(-17*COUNTS_PER_INCH, -42*COUNTS_PER_INCH, -90, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
                 && opModeIsActive()){
             globalCoordinatePositionUpdate();
@@ -438,7 +419,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        /*//Pivot back to calibration point
+        //Pivot back to calibration point
         while(opModeIsActive() && runtime.milliseconds() < 1000){
             drive.pivot(0, 0, 0.25, 0.2, 500, 5, Direction.FASTEST);
         }
