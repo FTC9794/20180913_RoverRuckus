@@ -126,7 +126,6 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-        genericDetector.enable();
 
         runtime.reset();
 
@@ -137,7 +136,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
-
+        genericDetector.enable();
         hang_latch.setPosition(1);
 
         mineral_rotation.setTargetPosition(150);
@@ -179,6 +178,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 }
             }
         }
+        mineralLocation = detectedLocation;
 
         globalCoordinatePositionUpdate();
 
