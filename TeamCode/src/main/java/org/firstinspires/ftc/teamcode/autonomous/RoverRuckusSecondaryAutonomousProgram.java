@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Enums.Direction;
@@ -19,6 +21,8 @@ import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.Meca
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
+import org.firstinspires.ftc.teamcode.subsystems.team_marker.ITeamMarker;
+import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 
 import java.util.ArrayList;
 
@@ -29,11 +33,25 @@ import java.util.ArrayList;
 public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
+    DcMotor mineral_rotation;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
 
+    DcMotor hang;
+
+    DigitalChannel rotation_limit;
+
     IIMU imu;
     BNO055IMU boschIMU;
+
+    Servo hang_latch;
+
+    ITeamMarker teamMarker;
+    Servo teamMarkerServo;
+
+    Servo scanner;
+    double rightPosition = 0.6;
+    double leftPosition = 0.35;
 
     ElapsedTime timer = new ElapsedTime();
 
@@ -48,6 +66,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
     //Create location object to store the mineral location data
     location mineralLocation;
+    location detectedLocation;
     boolean notReset = false;
 
     //Create detector to be used for the gold mineral
@@ -103,7 +122,26 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
+
+        boolean selected = false;
+        while(!selected){
+            if(gamepad1.a){
+                mineralLocation = location.CENTER;
+                selected = true;
+            }else if(gamepad1.b){
+                mineralLocation = location.LEFT;
+                selected = true;
+            }else if(gamepad1.x){
+                mineralLocation = location.RIGHT;
+                selected = true;
+            }
+            telemetry.addData("Gamepad 1 A", "Center Mineral");
+            telemetry.addData("Gamepad 1 B", "Left Mineral");
+            telemetry.addData("Gamepad 1 X", "Right Mineral");
+            telemetry.update();
+        }
         telemetry.addData("Status", "Init Complete");
+        telemetry.addData("Mineral Location", mineralLocation);
         telemetry.update();
 
         waitForStart();
@@ -119,11 +157,48 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
          * *****************************************************************************************
          */
 
+        hang_latch.setPosition(1);
+
+        mineral_rotation.setTargetPosition(150);
+        mineral_rotation.setPower(1);
+
+        waitMilliseconds(250, runtime);
+
+        hang.setTargetPosition(9600);
+        hang.setPower(1);
+        while(hang.isBusy() && opModeIsActive());
+
         //Scan for mineral
         globalCoordinatePositionUpdate();
+        boolean found = genericDetector.isFound();
 
-        //Determine mineral location
-        mineralLocation = location.RIGHT;
+        detectedLocation = location.CENTER;
+        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500)){
+            detectedLocation = location.CENTER;
+        }else{
+            while(opModeIsActive() && scanner.getPosition() > leftPosition){
+                scanner.setPosition(scanner.getPosition() - 0.001);
+            }
+            runtime.reset();
+            while(runtime.milliseconds() < 1000 && opModeIsActive());
+
+            found = genericDetector.isFound();
+            if(found && genericDetector.getScreenPosition().x < 500) {
+                detectedLocation = location.LEFT;
+            }else{
+                while(opModeIsActive() && scanner.getPosition() < rightPosition){
+                    scanner.setPosition(scanner.getPosition() + 0.001);
+                }
+                runtime.reset();
+                while(runtime.milliseconds() < 1000 && opModeIsActive());
+
+                found = genericDetector.isFound();
+                if(found && genericDetector.getScreenPosition().x > 100) {
+                    detectedLocation = location.RIGHT;
+                }
+            }
+        }
+
         globalCoordinatePositionUpdate();
 
         //Begin Sampling
@@ -135,6 +210,9 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         }
         drive.stop();
         globalCoordinatePositionUpdate();
+
+        hang.setTargetPosition(0);
+        hang.setPower(1);
 
         waitMilliseconds(500, runtime);
 
@@ -154,16 +232,35 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 genericDetector.disable();
                 drive.stop();
 
-                while (opModeIsActive()){
-                    drive.stop();
-                    right_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    right_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    left_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    left_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                waitMilliseconds(500, runtime);
+
+                //Start moving to alliance depot
+                while(goToPosition(-12*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.5)
+                        && opModeIsActive()){
                     globalCoordinatePositionUpdate();
-                    telemetry.addData("IMU Angle", imu.getZAngle());
+                    telemetry.addData("Moving to Position", "(-21, 0)");
                     telemetry.update();
                 }
+                drive.stop();
+                globalCoordinatePositionUpdate();
+
+                while(goToPosition(-12*COUNTS_PER_INCH, -51*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-21, 0)");
+                    telemetry.update();
+                }
+                drive.stop();
+                globalCoordinatePositionUpdate();
+
+                runtime.reset();
+                while (opModeIsActive() && runtime.milliseconds() < 1000){
+                    drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
+                    globalCoordinatePositionUpdate();
+                    telemetry.update();
+                }
+                drive.stop();
+                globalCoordinatePositionUpdate();
 
                 break;
 
@@ -177,7 +274,11 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                     telemetry.addData("Moving to Position", "(-21, 0)");
                     telemetry.update();
                 }
-                while(goToPosition(-27*COUNTS_PER_INCH, -20*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                drive.stop();
+                globalCoordinatePositionUpdate();
+                genericDetector.disable();
+
+                while(goToPosition(-12*COUNTS_PER_INCH, -51*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
                     telemetry.addData("Moving to Position", "(-21, 0)");
@@ -185,26 +286,17 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 }
                 drive.stop();
                 globalCoordinatePositionUpdate();
-                genericDetector.disable();
+
+                waitMilliseconds(500, runtime);
 
                 runtime.reset();
                 while (opModeIsActive() && runtime.milliseconds() < 1000){
-                    drive.pivot(-90, -45, 1, 1, 50, 2, Direction.FASTEST);
+                    drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
                     globalCoordinatePositionUpdate();
                     telemetry.update();
                 }
                 drive.stop();
                 globalCoordinatePositionUpdate();
-
-                while (opModeIsActive()){
-                    right_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    right_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    left_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    left_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("IMU Angle", imu.getZAngle());
-                    telemetry.update();
-                }
 
                 break;
 
@@ -222,29 +314,71 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 globalCoordinatePositionUpdate();
                 genericDetector.disable();
 
+                //Start moving to alliance depot
+                while(goToPosition(-12*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.5)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-21, 0)");
+                    telemetry.update();
+                }
+                drive.stop();
+                globalCoordinatePositionUpdate();
+
+                while(goToPosition(-12*COUNTS_PER_INCH, -51*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(-21, 0)");
+                    telemetry.update();
+                }
+                drive.stop();
+                globalCoordinatePositionUpdate();
+
+                //Pivot to face alliance depot
                 runtime.reset();
                 while (opModeIsActive() && runtime.milliseconds() < 1000){
-                    drive.pivot(-90, -45, 1, 1, 50, 2, Direction.FASTEST);
+                    drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
                     globalCoordinatePositionUpdate();
                     telemetry.update();
                 }
                 drive.stop();
                 globalCoordinatePositionUpdate();
 
-                while (opModeIsActive()){
-                    drive.stop();
-                    right_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    right_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    left_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    left_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("IMU Angle", imu.getZAngle());
-                    telemetry.update();
-                }
-
                 break;
 
         }
+
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        while(opModeIsActive() && rotation_limit.getState()){
+            mineral_rotation.setPower(-0.15);
+        }
+        mineral_rotation.setPower(0);
+
+        //Drive to alliance depot
+        drive.softResetEncoder();
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 10*COUNTS_PER_INCH,
+                0, 40*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -223 , DEFAULT_PID, -45
+                ,0.5*COUNTS_PER_INCH, 0));
+        drive.stop();
+
+        //Drop team marker
+        teamMarker.drop();
+        waitMilliseconds(1000, runtime);
+
+        //Drive to crater to park
+        drive.softResetEncoder();
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 60*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
+                ,0.5*COUNTS_PER_INCH, 0));
+        drive.stop();
+
+        while (opModeIsActive()){
+            drive.stop();
+            globalCoordinatePositionUpdate();
+            telemetry.addData("IMU Angle", imu.getZAngle());
+            telemetry.update();
+        }
+
+
 
 
         //Maneuver towards alliance depot
@@ -526,6 +660,29 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         verticalRight = hardwareMap.dcMotor.get("rb");
         horizontal = hardwareMap.dcMotor.get("lf");
         horizontal2 = hardwareMap.dcMotor.get("lb");
+
+        mineral_rotation = hardwareMap.dcMotor.get("mineral_rotation");
+        mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineral_rotation.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        teamMarkerServo = hardwareMap.servo.get("marker_servo");
+        teamMarker = new ServoArmDrop(teamMarkerServo);
+        teamMarker.hold();
+
+        scanner = hardwareMap.servo.get("scanner");
+        scanner.setPosition(0.5);
+
+        rotation_limit = hardwareMap.digitalChannel.get("rotation_limit");
+
+        hang_latch = hardwareMap.servo.get("hang_stopper");
+        hang_latch.setPosition(0);
+
+        hang = hardwareMap.dcMotor.get("hang");
+        hang.setDirection(DcMotorSimple.Direction.REVERSE);
+        hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //Set motor behaviors
         right_front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
