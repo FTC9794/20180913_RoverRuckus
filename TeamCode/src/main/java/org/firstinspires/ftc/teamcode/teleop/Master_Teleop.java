@@ -32,6 +32,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor hang;
     Servo hangStopper;
+    DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
     final int hangReadyPosition = 6000, hangMaxPosition = 9600, hangHungPosition = 0;
@@ -55,7 +56,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionDumpPosition = 2570, extensionInPosition = 0, extensionMaxPosition = 2700, rotationUpPosition = 850;
+    final int extensionMaxPosition = 2700, rotationUpPosition = 500, mineralRotationIncriment = 3, rotationMaxPosition = 1000;
     final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
@@ -69,7 +70,7 @@ public class Master_Teleop extends LinearOpMode {
     CRServo intake;
     final int intakeDumpPosition = 0, intakeIntakePosition = 0;
     final double intakeInPower = .73, intakeOutPower = -.73;
-    double intakeRotationPower;
+    double intakeRotationPower = .5;
     int intakeCurrentPosition;
 
     @Override
@@ -106,9 +107,11 @@ public class Master_Teleop extends LinearOpMode {
          */
         hang = hardwareMap.dcMotor.get("hang");
         hangStopper = hardwareMap.servo.get("hang_stopper");
+        hangLimit = hardwareMap.digitalChannel.get("hang_limit");
 
         hang.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -128,11 +131,15 @@ public class Master_Teleop extends LinearOpMode {
         mineralExtension = hardwareMap.dcMotor.get("mineral_extension");
         rotationLimit = hardwareMap.digitalChannel.get("rotation_limit");
 
+        mineralRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+        mineralExtensionPosition = 0;
+        mineralRotationPosition = 0;
         /*
 
         Mineral Intake initialization
@@ -141,8 +148,15 @@ public class Master_Teleop extends LinearOpMode {
         intake = hardwareMap.crservo.get("intake");
         intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
 
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        intakeCurrentPosition = 0;
+
+        telemetry.addData("initialization", "done");
+        telemetry.addData("intake rotation position", intakeRotation.getCurrentPosition());
+        telemetry.update();
 
         waitForStart();
 
@@ -176,7 +190,7 @@ d
                     drivePower[i] = -1;
                 }
             }
-            if(gamepad1.right_stick_button||gamepad1.left_stick_button){
+            if(!(gamepad1.right_stick_button||gamepad1.left_stick_button)){
                 for(int i=0; i<drivePower.length; i++){
                     drivePower[i] = drivePower[i]*reducedPower;
                 }
@@ -210,15 +224,17 @@ d
             }else if(hangDownPower>0){
                 hangCurrentPosition = hang.getCurrentPosition();
                 hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                if(hangCurrentPosition>0){
+                if(hangLimit.getState()){
                     hang.setPower(-hangDownPower);
                 }else{
+                    hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     hang.setPower(0);
                 }
 
+
             }else{
 
-                if(hang.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
+                if(!hang.getMode().equals(DcMotor.RunMode.RUN_TO_POSITION)){
                     hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     hang.setTargetPosition(hangCurrentPosition);
                 }
@@ -228,7 +244,8 @@ d
             if(gamepad2.y){
                 hang.setTargetPosition(hangReadyPosition);
             }
-            telemetry.addData("hang position", hangCurrentPosition);
+
+            telemetry.addData("hang limit", hangLimit.getState());
 
             /*
 
@@ -263,7 +280,7 @@ d
                 mineralExtension.setPower(1);
 
             }
-            telemetry.addData("extension position", mineralExtensionPosition);
+
 
             mineralRotationPower = -gamepad2.right_stick_y;
             if(mineralRotationPower!=0){
@@ -273,9 +290,18 @@ d
                     mineralRotationPosition = 0;
 
                 }else{
-                    mineralRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    mineralRotation.setPower(mineralRotationPower);
-                    mineralRotationPosition = mineralRotation.getCurrentPosition();
+                    mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    if(mineralRotationPower<0){
+
+                        mineralRotationPosition = (int) (mineralRotationPosition-mineralRotationIncriment);
+                    }else{
+                        if(!(mineralRotationPosition>rotationMaxPosition)){
+                            mineralRotationPosition = mineralRotationPosition+mineralRotationIncriment;
+                        }
+
+                    }
+                    mineralRotation.setTargetPosition(mineralRotationPosition);
+
                 }
 
             }else{
@@ -288,10 +314,8 @@ d
 
             if(gamepad2.right_bumper){
                 mineralRotation.setTargetPosition(rotationUpPosition);
+                mineralRotationPosition = rotationUpPosition;
             }
-            telemetry.addData("rotation position", mineralRotationPosition);
-
-
 
             /*
 
@@ -299,11 +323,14 @@ d
 
              */
 
-            intakeRotationPower = -gamepad2.left_stick_y;
-            if(intakeRotationPower!=0){
+            if(gamepad1.left_trigger>.01){
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 intakeCurrentPosition = intakeRotation.getCurrentPosition();
                 intakeRotation.setPower(intakeRotationPower);
+            }else if(gamepad1.right_trigger>.01){
+                intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                intakeCurrentPosition = intakeRotation.getCurrentPosition();
+                intakeRotation.setPower(-intakeRotationPower);
             }else{
                 if(intakeRotation.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
                     intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -312,11 +339,7 @@ d
                 intakeRotation.setPower(1);
             }
 
-            if(gamepad1.left_trigger>.01){
-                intakeRotation.setTargetPosition(intakeDumpPosition);
-            }else if(gamepad1.right_trigger>.01){
-                intakeRotation.setTargetPosition(intakeIntakePosition);
-            }
+
 
             if(gamepad1.right_bumper){
                 intake.setPower(intakeInPower);
@@ -327,7 +350,6 @@ d
             }else{
                 intake.setPower(0);
             }
-
 
              /*
 

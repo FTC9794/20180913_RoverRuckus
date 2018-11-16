@@ -7,6 +7,7 @@ import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldDetector;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
  * Created by Sarthak on 10/26/2018.
  */
 @Autonomous(name = "Double Sampling Autonomous", group = "Autonomous")
+@Disabled
 public class RoverRuckusDoubleSamplingAutonomous extends LinearOpMode {
 
     IDrivetrain drive;

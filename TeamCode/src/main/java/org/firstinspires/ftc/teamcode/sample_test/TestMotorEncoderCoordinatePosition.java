@@ -4,6 +4,7 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.teamcode.R;
  * Created by Sarthak on 10/1/2018.
  */
 @Autonomous(name = "Motor Encoder Coordinate Position", group = "Test")
+@Disabled
 public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
     DcMotor verticalRight, verticalLeft, horizontal;

@@ -45,6 +45,7 @@ import java.util.Date;
  */
 
 @TeleOp(group = "Outreach", name = "Outreach Gandalf Teleop")
+@Disabled
 public class OutreachTeleop extends LinearOpMode{
 
     //DC motors

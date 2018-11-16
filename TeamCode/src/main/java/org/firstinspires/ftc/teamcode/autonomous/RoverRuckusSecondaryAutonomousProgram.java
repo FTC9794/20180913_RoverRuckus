@@ -29,7 +29,7 @@ import java.util.ArrayList;
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "Secondary Autonomous", group = "Autonomous")
+@Autonomous(name = "Crater Autonomous", group = "Autonomous")
 public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
@@ -225,7 +225,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 drive.stop();
                 globalCoordinatePositionUpdate();
 
-                while(goToPosition(-12*COUNTS_PER_INCH, -51*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
+                while(goToPosition(-13*COUNTS_PER_INCH, -52*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
                     telemetry.addData("Moving to Position", "(-21, 0)");
@@ -259,7 +259,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 globalCoordinatePositionUpdate();
                 genericDetector.disable();
 
-                while(goToPosition(-12*COUNTS_PER_INCH, -51*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                while(goToPosition(-13*COUNTS_PER_INCH, -52*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
                     telemetry.addData("Moving to Position", "(-21, 0)");
@@ -305,7 +305,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 drive.stop();
                 globalCoordinatePositionUpdate();
 
-                while(goToPosition(-12*COUNTS_PER_INCH, -51*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
+                while(goToPosition(-13*COUNTS_PER_INCH, -52*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
                     telemetry.addData("Moving to Position", "(-21, 0)");
@@ -347,8 +347,12 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         //Drive to crater to park
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 60*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
+                ,0.5*COUNTS_PER_INCH, 0));
+        teamMarker.hold();
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
 

@@ -33,7 +33,7 @@ import java.util.ArrayList;
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@Autonomous(name = "Primary Autonomous", group = "Autonomous")
+@Autonomous(name = "Depot Autonomous", group = "Autonomous")
 public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
     IDrivetrain drive;
