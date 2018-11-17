@@ -138,7 +138,6 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
-        genericDetector.enable();
         hang_latch.setPosition(1);
         mineral_rotation.setTargetPosition(150);
         mineral_rotation.setPower(1);
@@ -149,6 +148,14 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         hang.setPower(1);
         while(hang.isBusy() && opModeIsActive());
 
+        genericDetector.enable();
+        waitMilliseconds(2500, runtime);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        while(opModeIsActive() && rotation_limit.getState()){
+            mineral_rotation.setPower(-0.15);
+        }
+        mineral_rotation.setPower(0);
+
 
         //Scan for mineral
         globalCoordinatePositionUpdate();
@@ -157,33 +164,45 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         boolean found = genericDetector.isFound();
 
         detectedLocation = location.CENTER;
-        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500)){
+        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 310){
             detectedLocation = location.CENTER;
         }else{
             while(opModeIsActive() && scanner.getPosition() > leftPosition){
                 scanner.setPosition(scanner.getPosition() - 0.001);
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
             }
             runtime.reset();
-            while(runtime.milliseconds() < 1000 && opModeIsActive());
+            while(runtime.milliseconds() < 1000 && opModeIsActive()){
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
+            }
 
             found = genericDetector.isFound();
-            if(found && genericDetector.getScreenPosition().x < 500) {
+            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 310) {
                 detectedLocation = location.LEFT;
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
             }else{
                 while(opModeIsActive() && scanner.getPosition() < rightPosition){
                     scanner.setPosition(scanner.getPosition() + 0.001);
+                    telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                    telemetry.update();
                 }
                 runtime.reset();
-                while(runtime.milliseconds() < 1000 && opModeIsActive());
+                while(runtime.milliseconds() < 1000 && opModeIsActive()){
+                    telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                    telemetry.update();
+                }
 
                 found = genericDetector.isFound();
-                if(found && genericDetector.getScreenPosition().x > 100) {
+                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 310) {
                     detectedLocation = location.RIGHT;
                 }
             }
         }
-
         mineralLocation = detectedLocation;
+        genericDetector.disable();
 
         globalCoordinatePositionUpdate();
 
@@ -337,12 +356,6 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         }
 
         teamMarker.hold();
-
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        while(opModeIsActive() && rotation_limit.getState()){
-            mineral_rotation.setPower(-0.15);
-        }
-        mineral_rotation.setPower(0);
 
         switch (mineralLocation){
             case LEFT:

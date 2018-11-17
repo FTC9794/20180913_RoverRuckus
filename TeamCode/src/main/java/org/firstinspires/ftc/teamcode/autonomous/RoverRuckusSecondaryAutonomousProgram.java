@@ -136,11 +136,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
-        genericDetector.enable();
         hang_latch.setPosition(1);
-
-        mineral_rotation.setTargetPosition(150);
-        mineral_rotation.setPower(1);
 
         waitMilliseconds(250, runtime);
 
@@ -148,37 +144,61 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         hang.setPower(1);
         while(hang.isBusy() && opModeIsActive());
 
+        mineral_rotation.setTargetPosition(150);
+        mineral_rotation.setPower(1);
+
+        genericDetector.enable();
+        waitMilliseconds(2500, runtime);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        while(opModeIsActive() && rotation_limit.getState()){
+            mineral_rotation.setPower(-0.15);
+        }
+        mineral_rotation.setPower(0);
+
         //Scan for mineral
         globalCoordinatePositionUpdate();
         boolean found = genericDetector.isFound();
 
         detectedLocation = location.CENTER;
-        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500)){
+        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 310){
             detectedLocation = location.CENTER;
         }else{
             while(opModeIsActive() && scanner.getPosition() > leftPosition){
                 scanner.setPosition(scanner.getPosition() - 0.001);
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
             }
             runtime.reset();
-            while(runtime.milliseconds() < 1000 && opModeIsActive());
+            while(runtime.milliseconds() < 1000 && opModeIsActive()){
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
+            }
 
             found = genericDetector.isFound();
-            if(found && genericDetector.getScreenPosition().x < 500) {
+            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 310) {
                 detectedLocation = location.LEFT;
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
             }else{
                 while(opModeIsActive() && scanner.getPosition() < rightPosition){
                     scanner.setPosition(scanner.getPosition() + 0.001);
+                    telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                    telemetry.update();
                 }
                 runtime.reset();
-                while(runtime.milliseconds() < 1000 && opModeIsActive());
+                while(runtime.milliseconds() < 1000 && opModeIsActive()){
+                    telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                    telemetry.update();
+                }
 
                 found = genericDetector.isFound();
-                if(found && genericDetector.getScreenPosition().x > 100) {
+                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 310) {
                     detectedLocation = location.RIGHT;
                 }
             }
         }
         mineralLocation = detectedLocation;
+        genericDetector.disable();
 
         globalCoordinatePositionUpdate();
 
@@ -225,8 +245,9 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 drive.stop();
                 globalCoordinatePositionUpdate();
 
-                while(goToPosition(-13*COUNTS_PER_INCH, -52*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
-                        && opModeIsActive()){
+                runtime.reset();
+                while(goToPosition(-10.75*COUNTS_PER_INCH, -50.5*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
+                        && opModeIsActive() && runtime.milliseconds() < 5000){
                     globalCoordinatePositionUpdate();
                     telemetry.addData("Moving to Position", "(-21, 0)");
                     telemetry.update();
@@ -236,7 +257,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
                 runtime.reset();
                 while (opModeIsActive() && runtime.milliseconds() < 1000){
-                    drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
+                    drive.pivot(-43, -25, 1, 0.25, 50, 2, Direction.FASTEST);
                     globalCoordinatePositionUpdate();
                     telemetry.update();
                 }
@@ -259,7 +280,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 globalCoordinatePositionUpdate();
                 genericDetector.disable();
 
-                while(goToPosition(-13*COUNTS_PER_INCH, -52*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
+                while(goToPosition(-11.75*COUNTS_PER_INCH, -51.5*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
                     telemetry.addData("Moving to Position", "(-21, 0)");
@@ -272,7 +293,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
                 runtime.reset();
                 while (opModeIsActive() && runtime.milliseconds() < 1000){
-                    drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
+                    drive.pivot(-43, -25, 1, 0.25, 50, 2, Direction.FASTEST);
                     globalCoordinatePositionUpdate();
                     telemetry.update();
                 }
@@ -305,7 +326,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 drive.stop();
                 globalCoordinatePositionUpdate();
 
-                while(goToPosition(-13*COUNTS_PER_INCH, -52*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
+                while(goToPosition(-11.75*COUNTS_PER_INCH, -51.5*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
                     telemetry.addData("Moving to Position", "(-21, 0)");
@@ -317,7 +338,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 //Pivot to face alliance depot
                 runtime.reset();
                 while (opModeIsActive() && runtime.milliseconds() < 1000){
-                    drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
+                    drive.pivot(-43, -25, 1, 0.25, 50, 2, Direction.FASTEST);
                     globalCoordinatePositionUpdate();
                     telemetry.update();
                 }
@@ -328,16 +349,10 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         }
 
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        while(opModeIsActive() && rotation_limit.getState()){
-            mineral_rotation.setPower(-0.15);
-        }
-        mineral_rotation.setPower(0);
-
         //Drive to alliance depot
         drive.softResetEncoder();
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -220 , DEFAULT_PID, -45
+                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -219 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
 

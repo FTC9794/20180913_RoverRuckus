@@ -14,7 +14,6 @@ import org.opencv.core.Size;
 
 
 @Autonomous(name="Gold Mineral Detection Test", group="Test")
-@Disabled
 public class GoldMineralDetectionTest extends LinearOpMode {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -57,7 +56,10 @@ public class GoldMineralDetectionTest extends LinearOpMode {
                 }else{
                     telemetry.addData("Position", "Unknown");
                 }
+                telemetry.addData("X Position", genericDetector.getScreenPosition().x);
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
             }
+            telemetry.addData("Is Found", genericDetector.isFound());
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
         }

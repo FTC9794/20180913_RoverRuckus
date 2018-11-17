@@ -54,7 +54,8 @@ public class VisionScanningTest extends LinearOpMode {
         runtime.reset();
 
         boolean found = genericDetector.isFound();
-        if(found && (genericDetector.getScreenPosition().x > 400 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 225){
+        mineralLocation = location.CENTER;
+        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 120){
             mineralLocation = location.CENTER;
         }else{
             while(opModeIsActive() && scanner.getPosition() > leftPosition){
@@ -64,7 +65,7 @@ public class VisionScanningTest extends LinearOpMode {
             while(runtime.milliseconds() < 1000 && opModeIsActive());
 
             found = genericDetector.isFound();
-            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 225) {
+            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 120) {
                 mineralLocation = location.LEFT;
             }else{
                 while(opModeIsActive() && scanner.getPosition() < rightPosition){
@@ -74,10 +75,8 @@ public class VisionScanningTest extends LinearOpMode {
                 while(runtime.milliseconds() < 1000 && opModeIsActive());
 
                 found = genericDetector.isFound();
-                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 225) {
+                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 120) {
                     mineralLocation = location.RIGHT;
-                }else{
-
                 }
             }
         }
