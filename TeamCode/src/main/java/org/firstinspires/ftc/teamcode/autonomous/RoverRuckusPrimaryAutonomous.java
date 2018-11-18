@@ -144,9 +144,13 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
         waitMilliseconds(250, runtime);
 
-        hang.setTargetPosition(9600);
+        hang.setTargetPosition(9640);
         hang.setPower(1);
-        while(hang.isBusy() && opModeIsActive());
+        runtime.reset();
+        while(hang.isBusy() && opModeIsActive() && runtime.milliseconds() < 6000){
+            telemetry.addData("hang pos", hang.getCurrentPosition());
+            telemetry.update();
+        }
 
         genericDetector.enable();
         waitMilliseconds(2500, runtime);
@@ -164,7 +168,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         boolean found = genericDetector.isFound();
 
         detectedLocation = location.CENTER;
-        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 310){
+        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 355){
             detectedLocation = location.CENTER;
         }else{
             while(opModeIsActive() && scanner.getPosition() > leftPosition){
@@ -179,7 +183,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             }
 
             found = genericDetector.isFound();
-            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 310) {
+            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 330) {
                 detectedLocation = location.LEFT;
                 telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
                 telemetry.update();
@@ -196,7 +200,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 }
 
                 found = genericDetector.isFound();
-                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 310) {
+                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 330) {
                     detectedLocation = location.RIGHT;
                 }
             }

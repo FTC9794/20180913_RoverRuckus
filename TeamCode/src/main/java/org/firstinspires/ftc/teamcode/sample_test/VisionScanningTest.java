@@ -15,7 +15,6 @@ import org.firstinspires.ftc.teamcode.autonomous.RoverRuckusPrimaryAutonomousArc
  * Created by Sarthak on 11/12/2018.
  */
 @Autonomous(name = "Vision Scanning Test", group ="Test")
-@Disabled
 public class VisionScanningTest extends LinearOpMode {
     //Define possible mineral locations in enum
     enum location {
@@ -54,28 +53,39 @@ public class VisionScanningTest extends LinearOpMode {
         runtime.reset();
 
         boolean found = genericDetector.isFound();
-        mineralLocation = location.CENTER;
-        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 120){
+        if(found && (genericDetector.getScreenPosition().x > 150 || genericDetector.getScreenPosition().x < 500) && genericDetector.getScreenPosition().y > 350){
             mineralLocation = location.CENTER;
         }else{
             while(opModeIsActive() && scanner.getPosition() > leftPosition){
                 scanner.setPosition(scanner.getPosition() - 0.001);
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
             }
             runtime.reset();
-            while(runtime.milliseconds() < 1000 && opModeIsActive());
+            while(runtime.milliseconds() < 1000 && opModeIsActive()){
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
+            }
 
             found = genericDetector.isFound();
-            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 120) {
+            if(found && genericDetector.getScreenPosition().x < 500 && genericDetector.getScreenPosition().y > 330) {
                 mineralLocation = location.LEFT;
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.update();
             }else{
                 while(opModeIsActive() && scanner.getPosition() < rightPosition){
                     scanner.setPosition(scanner.getPosition() + 0.001);
+                    telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                    telemetry.update();
                 }
                 runtime.reset();
-                while(runtime.milliseconds() < 1000 && opModeIsActive());
+                while(runtime.milliseconds() < 1000 && opModeIsActive()){
+                    telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                    telemetry.update();
+                }
 
                 found = genericDetector.isFound();
-                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 120) {
+                if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 330) {
                     mineralLocation = location.RIGHT;
                 }
             }
