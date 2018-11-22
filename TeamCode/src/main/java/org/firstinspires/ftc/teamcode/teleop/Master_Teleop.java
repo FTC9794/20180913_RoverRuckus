@@ -8,6 +8,12 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.INIT;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.ROTATION1;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.EXTENDING;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.NOTHING;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.ROTATING;
+
 /**
  * Created by Sarthak on 10/26/2018.
  */
@@ -39,7 +45,10 @@ public class Master_Teleop extends LinearOpMode {
     final double hangStopperStoredPosition = 1;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
-
+    public enum intakingPositionState{NOTHING, EXTENDING, ROTATING};
+    intakingPositionState intakePositionState = intakingPositionState.NOTHING;
+    public enum depositingPositionState{NOTHING, INIT, ROTATION1, EXTENSIONINTAKEROTATION, ROTATION2, FINALEXTENSION};
+    depositingPositionState depositPositionState = depositingPositionState.NOTHING;
 
     /*
 
@@ -56,7 +65,8 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, rotationUpPosition = 500, mineralRotationIncriment = 3, rotationMaxPosition = 1000;
+    final int extensionMaxPosition = 2700, extensionIntakePostition = 525, extensionDumpPosition1 = 1000, extensionDumpPosition2 = 1460,
+            rotationDumpPosition1 = 480, rotationDumpPosition2 = 935, mineralRotationIncriment = 3, rotationMaxPosition = 1000;
     final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
@@ -68,10 +78,11 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 0, intakeIntakePosition = 0;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 640,intakeDumpPosition3 = 710, intakeIntakePosition = 590, intakeDrivingPosition = 325;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -135,8 +146,8 @@ public class Master_Teleop extends LinearOpMode {
         mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         mineralExtensionPosition = 0;
         mineralRotationPosition = 0;
@@ -150,7 +161,7 @@ public class Master_Teleop extends LinearOpMode {
 
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         intakeCurrentPosition = 0;
 
@@ -246,6 +257,7 @@ d
             }
 
             telemetry.addData("hang limit", hangLimit.getState());
+            telemetry.addData("hang Position", hang.getCurrentPosition());
 
             /*
 
@@ -275,12 +287,15 @@ d
             }else{
                 if(mineralExtension.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
                     mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    mineralExtension.setTargetPosition(mineralExtensionPosition);
+
                 }
+                mineralExtension.setTargetPosition(mineralExtensionPosition);
                 mineralExtension.setPower(1);
 
             }
 
+            telemetry.addData("Extension Position", mineralExtension.getCurrentPosition());
+            telemetry.addData("Rotation Position", mineralRotation.getCurrentPosition());
 
             mineralRotationPower = -gamepad2.right_stick_y;
             if(mineralRotationPower!=0){
@@ -307,14 +322,10 @@ d
             }else{
                 if(!mineralRotation.getMode().equals(DcMotor.RunMode.RUN_TO_POSITION)){
                     mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    mineralRotation.setTargetPosition(mineralRotationPosition);
-                }
-                mineralRotation.setPower(1);
-            }
 
-            if(gamepad2.right_bumper){
-                mineralRotation.setTargetPosition(rotationUpPosition);
-                mineralRotationPosition = rotationUpPosition;
+                }
+                mineralRotation.setTargetPosition(mineralRotationPosition);
+                mineralRotation.setPower(1);
             }
 
             /*
@@ -334,8 +345,9 @@ d
             }else{
                 if(intakeRotation.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
                     intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    intakeRotation.setTargetPosition(intakeCurrentPosition);
+
                 }
+                intakeRotation.setTargetPosition(intakeCurrentPosition);
                 intakeRotation.setPower(1);
             }
 
@@ -362,8 +374,95 @@ d
                 teamMarker.setPosition(teamMarkerStoredPosition);
             }
 
-
+            telemetry.addData("Intake Rotation Position", intakeRotation.getCurrentPosition());
             telemetry.update();
+
+            /*
+
+            preset positions
+
+             */
+
+            if(gamepad1.b){
+                intakeCurrentPosition = intakeDrivingPosition;
+                mineralRotationPosition = 0;
+                mineralRotation.setPower(0);
+                mineralExtensionPosition = 0;
+            }
+
+
+
+
+            /*
+
+            State Machines
+
+             */
+
+            switch(intakePositionState){
+                case NOTHING:
+                    if(gamepad1.x){
+                        intakePositionState = EXTENDING;
+                        mineralExtensionPosition = extensionIntakePostition;
+                    }
+                    break;
+                case EXTENDING:
+                    if(!mineralExtension.isBusy()){
+                        intakePositionState = ROTATING;
+                        intakeCurrentPosition = intakeIntakePosition;
+                    }
+                    break;
+                case ROTATING:
+                    if(!intakeRotation.isBusy()){
+                        intakePositionState = NOTHING;
+                    }
+            }
+
+            switch(depositPositionState){
+                case NOTHING:
+                    if(gamepad2.a){
+                        intakeCurrentPosition = intakeDumpReadyPosition;
+                        mineralExtensionPosition = 0;
+                        depositPositionState = INIT;
+                    }
+                    break;
+                case INIT:
+                    if(!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                        mineralRotationPosition = rotationDumpPosition1;
+                        depositPositionState = ROTATION1;
+                    }
+                    intake.setPower(1);
+                    break;
+                case ROTATION1:
+                    if(mineralRotation.getCurrentPosition()>=rotationDumpPosition1){
+                        mineralExtensionPosition = extensionDumpPosition1;
+                        intakeCurrentPosition = intakeDumpPosition2;
+                        depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
+                    }
+              intake.setPower(1);
+                    break;
+                case EXTENSIONINTAKEROTATION:
+                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                        mineralRotationPosition = rotationDumpPosition2;
+                        intakeCurrentPosition = intakeDumpPosition3;
+                        depositPositionState = depositingPositionState.ROTATION2;
+                    }
+
+                    break;
+                case ROTATION2:
+                    if(mineralRotation.getCurrentPosition()>=rotationDumpPosition2&&!intakeRotation.isBusy()){
+                        mineralExtensionPosition = extensionDumpPosition2;
+                        depositPositionState = depositingPositionState.FINALEXTENSION;
+                    }
+                    break;
+                case FINALEXTENSION:
+                    if (!mineralExtension.isBusy()) {
+                        depositPositionState = depositingPositionState.NOTHING;
+                    }
+                    break;
+
+            }
+            telemetry.addData("dump state", depositPositionState.toString());
         }
     }
 }

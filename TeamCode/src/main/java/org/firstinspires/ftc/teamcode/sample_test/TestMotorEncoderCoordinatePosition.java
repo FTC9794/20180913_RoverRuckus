@@ -6,16 +6,19 @@ import android.media.SoundPool;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+import org.firstinspires.ftc.teamcode.DataLogger;
 import org.firstinspires.ftc.teamcode.R;
+
+import java.util.Date;
 
 /**
  * Created by Sarthak on 10/1/2018.
  */
-@Autonomous(name = "Motor Encoder Coordinate Position", group = "Test")
-@Disabled
+@TeleOp(name = "Motor Encoder Coordinate Position", group = "Test")
 public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
     DcMotor verticalRight, verticalLeft, horizontal;
@@ -40,6 +43,9 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
     double changeInX = 0, changeInY = 0;
     double position = 0, angle = 0;
 
+    DataLogger data;
+    Date date;
+
     @Override
     public void runOpMode() throws InterruptedException {
         sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
@@ -59,19 +65,36 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         verticalLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         horizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        date = new Date();
+        data = new DataLogger(date.toString() + "Encoder Position Calculations");
+        data.addField("Left Change");
+        data.addField("Right Change");
+        data.addField("Horizontal Change");
+        data.addField("Change in Angle");
+        data.addField("Angle");
+        data.addField("p");
+        data.addField("n");
+        data.addField("x");
+        data.addField("y");
+        data.newLine();
+
+
+
         waitForStart();
 
         //sound.play(beepID, 1, 1, 1, 0, 1);
 
         while(opModeIsActive()){
-            algorithm2();
+            globalCoordinatePositionUpdate();
             telemetry.update();
         }
+
+        data.closeDataLogger();
     }
 
-    void algorithm2(){
+    private void globalCoordinatePositionUpdate(){
         //Get Current Positions
-        vlPos = -verticalLeft.getCurrentPosition();
+        vlPos = verticalLeft.getCurrentPosition();
         vrPos = verticalRight.getCurrentPosition();
         hPos = horizontal.getCurrentPosition();
 
@@ -92,13 +115,22 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         prevRight = vrPos;
         prevHorizontal = hPos;
 
+        data.addField((float) leftChange);
+        data.addField((float) rightChange);
+        data.addField((float) horizontalChange);
+        data.addField((float) changeInAngle);
+        data.addField((float) angle);
+        data.addField((float) p);
+        data.addField((float) n);
+        data.addField((float) x);
+        data.addField((float) y);
+        data.newLine();
 
         telemetry.addData("Vertical Right Position", vrPos);
         telemetry.addData("Vertical Left Position", vlPos);
         telemetry.addData("Horizontal Position", hPos);
-        //telemetry.addData("Angle Radians", angle);
-        telemetry.addData("Algorithm 2 Angle (Degrees)", Math.toDegrees(angle) % 360);
-        telemetry.addData("Algorithm 2 X Position", x / COUNTS_PER_INCH);
-        telemetry.addData("Algorithm 2 Y Position", y / COUNTS_PER_INCH);
+        telemetry.addData("Angle (Degrees)", Math.toDegrees(angle) % 360);
+        telemetry.addData("X Position", x / COUNTS_PER_INCH);
+        telemetry.addData("Y Position", y / COUNTS_PER_INCH);
     }
 }
