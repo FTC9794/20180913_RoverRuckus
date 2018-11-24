@@ -44,7 +44,7 @@ public class Master_Teleop extends LinearOpMode {
     DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 3000;
+    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 13, hangIncrement = 20;
     final double hangStopperStoredPosition = 1;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
@@ -246,6 +246,7 @@ d
                     hang.setPower(hangUpPower);
                 }
                 hangReady = false;
+                currentHangingState = hangState.NOTHING;
             }else if(hangDownPower>0){
                 hangCurrentPosition = hang.getCurrentPosition();
                 hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -256,6 +257,7 @@ d
                     hang.setPower(0);
                 }
                 hangReady = false;
+                currentHangingState = hangState.NOTHING;
 
             }else{
 
@@ -290,6 +292,10 @@ d
                 }else{
                     mineralExtension.setPower(mineralExtensionPower);
                 }
+                depositBlocksState = depositingBlocksPositionState.NOTHING;
+                depositPositionState = depositingPositionState.NOTHING;
+                intakePositionState = NOTHING;
+                drivePositionState = drivingPositionState.NOTHING;
 
             }else if(gamepad2.dpad_down){
                 mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -299,6 +305,10 @@ d
                 }else{
                     mineralExtension.setPower(0);
                 }
+                depositBlocksState = depositingBlocksPositionState.NOTHING;
+                depositPositionState = depositingPositionState.NOTHING;
+                intakePositionState = NOTHING;
+                drivePositionState = drivingPositionState.NOTHING;
 
             }else{
                 if(mineralExtension.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
@@ -315,6 +325,10 @@ d
 
             mineralRotationPower = -gamepad2.right_stick_y;
             if(mineralRotationPower!=0){
+                depositBlocksState = depositingBlocksPositionState.NOTHING;
+                depositPositionState = depositingPositionState.NOTHING;
+                intakePositionState = NOTHING;
+                drivePositionState = drivingPositionState.NOTHING;
                 if(mineralRotationPower<0&&!rotationLimit.getState()){
                     mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     mineralRotation.setPower(0);
@@ -354,10 +368,18 @@ d
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 intakeCurrentPosition = intakeRotation.getCurrentPosition();
                 intakeRotation.setPower(intakeRotationPower);
+                depositBlocksState = depositingBlocksPositionState.NOTHING;
+                depositPositionState = depositingPositionState.NOTHING;
+                intakePositionState = NOTHING;
+                drivePositionState = drivingPositionState.NOTHING;
             }else if(gamepad1.right_trigger>.01){
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 intakeCurrentPosition = intakeRotation.getCurrentPosition();
                 intakeRotation.setPower(-intakeRotationPower);
+                depositBlocksState = depositingBlocksPositionState.NOTHING;
+                depositPositionState = depositingPositionState.NOTHING;
+                intakePositionState = NOTHING;
+                drivePositionState = drivingPositionState.NOTHING;
             }else{
                 if(intakeRotation.getMode().equals(DcMotor.RunMode.RUN_WITHOUT_ENCODER)){
                     intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -406,6 +428,9 @@ d
                     if(gamepad1.x){
                         intakePositionState = EXTENDING;
                         mineralExtensionPosition = extensionIntakePostition;
+                        depositBlocksState = depositingBlocksPositionState.NOTHING;
+                        depositPositionState = depositingPositionState.NOTHING;
+                        drivePositionState = drivingPositionState.NOTHING;
                     }
                     break;
 
@@ -430,6 +455,9 @@ d
                         mineralRotationPosition = rotationDrivePosition;
                         mineralExtensionPosition = 0;
                         depositPositionState = INIT;
+                        depositBlocksState = depositingBlocksPositionState.NOTHING;
+                        intakePositionState = NOTHING;
+                        drivePositionState = drivingPositionState.NOTHING;
                     }
                     break;
 
@@ -472,6 +500,9 @@ d
                         mineralRotationPosition = rotationDrivePosition;
                         mineralExtensionPosition = 0;
                         depositBlocksState = depositingBlocksPositionState.INIT;
+                        depositPositionState = depositingPositionState.NOTHING;
+                        intakePositionState = NOTHING;
+                        drivePositionState = drivingPositionState.NOTHING;
                     }
                     break;
                 case INIT:
@@ -507,11 +538,15 @@ d
             switch(drivePositionState){
                 case NOTHING:
                     if(gamepad1.b){
+                        depositBlocksState = depositingBlocksPositionState.NOTHING;
+                        depositPositionState = depositingPositionState.NOTHING;
+                        intakePositionState = NOTHING;
                         if(mineralRotation.getCurrentPosition()>rotationExtendPosition){
                             drivePositionState = drivingPositionState.ROTATION1;
                             mineralRotationPosition = rotationExtendPosition;
                             mineralExtensionPosition = 0;
                             intakeCurrentPosition = intakeIntakePosition;
+
                         }else{
                             drivePositionState = drivingPositionState.FINALPOSITION;
                             mineralExtensionPosition = 0;
@@ -548,12 +583,14 @@ d
                     break;
                 case LATCHING:
                     if(!hang.isBusy()){
-                        hangCurrentPosition = hangHungPosition;
+                        hangCurrentPosition = hangLatchPosition+hangIncrement;
                         currentHangingState = hangState.HANGING;
                     }
                 case HANGING:
-                    if(!hang.isBusy() && latch_detector.getDistance(DistanceUnit.CM) > 10){
+                    if(latch_detector.getDistance(DistanceUnit.CM) > hangHungPosition){
                         currentHangingState = hangState.NOTHING;
+                    }else{
+                        hangCurrentPosition = hangCurrentPosition + hangIncrement;
                     }
             }
             telemetry.addData("hang state", currentHangingState);
