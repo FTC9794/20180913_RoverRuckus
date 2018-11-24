@@ -51,8 +51,10 @@ public class Master_Teleop extends LinearOpMode {
     intakingPositionState intakePositionState = intakingPositionState.NOTHING;
     public enum depositingPositionState{NOTHING, INIT, ROTATION1, EXTENSIONINTAKEROTATION, ROTATION2};
     public enum depositingBlocksPositionState{NOTHING, INIT, ROTATION1, EXTENSIONINTAKEROTATION, ROTATION2};
+    public enum drivingPositionState{NOTHING, ROTATION1, FINALPOSITION};
     depositingPositionState depositPositionState = depositingPositionState.NOTHING;
     depositingBlocksPositionState depositBlocksState = depositingBlocksPositionState.NOTHING;
+    drivingPositionState drivePositionState = drivingPositionState.NOTHING;
 
     /*
 
@@ -69,8 +71,9 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionIntakePostition = 840, extensionDumpPosition1 = 1460, extensionDumpPositionBlocks = 2000,
-            rotationDumpPosition1 = 685, rotationDumpPosition2 = 950, mineralRotationDumpBlocksPosition = 930, mineralRotationIncriment = 3, rotationMaxPosition = 1200, rotationDrivePosition = 390;
+    final int extensionMaxPosition = 2700, extensionIntakePostition = 840, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
+            rotationExtendPosition = 685, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 930, mineralRotationIncriment = 3, rotationMaxPosition = 1200,
+            rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
@@ -412,16 +415,19 @@ d
                         mineralExtensionPosition = extensionIntakePostition;
                     }
                     break;
+
                 case EXTENDING:
                     if(!mineralExtension.isBusy()){
                         intakePositionState = ROTATING;
                         mineralRotationPosition = 0;
                     }
                     break;
+
                 case ROTATING:
                     if(!intakeRotation.isBusy()){
                         intakePositionState = NOTHING;
                     }
+
             }
 
             switch(depositPositionState){
@@ -433,16 +439,17 @@ d
                         depositPositionState = INIT;
                     }
                     break;
+
                 case INIT:
                     if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
-                        mineralRotationPosition = rotationDumpPosition1;
+                        mineralRotationPosition = rotationExtendPosition;
                         depositPositionState = ROTATION1;
                     }
                     intake.setPower(1);
                     break;
                 case ROTATION1:
                     if(!mineralRotation.isBusy()){
-                        mineralExtensionPosition = extensionDumpPosition1;
+                        mineralExtensionPosition = extensionDumpPositionBalls;
                         intakeCurrentPosition = intakeDumpPosition2;
                         depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
                     }
@@ -450,7 +457,7 @@ d
                     break;
                 case EXTENSIONINTAKEROTATION:
                     if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
-                        mineralRotationPosition = rotationDumpPosition2;
+                        mineralRotationPosition = mineralRotationDumpBallPosition;
                         depositPositionState = depositingPositionState.ROTATION2;
                     }
 
@@ -476,7 +483,7 @@ d
                     break;
                 case INIT:
                     if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
-                        mineralRotationPosition = rotationDumpPosition1;
+                        mineralRotationPosition = rotationExtendPosition;
                         depositBlocksState = depositingBlocksPositionState.ROTATION1;
                     }
                     intake.setPower(1);
@@ -502,6 +509,35 @@ d
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                     }
                     break;
+            }
+
+            switch(drivePositionState){
+                case NOTHING:
+                    if(gamepad1.b){
+                        if(mineralRotation.getCurrentPosition()>rotationExtendPosition){
+                            drivePositionState = drivingPositionState.ROTATION1;
+                            mineralRotationPosition = rotationExtendPosition;
+                        }else{
+                            drivePositionState = drivingPositionState.FINALPOSITION;
+                            mineralExtensionPosition = 0;
+                            mineralRotationPosition = rotationDrivePosition;
+                            intakeCurrentPosition = intakeIntakePosition;
+                        }
+                    }
+                    break;
+
+                case ROTATION1:
+                    if(!mineralRotation.isBusy()){
+                        drivePositionState = drivingPositionState.FINALPOSITION;
+                        mineralExtensionPosition = 0;
+                        mineralRotationPosition = rotationDrivePosition;
+                        intakeCurrentPosition = intakeIntakePosition;
+                    }
+                    break;
+                case FINALPOSITION:
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                        drivePositionState = drivingPositionState.NOTHING;
+                    }
             }
 
 
