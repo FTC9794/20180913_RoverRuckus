@@ -31,7 +31,7 @@ public class Master_Teleop extends LinearOpMode {
     DcMotor rf, rb, lf, lb;
     Servo phoneServo;
     double[] drivePower = new double[4];
-    final double reducedPower = .5, phoneStoredPosition = .5;
+    final double reducedPower = .75, phoneStoredPosition = .5;
 
 
     /*
@@ -44,7 +44,7 @@ public class Master_Teleop extends LinearOpMode {
     DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 13, hangIncrement = 20;
+    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 13, hangIncrement = 200;
     final double hangStopperStoredPosition = 1;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
@@ -76,8 +76,8 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionIntakePostition = 840, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
-            rotationExtendPosition = 750, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncriment = 3,
+    final int extensionMaxPosition = 2700, extensionIntakePostition = 640, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
+            rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncriment = 3,
             rotationMaxPosition = 1200, rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
@@ -90,7 +90,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 590, intakeDrivingPosition = 390;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 610, intakeDrivingPosition = 390;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -427,6 +427,7 @@ d
                 case NOTHING:
                     if(gamepad1.x){
                         intakePositionState = EXTENDING;
+                        intakeCurrentPosition = intakeIntakePosition;
                         mineralExtensionPosition = extensionIntakePostition;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
@@ -435,7 +436,7 @@ d
                     break;
 
                 case EXTENDING:
-                    if(!mineralExtension.isBusy()){
+                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
                         intakePositionState = ROTATING;
                         mineralRotationPosition = 0;
                     }
@@ -590,7 +591,7 @@ d
                     if(latch_detector.getDistance(DistanceUnit.CM) > hangHungPosition){
                         currentHangingState = hangState.NOTHING;
                     }else{
-                        hangCurrentPosition = hangCurrentPosition + hangIncrement;
+                        hangCurrentPosition = hangCurrentPosition - hangIncrement;
                     }
             }
             telemetry.addData("hang state", currentHangingState);
