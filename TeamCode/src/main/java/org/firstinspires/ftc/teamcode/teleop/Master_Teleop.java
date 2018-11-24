@@ -44,7 +44,7 @@ public class Master_Teleop extends LinearOpMode {
     DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 13, hangIncrement = 200;
+    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 13;
     final double hangStopperStoredPosition = 1;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
@@ -584,14 +584,13 @@ d
                     break;
                 case LATCHING:
                     if(!hang.isBusy()){
-                        hangCurrentPosition = hangLatchPosition+hangIncrement;
+                        hangCurrentPosition = 0;
                         currentHangingState = hangState.HANGING;
                     }
                 case HANGING:
                     if(latch_detector.getDistance(DistanceUnit.CM) > hangHungPosition){
                         currentHangingState = hangState.NOTHING;
-                    }else{
-                        hangCurrentPosition = hangCurrentPosition - hangIncrement;
+                        hangCurrentPosition = hang.getCurrentPosition();
                     }
             }
             telemetry.addData("hang state", currentHangingState);
