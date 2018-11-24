@@ -41,14 +41,18 @@ public class Master_Teleop extends LinearOpMode {
     DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 6000, hangMaxPosition = 9600, hangHungPosition = 0;
+    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 3000;
     final double hangStopperStoredPosition = 1;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
+    boolean hangReady = false;
+
     public enum intakingPositionState{NOTHING, EXTENDING, ROTATING};
     intakingPositionState intakePositionState = intakingPositionState.NOTHING;
-    public enum depositingPositionState{NOTHING, INIT, ROTATION1, EXTENSIONINTAKEROTATION, ROTATION2, FINALEXTENSION};
+    public enum depositingPositionState{NOTHING, INIT, ROTATION1, EXTENSIONINTAKEROTATION, ROTATION2};
+    public enum depositingBlocksPositionState{NOTHING, INIT, ROTATION1, EXTENSIONINTAKEROTATION, ROTATION2};
     depositingPositionState depositPositionState = depositingPositionState.NOTHING;
+    depositingBlocksPositionState depositBlocksState = depositingBlocksPositionState.NOTHING;
 
     /*
 
@@ -65,8 +69,8 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionIntakePostition = 525, extensionDumpPosition1 = 1000, extensionDumpPosition2 = 1460,
-            rotationDumpPosition1 = 480, rotationDumpPosition2 = 935, mineralRotationIncriment = 3, rotationMaxPosition = 1000;
+    final int extensionMaxPosition = 2700, extensionIntakePostition = 840, extensionDumpPosition1 = 1460, extensionDumpPositionBlocks = 2000,
+            rotationDumpPosition1 = 685, rotationDumpPosition2 = 950, mineralRotationDumpBlocksPosition = 930, mineralRotationIncriment = 3, rotationMaxPosition = 1200, rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
@@ -78,7 +82,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 640,intakeDumpPosition3 = 710, intakeIntakePosition = 590, intakeDrivingPosition = 325;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 590, intakeDrivingPosition = 390;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -231,7 +235,7 @@ d
                 }else{
                     hang.setPower(hangUpPower);
                 }
-
+                hangReady = false;
             }else if(hangDownPower>0){
                 hangCurrentPosition = hang.getCurrentPosition();
                 hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -241,19 +245,21 @@ d
                     hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     hang.setPower(0);
                 }
-
+                hangReady = false;
 
             }else{
 
                 if(!hang.getMode().equals(DcMotor.RunMode.RUN_TO_POSITION)){
                     hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    hang.setTargetPosition(hangCurrentPosition);
                 }
+
+                hang.setTargetPosition(hangCurrentPosition);
                 hang.setPower(1);
             }
 
             if(gamepad2.y){
-                hang.setTargetPosition(hangReadyPosition);
+                hangCurrentPosition = hangReadyPosition;
+                hangReady = true;
             }
 
             telemetry.addData("hang limit", hangLimit.getState());
@@ -368,7 +374,7 @@ d
              Team Marker code
 
              */
-            if(gamepad2.b){
+            if(gamepad1.y){
                 teamMarker.setPosition(teamMarkerDepositPosition);
             }else{
                 teamMarker.setPosition(teamMarkerStoredPosition);
@@ -384,8 +390,8 @@ d
              */
 
             if(gamepad1.b){
-                intakeCurrentPosition = intakeDrivingPosition;
-                mineralRotationPosition = 0;
+                intakeCurrentPosition = intakeIntakePosition;
+                mineralRotationPosition = rotationDrivePosition;
                 mineralRotation.setPower(0);
                 mineralExtensionPosition = 0;
             }
@@ -409,7 +415,7 @@ d
                 case EXTENDING:
                     if(!mineralExtension.isBusy()){
                         intakePositionState = ROTATING;
-                        intakeCurrentPosition = intakeIntakePosition;
+                        mineralRotationPosition = 0;
                     }
                     break;
                 case ROTATING:
@@ -420,49 +426,107 @@ d
 
             switch(depositPositionState){
                 case NOTHING:
-                    if(gamepad2.a){
-                        intakeCurrentPosition = intakeDumpReadyPosition;
+                    if(gamepad2.x){
+                        intakeCurrentPosition = intakeIntakePosition;
+                        mineralRotationPosition = rotationDrivePosition;
                         mineralExtensionPosition = 0;
                         depositPositionState = INIT;
                     }
                     break;
                 case INIT:
-                    if(!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotationPosition = rotationDumpPosition1;
                         depositPositionState = ROTATION1;
                     }
                     intake.setPower(1);
                     break;
                 case ROTATION1:
-                    if(mineralRotation.getCurrentPosition()>=rotationDumpPosition1){
+                    if(!mineralRotation.isBusy()){
                         mineralExtensionPosition = extensionDumpPosition1;
                         intakeCurrentPosition = intakeDumpPosition2;
                         depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
                     }
-              intake.setPower(1);
+                    intake.setPower(1);
                     break;
                 case EXTENSIONINTAKEROTATION:
                     if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
                         mineralRotationPosition = rotationDumpPosition2;
-                        intakeCurrentPosition = intakeDumpPosition3;
                         depositPositionState = depositingPositionState.ROTATION2;
                     }
 
                     break;
                 case ROTATION2:
-                    if(mineralRotation.getCurrentPosition()>=rotationDumpPosition2&&!intakeRotation.isBusy()){
-                        mineralExtensionPosition = extensionDumpPosition2;
-                        depositPositionState = depositingPositionState.FINALEXTENSION;
-                    }
-                    break;
-                case FINALEXTENSION:
-                    if (!mineralExtension.isBusy()) {
+                    if(!mineralRotation.isBusy()){
+                        //mineralExtensionPosition = extensionDumpPosition2;
                         depositPositionState = depositingPositionState.NOTHING;
                     }
                     break;
 
             }
             telemetry.addData("dump state", depositPositionState.toString());
+
+            switch (depositBlocksState){
+                case NOTHING:
+                    if(gamepad2.b){
+                        intakeCurrentPosition = intakeIntakePosition;
+                        mineralRotationPosition = rotationDrivePosition;
+                        mineralExtensionPosition = 0;
+                        depositBlocksState = depositingBlocksPositionState.INIT;
+                    }
+                    break;
+                case INIT:
+                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
+                        mineralRotationPosition = rotationDumpPosition1;
+                        depositBlocksState = depositingBlocksPositionState.ROTATION1;
+                    }
+                    intake.setPower(1);
+                    break;
+                case ROTATION1:
+                    if(!mineralRotation.isBusy()){
+                        mineralExtensionPosition = extensionDumpPositionBlocks;
+                        intakeCurrentPosition = intakeDumpPosition2;
+                        depositBlocksState = depositingBlocksPositionState.EXTENSIONINTAKEROTATION;
+                    }
+                    intake.setPower(1);
+                    break;
+                case EXTENSIONINTAKEROTATION:
+                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                        mineralRotationPosition = mineralRotationDumpBlocksPosition;
+                        depositBlocksState = depositingBlocksPositionState.ROTATION2;
+                    }
+
+                    break;
+                case ROTATION2:
+                    if(!mineralRotation.isBusy()){
+                        //mineralExtensionPosition = extensionDumpPosition2;
+                        depositBlocksState = depositingBlocksPositionState.NOTHING;
+                    }
+                    break;
+            }
+
+
+            /*
+            Hang State Machine
+             */
+            switch(currentHangingState){
+                case NOTHING:
+                    if(gamepad2.a&&hangReady){
+                        currentHangingState = hangState.LATCHING;
+                        hangCurrentPosition = hangLatchPosition;
+                    }
+                    break;
+                case LATCHING:
+                    if(!hang.isBusy()){
+                        hangCurrentPosition = hangHungPosition;
+                        currentHangingState = hangState.HANGING;
+                    }
+                case HANGING:
+                    if(!hang.isBusy()){
+                        currentHangingState = hangState.NOTHING;
+                    }
+            }
+            telemetry.addData("hang state", currentHangingState);
+
         }
     }
 }

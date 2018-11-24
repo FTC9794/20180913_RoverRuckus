@@ -25,7 +25,6 @@ import java.util.ArrayList;
  * Created by Sarthak on 10/26/2018.
  */
 @Autonomous(name = "Autonomous Testing", group = "Autonomous")
-@Disabled
 public class AutonomousTesting extends LinearOpMode {
 
     IDrivetrain drive;
@@ -303,7 +302,7 @@ public class AutonomousTesting extends LinearOpMode {
         double xDistance = targetX - x;
         double yDistance = targetY - y;
 
-        double orientationDifference = targetOrientation - angle;
+        double orientationDifference = targetOrientation - imu.getZAngle();
 
         double distance = distanceFormula(xDistance, yDistance);
         double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
@@ -319,9 +318,9 @@ public class AutonomousTesting extends LinearOpMode {
         if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
             moveAngle += 180;
         }
-        moveAngle = (moveAngle % 360) - angle;
+        moveAngle = (moveAngle % 360) - (Math.toDegrees(angle));
 
-        if(!(Math.abs(yDistance) < 0.25 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.25 * COUNTS_PER_INCH
+        if(!(Math.abs(yDistance) < 0.5 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.5 * COUNTS_PER_INCH
                 && Math.abs(orientationDifference) < 2)){
             drive.move(0, distance, distance, 0, distance, power, power,
                     moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
@@ -329,6 +328,7 @@ public class AutonomousTesting extends LinearOpMode {
             telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
             telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
             telemetry.addData("Move Angle", moveAngle);
+
             return true;
         }else{
             return false;

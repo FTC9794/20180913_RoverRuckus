@@ -2,6 +2,7 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
 import com.disnodeteam.dogecv.CameraViewDisplay;
+import com.disnodeteam.dogecv.detectors.roverrukus.GoldDetector;
 import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -19,16 +20,16 @@ public class GoldMineralDetectionTest extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
 
 
-    private GoldMineralDetector genericDetector = null;
+    private GoldDetector genericDetector = null;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry.addData("Status", "Initialized");
 
 
-        genericDetector = new GoldMineralDetector();
+        genericDetector = new GoldDetector();
         genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
-        genericDetector.colorFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW);
+        genericDetector.downscale = 0.7;
 
         genericDetector.enable();
 
@@ -40,7 +41,7 @@ public class GoldMineralDetectionTest extends LinearOpMode {
         Point blockLocation = null;
 
         while(opModeIsActive()){
-            if(genericDetector.isFound() == true){
+            /*if(genericDetector.isFound() == true){
                 telemetry.addData("Location", genericDetector.getScreenPosition());
                 //telemetry.addData("Rect", genericDetector.getRect().toString());
                 blockLocation = genericDetector.getScreenPosition();
@@ -58,8 +59,9 @@ public class GoldMineralDetectionTest extends LinearOpMode {
                 }
                 telemetry.addData("X Position", genericDetector.getScreenPosition().x);
                 telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
-            }
+            }*/
             telemetry.addData("Is Found", genericDetector.isFound());
+            telemetry.addData("Pos", genericDetector.getScreenPosition().toString());
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.update();
         }

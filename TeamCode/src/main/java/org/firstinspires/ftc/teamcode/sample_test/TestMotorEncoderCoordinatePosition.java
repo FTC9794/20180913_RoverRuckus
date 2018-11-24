@@ -24,13 +24,12 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
     DcMotor verticalRight, verticalLeft, horizontal;
 
     double vrPos = 0, vlPos = 0, hPos = 0;
-    final double alpha = 20.63;
+    final double alpha = -20.63;
 
     SoundPool sound;
     int beepID;
 
     final double COUNTS_PER_INCH = 307.699557;
-    final double UNITS_TO_DEGREES = 0.0064033333;
 
 
     //Orientation, Magnitude, X, Y
@@ -48,8 +47,6 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
-        beepID = sound.load(hardwareMap.appContext, R.raw.supermariobros, 1);
 
         verticalLeft = hardwareMap.dcMotor.get("rf");
         verticalRight = hardwareMap.dcMotor.get("rb");
@@ -60,6 +57,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         horizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         verticalLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        horizontal.setDirection(DcMotorSimple.Direction.REVERSE);
 
         verticalRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         verticalLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -109,7 +107,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         double p = ((rightChange + leftChange) / 2);
         double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(alpha));
         x = x + (p*Math.sin(angle) + n*Math.cos(angle));
-        y = y + -(p*Math.cos(angle) - n*Math.sin(angle));
+        y = y + p*Math.cos(angle) - n*Math.sin(angle);
 
         prevLeft = vlPos;
         prevRight = vrPos;
