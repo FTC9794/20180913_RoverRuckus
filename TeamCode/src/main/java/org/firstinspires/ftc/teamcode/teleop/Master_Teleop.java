@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -7,6 +8,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.INIT;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.ROTATION1;
@@ -47,6 +50,8 @@ public class Master_Teleop extends LinearOpMode {
     hangState currentHangingState = hangState.NOTHING;
     boolean hangReady = false;
 
+    Rev2mDistanceSensor latch_detector;
+
     public enum intakingPositionState{NOTHING, EXTENDING, ROTATING};
     intakingPositionState intakePositionState = intakingPositionState.NOTHING;
     public enum depositingPositionState{NOTHING, INIT, ROTATION1, EXTENSIONINTAKEROTATION, ROTATION2};
@@ -62,7 +67,7 @@ public class Master_Teleop extends LinearOpMode {
 
      */
     Servo teamMarker;
-    final double teamMarkerStoredPosition = 0, teamMarkerDepositPosition = 1;
+    final double teamMarkerStoredPosition = .2, teamMarkerDepositPosition = 1;
 
     /*
 
@@ -72,8 +77,8 @@ public class Master_Teleop extends LinearOpMode {
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
     final int extensionMaxPosition = 2700, extensionIntakePostition = 840, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
-            rotationExtendPosition = 685, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 930, mineralRotationIncriment = 3, rotationMaxPosition = 1200,
-            rotationDrivePosition = 390;
+            rotationExtendPosition = 750, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncriment = 3,
+            rotationMaxPosition = 1200, rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
@@ -165,6 +170,8 @@ public class Master_Teleop extends LinearOpMode {
          */
         intake = hardwareMap.crservo.get("intake");
         intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+
+        latch_detector = (Rev2mDistanceSensor) hardwareMap.get("latch_detector");
 
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -386,20 +393,6 @@ d
             telemetry.addData("Intake Rotation Position", intakeRotation.getCurrentPosition());
             telemetry.update();
 
-            /*
-
-            preset positions
-
-             */
-
-            if(gamepad1.b){
-                intakeCurrentPosition = intakeIntakePosition;
-                mineralRotationPosition = rotationDrivePosition;
-                mineralRotation.setPower(0);
-                mineralExtensionPosition = 0;
-            }
-
-
 
 
             /*
@@ -517,6 +510,8 @@ d
                         if(mineralRotation.getCurrentPosition()>rotationExtendPosition){
                             drivePositionState = drivingPositionState.ROTATION1;
                             mineralRotationPosition = rotationExtendPosition;
+                            mineralExtensionPosition = 0;
+                            intakeCurrentPosition = intakeIntakePosition;
                         }else{
                             drivePositionState = drivingPositionState.FINALPOSITION;
                             mineralExtensionPosition = 0;
@@ -527,7 +522,7 @@ d
                     break;
 
                 case ROTATION1:
-                    if(!mineralRotation.isBusy()){
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
                         drivePositionState = drivingPositionState.FINALPOSITION;
                         mineralExtensionPosition = 0;
                         mineralRotationPosition = rotationDrivePosition;
@@ -557,11 +552,12 @@ d
                         currentHangingState = hangState.HANGING;
                     }
                 case HANGING:
-                    if(!hang.isBusy()){
+                    if(!hang.isBusy() && latch_detector.getDistance(DistanceUnit.CM) > 10){
                         currentHangingState = hangState.NOTHING;
                     }
             }
             telemetry.addData("hang state", currentHangingState);
+            telemetry.addData("hang distance sensor", latch_detector.getDistance(DistanceUnit.CM));
 
         }
     }
