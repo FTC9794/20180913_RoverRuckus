@@ -77,7 +77,7 @@ public class Master_Teleop extends LinearOpMode {
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
     final int extensionMaxPosition = 2700, extensionIntakePostition = 640, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
-            rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncriment = 3,
+            rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
             rotationMaxPosition = 1200, rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
     int mineralExtensionPosition, mineralRotationPosition;
@@ -95,6 +95,10 @@ public class Master_Teleop extends LinearOpMode {
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
 
+    double pitch, roll, pivot;
+
+    boolean intakePressed = false;
+    boolean intaking = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -182,7 +186,24 @@ public class Master_Teleop extends LinearOpMode {
         telemetry.addData("initialization", "done");
         telemetry.addData("intake rotation position", intakeRotation.getCurrentPosition());
         telemetry.update();
+        boolean selected = false;
+        String hand = "";
+        while(!selected){
+            telemetry.addData("Gamepad1 DPad Left", "Lefty Mode");
+            telemetry.addData("Gamepad1 DPad Right", "Righty Mode");
+            telemetry.update();
+            if(gamepad1.dpad_left){
+                hand = "left";
+                selected = true;
+            }else if(gamepad1.dpad_right){
+                hand = "right";
+                selected = true;
+            }
+        }
 
+        telemetry.addLine("Init Complete");
+        telemetry.addData("Hand Selected", hand);
+        telemetry.update();
         waitForStart();
 
         //initialize servo positions after start is pressed to be legal
@@ -199,9 +220,15 @@ d
              */
 
             //Get gamepad values
-            double pitch = -gamepad1.left_stick_y;
-            double roll = gamepad1.left_stick_x;
-            double pivot = gamepad1.right_stick_x;
+            if(hand.equals("left")){
+                pitch = -gamepad1.left_stick_y;
+                roll = gamepad1.left_stick_x;
+                pivot = gamepad1.right_stick_x;
+            }else{
+                pitch = -gamepad1.right_stick_y;
+                roll = gamepad1.right_stick_x;
+                pivot = gamepad1.left_stick_x;
+            }
 
             drivePower[0] = pitch-roll-pivot;
             drivePower[1] = pitch+roll-pivot;
@@ -283,6 +310,13 @@ d
 
              */
 
+            if(gamepad2.right_bumper){
+                mineralExtensionPosition = 0;
+                intakeCurrentPosition = 0;
+                mineralRotationPosition = 0;
+                drivePositionState = drivingPositionState.NOTHING;
+            }
+
             if(gamepad2.dpad_up){
                 mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 mineralExtensionPosition = mineralExtension.getCurrentPosition();
@@ -338,10 +372,10 @@ d
                     mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     if(mineralRotationPower<0){
 
-                        mineralRotationPosition = (int) (mineralRotationPosition-mineralRotationIncriment);
+                        mineralRotationPosition = (int) (mineralRotationPosition-mineralRotationIncrement);
                     }else{
                         if(!(mineralRotationPosition>rotationMaxPosition)){
-                            mineralRotationPosition = mineralRotationPosition+mineralRotationIncriment;
+                            mineralRotationPosition = mineralRotationPosition+mineralRotationIncrement;
                         }
 
                     }
@@ -391,15 +425,37 @@ d
 
 
 
-            if(gamepad1.right_bumper){
+            if(gamepad1.right_bumper&&!intakePressed){
+                intaking = !intaking;
+                intakePressed = true;
+            }else if(gamepad1.right_bumper){
+                intakePressed = true;
+            }else{
+                intakePressed = false;
+            }
+
+            if(gamepad1.left_bumper){
+                intake.setPower(intakeOutPower);
+                intaking = false;
+            }
+            else if(intaking){
                 intake.setPower(intakeInPower);
+            }else if(!intaking){
+                intake.setPower(0);
+            }
+
+            /*if(gamepad1.right_bumper){
+                if(!intakePressed){
+                    intake.setPower(intakeInPower);
+                }
+
 
             }else if(gamepad1.left_bumper){
                 intake.setPower(intakeOutPower);
 
             }else{
                 intake.setPower(0);
-            }
+            }*/
 
              /*
 
