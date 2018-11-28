@@ -525,7 +525,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
         //Drop team marker
         teamMarker.drop();
-        waitMilliseconds(3000, runtime);
+        waitMilliseconds(2500, runtime);
 
         hang.setPower(0);
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
