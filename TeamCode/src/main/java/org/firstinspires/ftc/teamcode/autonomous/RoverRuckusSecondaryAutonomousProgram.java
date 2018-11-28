@@ -13,7 +13,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.DataLogger;
 import org.firstinspires.ftc.teamcode.Enums.Direction;
 import org.firstinspires.ftc.teamcode.R;
@@ -25,6 +27,7 @@ import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
 import org.firstinspires.ftc.teamcode.subsystems.team_marker.ITeamMarker;
 import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -102,8 +105,77 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
     SoundPool sound;
     int beepID;
 
+    final int X_POS_INDEX = 0;
+    final int Y_POS_INDEX = 1;
+    final int THETA_INDEX = 2;
+    final int MAX_POWER_INDEX = 3;
+    final int MIN_POWER_INDEX = 4;
+
+    double[][] leftMineral;
+    double[][] centerMineral;
+    double[][] rightMineral;
+    double[][] depot;
+
+    File leftMineralPositionFile = AppUtil.getInstance().getSettingsFile("leftMineralCraterAuto.txt");
+    File middleMineralPositionFile = AppUtil.getInstance().getSettingsFile("centerMineralCraterAuto.txt");
+    File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineralCraterAuto.txt");
+    File depotFile = AppUtil.getInstance().getSettingsFile("depotCraterAuto.txt");
+
     @Override
     public void runOpMode() throws InterruptedException {
+
+        String fileText = ReadWriteFile.readFile(leftMineralPositionFile);
+        String[] inputs = fileText.split("~");
+        leftMineral = new double[inputs.length][5];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                leftMineral[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Left Mineral Position File");
+        telemetry.update();
+
+        fileText = ReadWriteFile.readFile(middleMineralPositionFile);
+        inputs = fileText.split("~");
+        centerMineral = new double[inputs.length][5];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                centerMineral[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Center Mineral Position File");
+        telemetry.update();
+
+        fileText = ReadWriteFile.readFile(rightMineralPositionFile);
+        inputs = fileText.split("~");
+        rightMineral = new double[inputs.length][5];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                rightMineral[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Right Mineral Position File");
+        telemetry.update();
+
+        fileText = ReadWriteFile.readFile(depotFile);
+        inputs = fileText.split("~");
+        depot = new double[inputs.length][5];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                depot[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Depot Position File");
+        telemetry.update();
+
         sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
         beepID = sound.load(hardwareMap.appContext, R.raw.supermariobros, 1);
         //Init motor hardware map and behaviors
@@ -127,23 +199,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
-        /*boolean selected = false;
-        (while(!selected){
-            if(gamepad1.a){
-                mineralLocation = location.CENTER;
-                selected = true;
-            }else if(gamepad1.b){
-                mineralLocation = location.LEFT;
-                selected = true;
-            }else if(gamepad1.x){
-                mineralLocation = location.RIGHT;
-                selected = true;
-            }
-            telemetry.addData("Gamepad 1 A", "Center Mineral");
-            telemetry.addData("Gamepad 1 B", "Left Mineral");
-            telemetry.addData("Gamepad 1 X", "Right Mineral");
-            telemetry.update();
-        }*/
+
         date = new Date();
         data = new DataLogger(date.toString() + "Crater Autonomous Calculations");
         data.addField("X");
@@ -182,19 +238,25 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
             telemetry.addData("hang pos", hang.getCurrentPosition());
             telemetry.update();
         }
+        hang.setPower(0);
+        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         genericDetector.enable();
+        runtime.reset();
 
-        mineral_rotation.setTargetPosition(150);
+        mineral_rotation.setTargetPosition(200);
         mineral_rotation.setPower(1);
 
-        runtime.reset();
+        waitMilliseconds(1000, runtime);
+
         mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         while(opModeIsActive() && rotation_limit.getState()){
             mineral_rotation.setPower(-0.15);
         }
         mineral_rotation.setPower(0);
+
         while(runtime.milliseconds() < 1250 && opModeIsActive());
+
 
         //Scan for mineral
         globalCoordinatePositionUpdate();
@@ -228,7 +290,130 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         }
 
         globalCoordinatePositionUpdate();
+        genericDetector.disable();
 
+        switch (mineralLocation){
+            case LEFT:
+                for(int i = 0; i < leftMineral.length; i++){
+                    double x = leftMineral[i][X_POS_INDEX];
+                    double y = leftMineral[i][Y_POS_INDEX];
+                    double theta = leftMineral[i][THETA_INDEX];
+                    double maxPower = leftMineral[i][MAX_POWER_INDEX];
+                    double minPower = leftMineral[i][MIN_POWER_INDEX];
+                    while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                            && opModeIsActive()){
+                        globalCoordinatePositionUpdate();
+                        telemetry.addData("Moving to Position", "(" + x +", " + y +")");
+                        telemetry.addData("Target Angle", theta);
+                        telemetry.update();
+                    }
+                    drive.stop();
+                    globalCoordinatePositionUpdate();
+                }
+                break;
+            case CENTER:
+                for(int i = 0; i < centerMineral.length; i++){
+                    double x = centerMineral[i][X_POS_INDEX];
+                    double y = centerMineral[i][Y_POS_INDEX];
+                    double theta = centerMineral[i][THETA_INDEX];
+                    double maxPower = centerMineral[i][MAX_POWER_INDEX];
+                    double minPower = centerMineral[i][MIN_POWER_INDEX];
+                    while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                            && opModeIsActive()){
+                        globalCoordinatePositionUpdate();
+                        telemetry.addData("Moving to Position", "(" + x + ", " + y + ")");
+                        telemetry.addData("Target Angle", theta);
+                        telemetry.update();
+                    }
+                    drive.stop();
+                    globalCoordinatePositionUpdate();
+                }
+                break;
+            case RIGHT:
+                for(int i = 0; i < rightMineral.length; i++){
+                    double x = rightMineral[i][X_POS_INDEX];
+                    double y = rightMineral[i][Y_POS_INDEX];
+                    double theta = rightMineral[i][THETA_INDEX];
+                    double maxPower = rightMineral[i][MAX_POWER_INDEX];
+                    double minPower = rightMineral[i][MIN_POWER_INDEX];
+                    while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                            && opModeIsActive()){
+                        globalCoordinatePositionUpdate();
+                        telemetry.addData("Moving to Position", "(" + x +", " + y +")");
+                        telemetry.addData("Target Angle", theta);
+                        telemetry.update();
+                    }
+                    drive.stop();
+                    globalCoordinatePositionUpdate();
+                }
+                break;
+        }
+        drive.stop();
+        globalCoordinatePositionUpdate();
+
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.setTargetPosition(0);
+        hang.setPower(1);
+
+        for(int i = 0; i < depot.length; i++){
+            double x = depot[i][X_POS_INDEX];
+            double y = depot[i][Y_POS_INDEX];
+            double theta = depot[i][THETA_INDEX];
+            double maxPower = depot[i][MAX_POWER_INDEX];
+            double minPower = depot[i][MIN_POWER_INDEX];
+            while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                    && opModeIsActive()){
+                globalCoordinatePositionUpdate();
+                telemetry.addData("Moving to Position", "(" + x +", " + y +")");
+                telemetry.addData("Target Angle", theta);
+                telemetry.update();
+            }
+            drive.stop();
+            globalCoordinatePositionUpdate();
+        }
+
+        //Pivot to face alliance depot
+        runtime.reset();
+        while (opModeIsActive() && runtime.milliseconds() < 1500){
+            drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+        }
+        drive.stop();
+        globalCoordinatePositionUpdate();
+
+        //Drive to alliance depot
+        drive.softResetEncoder();
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
+                ,0.5*COUNTS_PER_INCH, 0));
+        drive.stop();
+
+        //Drop team marker
+        teamMarker.drop();
+        waitMilliseconds(1000, runtime);
+
+        //Drive to crater to park
+        drive.softResetEncoder();
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
+                ,0.5*COUNTS_PER_INCH, 0));
+        teamMarker.hold();
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
+                ,0.5*COUNTS_PER_INCH, 0));
+        drive.stop();
+
+        while (opModeIsActive()){
+            drive.stop();
+            globalCoordinatePositionUpdate();
+            telemetry.addData("Status", "Program Finished");
+            telemetry.addData("X Position", x/COUNTS_PER_INCH);
+            telemetry.addData("Y Position", y/COUNTS_PER_INCH);
+            telemetry.update();
+        }
+
+/*
         //Begin Sampling
         switch (mineralLocation){
             case CENTER:
@@ -343,47 +528,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         }
         drive.stop();
         globalCoordinatePositionUpdate();
-
-        //Pivot to face alliance depot
-        runtime.reset();
-        while (opModeIsActive() && runtime.milliseconds() < 1500){
-            drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-        }
-        drive.stop();
-        globalCoordinatePositionUpdate();
-
-        //Drive to alliance depot
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        drive.stop();
-
-        //Drop team marker
-        teamMarker.drop();
-        waitMilliseconds(1000, runtime);
-
-        //Drive to crater to park
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        teamMarker.hold();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        drive.stop();
-
-        while (opModeIsActive()){
-            drive.stop();
-            globalCoordinatePositionUpdate();
-            telemetry.addData("Status", "Program Finished");
-            telemetry.addData("X Position", x/COUNTS_PER_INCH);
-            telemetry.addData("Y Position", y/COUNTS_PER_INCH);
-            telemetry.update();
-        }
+*/
 
         //hang.setTargetPosition(0);
         //hang.setPower(1);

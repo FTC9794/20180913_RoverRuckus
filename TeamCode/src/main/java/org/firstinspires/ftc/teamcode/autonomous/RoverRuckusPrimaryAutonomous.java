@@ -213,6 +213,9 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             telemetry.update();
         }
 
+        hang.setPower(0);
+        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         genericDetector.enable();
         runtime.reset();
 
@@ -318,7 +321,10 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setTargetPosition(0);
+        hang.setPower(1);
+
         for(int i = 0; i < depot.length; i++){
             double x = depot[i][X_POS_INDEX];
             double y = depot[i][Y_POS_INDEX];
@@ -483,7 +489,9 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                 break;
         }
 
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setTargetPosition(0);
+        hang.setPower(1);
 
         globalCoordinatePositionUpdate();
         while(goToPosition(-15*COUNTS_PER_INCH, -44*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.4)
@@ -518,6 +526,9 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         //Drop team marker
         teamMarker.drop();
         waitMilliseconds(3000, runtime);
+
+        hang.setPower(0);
+        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         //Drive to crater to park
         drive.softResetEncoder();
