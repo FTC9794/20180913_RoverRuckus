@@ -392,6 +392,8 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         //Drop team marker
         teamMarker.drop();
         waitMilliseconds(1000, runtime);
+        hang.setPower(0);
+        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         //Drive to crater to park
         drive.softResetEncoder();
