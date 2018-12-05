@@ -58,6 +58,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
     Servo teamMarkerServo;
 
     ModernRoboticsI2cRangeSensor leftWallPing;
+    ModernRoboticsI2cRangeSensor rightWallPing;
 
     Servo scanner;
     double rightPosition = 0.6;
@@ -451,8 +452,8 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             }
 
             drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                    0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 35*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+                    0, 35*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
                     ,0.5*COUNTS_PER_INCH, 0));
             drive.stop();
         }
@@ -490,9 +491,10 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         }else if (mineralLocation == location.LEFT){
             //Drop team marker
             teamMarker.drop();
-            waitMilliseconds(2000, runtime);
+            waitMilliseconds(1500, runtime);
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            teamMarker.hold();
 
             //Pivot to face alliance depot
             runtime.reset();
@@ -503,12 +505,67 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             }
             drive.stop();
             globalCoordinatePositionUpdate();
+
+            double wallReading = rightWallPing.cmUltrasonic();
+            while (wallReading == 255){
+                wallReading = rightWallPing.cmUltrasonic();
+            }
+
+            double wallCorrection = (27 - wallReading) / 2.54;
+            if(wallCorrection > 0.75){
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, 45
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+            }else if (wallCorrection < -0.75){
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, 45
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+            }
+
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 12*COUNTS_PER_INCH,
+                    0, 36*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+
+            wallReading = rightWallPing.cmUltrasonic();
+            while (wallReading == 255){
+                wallReading = rightWallPing.cmUltrasonic();
+            }
+            wallCorrection = (10 - wallReading) / 2.54;
+
+            if(wallCorrection > 0.75){
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, 45
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+            }else if (wallCorrection < -0.75){
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, 45
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+            }
+
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 12*COUNTS_PER_INCH,
+                    0, 36*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+
+
         }else if(mineralLocation == location.CENTER){
             //Drop team marker
             teamMarker.drop();
             waitMilliseconds(2000, runtime);
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            teamMarker.hold();
         }
 
         /*switch (mineralLocation){
@@ -763,6 +820,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         hang_latch.setPosition(0);
 
         leftWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("left_us");
+        rightWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("right_us");
 
         hang = hardwareMap.dcMotor.get("hang");
         hang.setDirection(DcMotorSimple.Direction.REVERSE);
