@@ -76,7 +76,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionIntakePostition = 640, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
+    final int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
             rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
             rotationMaxPosition = 1200, rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
@@ -301,8 +301,6 @@ d
                 hangReady = true;
             }
 
-            telemetry.addData("hang limit", hangLimit.getState());
-            telemetry.addData("hang Position", hang.getCurrentPosition());
 
             /*
 
@@ -482,24 +480,17 @@ d
             switch(intakePositionState){
                 case NOTHING:
                     if(gamepad1.x){
-                        intakePositionState = EXTENDING;
+                        intakePositionState = ROTATING;
                         intakeCurrentPosition = intakeIntakePosition;
-                        mineralExtensionPosition = extensionIntakePostition;
+                        mineralRotationPosition = 0;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
                     }
                     break;
 
-                case EXTENDING:
-                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
-                        intakePositionState = ROTATING;
-                        mineralRotationPosition = 0;
-                    }
-                    break;
-
                 case ROTATING:
-                    if(!intakeRotation.isBusy()){
+                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()){
                         intakePositionState = NOTHING;
                     }
 
@@ -548,7 +539,6 @@ d
                     break;
 
             }
-            telemetry.addData("dump state", depositPositionState.toString());
 
             switch (depositBlocksState){
                 case NOTHING:
@@ -649,9 +639,6 @@ d
                         hangCurrentPosition = hang.getCurrentPosition();
                     }
             }
-            telemetry.addData("hang state", currentHangingState);
-            telemetry.addData("hang distance sensor", latch_detector.getDistance(DistanceUnit.CM));
-
         }
     }
 }
