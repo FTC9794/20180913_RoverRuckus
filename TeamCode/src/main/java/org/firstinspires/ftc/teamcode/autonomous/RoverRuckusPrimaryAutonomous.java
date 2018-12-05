@@ -261,6 +261,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         }
         globalCoordinatePositionUpdate();
         genericDetector.disable();
+        scanner.setPosition(0.5);
 
         switch (mineralLocation){
             case LEFT:
@@ -351,9 +352,25 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        /*double wallDistance = rightWallPing.cmUltrasonic()
-        wallDistance = 12-wallDistance;
-        double angleCorrection = Math.toDegrees(Math.asin(wallDistance/44));*/
+        double wallReading = rightWallPing.cmUltrasonic();
+        while (wallReading == 255){
+            wallReading = rightWallPing.cmUltrasonic();
+        }
+
+        double wallCorrection = (10 - wallReading) / 2.54;
+        if(wallCorrection > 0.75){
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                    0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 135
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+        }else if (wallCorrection < -0.75){
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                    0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, 135
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+        }
 
         //Drive to alliance depot
         drive.softResetEncoder();
@@ -364,7 +381,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
         //Drop team marker
         teamMarker.drop();
-        waitMilliseconds(2000, runtime);
+        waitMilliseconds(500, runtime);
 
         //Drive to crater to park
         drive.softResetEncoder();
@@ -386,7 +403,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             telemetry.update();
         }
 
-        //Begin Sampling
+        /*//Begin Sampling
         switch (mineralLocation){
             case CENTER:
                 globalCoordinatePositionUpdate();
@@ -514,7 +531,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
         /*double wallDistance = rightWallPing.cmUltrasonic()
         wallDistance = 12-wallDistance;
-        double angleCorrection = Math.toDegrees(Math.asin(wallDistance/44));*/
+        double angleCorrection = Math.toDegrees(Math.asin(wallDistance/44));
 
         //Drive to alliance depot
         drive.softResetEncoder();
@@ -548,7 +565,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             telemetry.addData("X Position", x/COUNTS_PER_INCH);
             telemetry.addData("Y Position", y/COUNTS_PER_INCH);
             telemetry.update();
-        }
+        }*/
 
     }
 
@@ -629,7 +646,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         scanner = hardwareMap.servo.get("scanner");
         scanner.setPosition(0.5);
 
-        rightWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("right_wall_sensor");
+        rightWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("right_us");
 
         hang_latch = hardwareMap.servo.get("hang_stopper");
         hang_latch.setPosition(0);

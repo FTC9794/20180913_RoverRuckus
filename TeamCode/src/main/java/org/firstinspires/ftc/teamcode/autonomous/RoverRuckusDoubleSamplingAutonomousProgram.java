@@ -32,11 +32,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 
+import static org.firstinspires.ftc.teamcode.autonomous.RoverRuckusDoubleSamplingAutonomousProgram.location.RIGHT;
+
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "Crater Autonomous", group = "Autonomous")
-public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
+@Autonomous(name = "Double Sampling Autonomous", group = "Autonomous")
+public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
     DcMotor mineral_rotation;
@@ -44,8 +46,6 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
     ArrayList motors, encoders;
 
     DcMotor hang;
-
-    ModernRoboticsI2cRangeSensor leftWallPing;
 
     DigitalChannel rotation_limit;
 
@@ -56,6 +56,8 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
     ITeamMarker teamMarker;
     Servo teamMarkerServo;
+
+    ModernRoboticsI2cRangeSensor leftWallPing;
 
     Servo scanner;
     double rightPosition = 0.6;
@@ -90,7 +92,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
     final double DEFAULT_ERROR_DISTANCE = 10;
 
-    final double[] DEFAULT_PID = {.02};
+    final double[] DEFAULT_PID = {.03};
     final double[] DEFAULT_PID_STRAFE = {.03};
     final double COUNTS_PER_INCH = 307.699557;
 
@@ -117,12 +119,14 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
     double[][] leftMineral;
     double[][] centerMineral;
     double[][] rightMineral;
-    double[][] depot;
+    double[][] depotMain;
+    double[][] depotRight;
 
-    File leftMineralPositionFile = AppUtil.getInstance().getSettingsFile("leftMineralCraterAuto.txt");
-    File middleMineralPositionFile = AppUtil.getInstance().getSettingsFile("centerMineralCraterAuto.txt");
-    File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineralCraterAuto.txt");
-    File depotFile = AppUtil.getInstance().getSettingsFile("depotCraterAuto.txt");
+    File leftMineralPositionFile = AppUtil.getInstance().getSettingsFile("leftMineralDoubleAuto.txt");
+    File middleMineralPositionFile = AppUtil.getInstance().getSettingsFile("centerMineralDoubleAuto.txt");
+    File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineralDoubleAuto.txt");
+    File depotFileMain = AppUtil.getInstance().getSettingsFile("depotDoubleAutoMain.txt");
+    File depotFileRight = AppUtil.getInstance().getSettingsFile("depotDoubleAutoRight.txt");
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -166,17 +170,30 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         telemetry.addData("Status", "Read Right Mineral Position File");
         telemetry.update();
 
-        fileText = ReadWriteFile.readFile(depotFile);
+        fileText = ReadWriteFile.readFile(depotFileMain);
         inputs = fileText.split("~");
-        depot = new double[inputs.length][5];
+        depotMain = new double[inputs.length][5];
         for(int i = 0; i < inputs.length; i++){
             String[] params = inputs[i].split(",");
             for(int j = 0; j < params.length; j++){
-                depot[i][j] = Double.parseDouble(params[j]);
+                depotMain[i][j] = Double.parseDouble(params[j]);
             }
         }
 
-        telemetry.addData("Status", "Read Depot Position File");
+        telemetry.addData("Status", "Read Depot Main Position File");
+        telemetry.update();
+
+        fileText = ReadWriteFile.readFile(depotFileRight);
+        inputs = fileText.split("~");
+        depotRight = new double[inputs.length][5];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                depotRight[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Depot Right Position File");
         telemetry.update();
 
         sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
@@ -270,7 +287,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         if(found && (genericDetector.getScreenPosition().x < 300 && genericDetector.getScreenPosition().y > 10)){
             mineralLocation = location.CENTER;
         }else if (found && genericDetector.getScreenPosition().x > 375 && genericDetector.getScreenPosition().y > 10) {
-            mineralLocation = location.RIGHT;
+            mineralLocation = RIGHT;
         }
         else{
             while(opModeIsActive() && scanner.getPosition() < 0.6){
@@ -286,7 +303,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
             found = genericDetector.isFound();
             if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 40) {
-                mineralLocation = location.RIGHT;
+                mineralLocation = RIGHT;
             }else {
                 mineralLocation = location.LEFT;
             }
@@ -294,7 +311,6 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         globalCoordinatePositionUpdate();
         genericDetector.disable();
-        scanner.setPosition(0.5);
 
         switch (mineralLocation){
             case LEFT:
@@ -359,21 +375,40 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         hang.setTargetPosition(0);
         hang.setPower(1);
 
-        for(int i = 0; i < depot.length; i++){
-            double x = depot[i][X_POS_INDEX];
-            double y = depot[i][Y_POS_INDEX];
-            double theta = depot[i][THETA_INDEX];
-            double maxPower = depot[i][MAX_POWER_INDEX];
-            double minPower = depot[i][MIN_POWER_INDEX];
-            while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
-                    && opModeIsActive()){
+        if(mineralLocation == RIGHT){
+            for(int i = 0; i < depotRight.length; i++){
+                double x = depotRight[i][X_POS_INDEX];
+                double y = depotRight[i][Y_POS_INDEX];
+                double theta = depotRight[i][THETA_INDEX];
+                double maxPower = depotRight[i][MAX_POWER_INDEX];
+                double minPower = depotRight[i][MIN_POWER_INDEX];
+                while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(" + x +", " + y +")");
+                    telemetry.addData("Target Angle", theta);
+                    telemetry.update();
+                }
+                drive.stop();
                 globalCoordinatePositionUpdate();
-                telemetry.addData("Moving to Position", "(" + x +", " + y +")");
-                telemetry.addData("Target Angle", theta);
-                telemetry.update();
             }
-            drive.stop();
-            globalCoordinatePositionUpdate();
+        }else{
+            for(int i = 0; i < depotMain.length; i++){
+                double x = depotMain[i][X_POS_INDEX];
+                double y = depotMain[i][Y_POS_INDEX];
+                double theta = depotMain[i][THETA_INDEX];
+                double maxPower = depotMain[i][MAX_POWER_INDEX];
+                double minPower = depotMain[i][MIN_POWER_INDEX];
+                while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                        && opModeIsActive()){
+                    globalCoordinatePositionUpdate();
+                    telemetry.addData("Moving to Position", "(" + x +", " + y +")");
+                    telemetry.addData("Target Angle", theta);
+                    telemetry.update();
+                }
+                drive.stop();
+                globalCoordinatePositionUpdate();
+            }
         }
 
         //Pivot to face alliance depot
@@ -386,40 +421,125 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        double wallReading = leftWallPing.cmUltrasonic();
-        while (wallReading == 255){
-            wallReading = leftWallPing.cmUltrasonic();
-        }
-
-        double wallCorrection = (10 - wallReading) / 2.54;
-        if(wallCorrection > 0.75){
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                    0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
-            drive.stop();
-        }else if (wallCorrection < -0.75){
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                    0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
-            drive.stop();
-        }
-
         //Drive to alliance depot
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        drive.stop();
+        if(mineralLocation == RIGHT){
+            //Drive to alliance depot and knock second mineral
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 33*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+                    0, 33*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+        }else{
+            double wallReading = leftWallPing.cmUltrasonic();
+            while (wallReading == 255){
+                wallReading = leftWallPing.cmUltrasonic();
+            }
 
-        //Drop team marker
-        teamMarker.drop();
-        waitMilliseconds(500, runtime);
-        hang.setPower(0);
-        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            double wallCorrection = (10 - wallReading) / 2.54;
+            if(wallCorrection > 0.75){
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, -45
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+            }else if (wallCorrection < -0.75){
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, -45
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+            }
 
-        //Drive to crater to park
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+                    0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+        }
+
+
+        if(mineralLocation == RIGHT){
+            //Pivot to face alliance depot
+            runtime.reset();
+            while (opModeIsActive() && runtime.milliseconds() < 750){
+                drive.pivot(-25, -35, 0.75, 0.25, 50, 2, Direction.FASTEST);
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
+            drive.stop();
+            globalCoordinatePositionUpdate();
+
+            //Drop team marker
+            teamMarker.drop();
+            waitMilliseconds(500, runtime);
+            hang.setPower(0);
+            hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                    0, 25*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -70 , DEFAULT_PID, -45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            teamMarker.hold();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                    0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -70 , DEFAULT_PID, -45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+
+            globalCoordinatePositionUpdate();
+
+        }else if (mineralLocation == location.LEFT){
+            //Drop team marker
+            teamMarker.drop();
+            waitMilliseconds(2000, runtime);
+            hang.setPower(0);
+            hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            //Pivot to face alliance depot
+            runtime.reset();
+            while (opModeIsActive() && runtime.milliseconds() < 1500){
+                drive.pivot(45, 25, 1, 0.25, 50, 2, Direction.FASTEST);
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
+            drive.stop();
+            globalCoordinatePositionUpdate();
+        }else if(mineralLocation == location.CENTER){
+            //Drop team marker
+            teamMarker.drop();
+            waitMilliseconds(2000, runtime);
+            hang.setPower(0);
+            hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        }
+
+        /*switch (mineralLocation){
+            case LEFT:
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 6*COUNTS_PER_INCH, 6*COUNTS_PER_INCH,
+                        0, 6*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 150 , DEFAULT_PID, 45
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+                teamMarker.hold();
+
+                //Pivot to face alliance depot
+                runtime.reset();
+                while (opModeIsActive() && runtime.milliseconds() < 1000){
+                    drive.pivot(135, 115, 1, 0.25, 50, 2, Direction.FASTEST);
+                    globalCoordinatePositionUpdate();
+                    telemetry.update();
+                }
+                drive.stop();
+                globalCoordinatePositionUpdate();
+
+                //Knock second mineral
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 45*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                        0, 45*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, 135
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+                break;
+        }*/
+
+        /*//Drive to crater to park
         drive.softResetEncoder();
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
                 0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
@@ -428,7 +548,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
                 0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
-        drive.stop();
+        drive.stop();*/
 
         while (opModeIsActive()){
             drive.stop();
