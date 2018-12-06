@@ -13,7 +13,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.INIT;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.ROTATION1;
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.EXTENDING;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.NOTHING;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.ROTATING;
 
@@ -520,13 +519,13 @@ d
                     if(mineralRotation.getCurrentPosition()>rotationExtendPosition-30){
                         mineralExtensionPosition = extensionDumpPositionBalls;
                         intakeCurrentPosition = intakeDumpPosition2;
-                        mineralRotationPosition = mineralRotationDumpBallPosition;
+                        mineralRotationPosition = rotationExtendPosition;
                         depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
                     }
                     intake.setPower(1);
                     break;
                 case EXTENSIONINTAKEROTATION:
-                    if(mineralExtension.getCurrentPosition()>300){
+                    if(mineralExtension.getCurrentPosition()>500){
                         mineralRotationPosition = mineralRotationDumpBallPosition;
                         depositPositionState = depositingPositionState.ROTATION2;
                     }

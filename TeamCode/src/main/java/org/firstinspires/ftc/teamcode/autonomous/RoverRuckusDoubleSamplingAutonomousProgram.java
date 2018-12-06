@@ -562,50 +562,72 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         }else if(mineralLocation == location.CENTER){
             //Drop team marker
             teamMarker.drop();
-            waitMilliseconds(2000, runtime);
+            waitMilliseconds(1500, runtime);
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             teamMarker.hold();
-        }
 
-        /*switch (mineralLocation){
-            case LEFT:
-                drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 6*COUNTS_PER_INCH, 6*COUNTS_PER_INCH,
-                        0, 6*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 150 , DEFAULT_PID, 45
-                        ,0.5*COUNTS_PER_INCH, 0));
-                drive.stop();
-                teamMarker.hold();
-
-                //Pivot to face alliance depot
-                runtime.reset();
-                while (opModeIsActive() && runtime.milliseconds() < 1000){
-                    drive.pivot(135, 115, 1, 0.25, 50, 2, Direction.FASTEST);
-                    globalCoordinatePositionUpdate();
-                    telemetry.update();
-                }
-                drive.stop();
+            //Pivot to face alliance depot
+            runtime.reset();
+            while (opModeIsActive() && runtime.milliseconds() < 1500){
+                drive.pivot(225, 115, 1, 0.25, 50, 2, Direction.FASTEST);
                 globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
+            drive.stop();
+            globalCoordinatePositionUpdate();
 
-                //Knock second mineral
+            double wallReading = leftWallPing.cmUltrasonic();
+            while (wallReading == 255){
+                wallReading = leftWallPing.cmUltrasonic();
+            }
+
+            double wallCorrection = (60 - wallReading) / 2.54;
+            if(wallCorrection < 0.75){
                 drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 45*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                        0, 45*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, 135
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, 225
                         ,0.5*COUNTS_PER_INCH, 0));
                 drive.stop();
-                break;
-        }*/
+            }else if (wallCorrection > -0.75){
+                drive.softResetEncoder();
+                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
+                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, 225
+                        ,0.5*COUNTS_PER_INCH, 0));
+                drive.stop();
+            }
 
-        /*//Drive to crater to park
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        teamMarker.hold();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        drive.stop();*/
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 6*COUNTS_PER_INCH,
+                    0, 15*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 225
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 6*COUNTS_PER_INCH,
+                    0, 18*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 225 , DEFAULT_PID, 225
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+
+            waitMilliseconds(500, runtime);
+
+            runtime.reset();
+            while (opModeIsActive() && runtime.milliseconds() < 1500){
+                drive.pivot(-45, -60, 1, 0.25, 50, 2, Direction.FASTEST);
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
+            drive.stop();
+            globalCoordinatePositionUpdate();
+
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 55*COUNTS_PER_INCH, 24*COUNTS_PER_INCH,
+                    0, 45*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+
+
+        }
 
         while (opModeIsActive()){
             drive.stop();
@@ -615,126 +637,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             telemetry.addData("Y Position", y/COUNTS_PER_INCH);
             telemetry.update();
         }
-
-/*
-        //Begin Sampling
-        switch (mineralLocation){
-            case CENTER:
-                globalCoordinatePositionUpdate();
-                while(goToPosition(-16.5*COUNTS_PER_INCH, -2.25*COUNTS_PER_INCH, 0, 1.0, 0.6)
-                        && opModeIsActive()){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-                runtime.reset();
-                globalCoordinatePositionUpdate();
-                while(goToPosition(-23.5*COUNTS_PER_INCH, -2.25*COUNTS_PER_INCH, 0, 1.0, 0.4)
-                        && opModeIsActive() && runtime.milliseconds() < 1500){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-                while(goToPosition(-16.5*COUNTS_PER_INCH, -2.25*COUNTS_PER_INCH, 0, 1.0, 0.4)
-                        && opModeIsActive()){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-                break;
-            case LEFT:
-                globalCoordinatePositionUpdate();
-                while(goToPosition(-3*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 0, 0.5, 0.35)
-                        && opModeIsActive()){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                while(goToPosition(-16.5*COUNTS_PER_INCH, -17*COUNTS_PER_INCH, 0, 0.6, 0.4)
-                        && opModeIsActive()){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-                runtime.reset();
-                globalCoordinatePositionUpdate();
-                while(goToPosition(-23.5*COUNTS_PER_INCH, -17*COUNTS_PER_INCH, 0, 1.0, 0.4)
-                        && opModeIsActive() && runtime.milliseconds() < 1500){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-
-                break;
-            case RIGHT:
-                while(goToPosition(-3*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 0, 0.5, 0.35)
-                        && opModeIsActive()){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                while(goToPosition(-16.5*COUNTS_PER_INCH, 13.5*COUNTS_PER_INCH, 0, 1.0, 0.6)
-                        && opModeIsActive()){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-                runtime.reset();
-                globalCoordinatePositionUpdate();
-                while(goToPosition(-23.5*COUNTS_PER_INCH, 13.5*COUNTS_PER_INCH, 0, 1.0, 0.4)
-                        && opModeIsActive() && runtime.milliseconds() < 1500){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-                while(goToPosition(-16.5*COUNTS_PER_INCH, 13.5*COUNTS_PER_INCH, 0, 1.0, 0.4)
-                        && opModeIsActive()){
-                    globalCoordinatePositionUpdate();
-                    telemetry.addData("Moving to Position", "(-20, 17)");
-                    telemetry.update();
-                }
-                drive.stop();
-                globalCoordinatePositionUpdate();
-
-                break;
-        }
-
-        hang.setTargetPosition(0);
-
-        globalCoordinatePositionUpdate();
-        while(goToPosition(-15*COUNTS_PER_INCH, -45*COUNTS_PER_INCH, 0, DEFAULT_MAX_POWER, 0.25)
-                && opModeIsActive()){
-            globalCoordinatePositionUpdate();
-            telemetry.addData("Moving to Position", "(-20, 17)");
-            telemetry.update();
-        }
-        drive.stop();
-        globalCoordinatePositionUpdate();
-*/
-
-        //hang.setTargetPosition(0);
-        //hang.setPower(1);
 
     }
 
