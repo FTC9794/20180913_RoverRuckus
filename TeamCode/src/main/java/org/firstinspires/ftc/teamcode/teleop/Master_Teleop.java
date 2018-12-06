@@ -13,7 +13,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.INIT;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.ROTATION1;
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.EXTENDING;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.NOTHING;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositionState.ROTATING;
 
@@ -76,7 +75,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionIntakePostition = 640, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
+    final int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1500, extensionDumpPositionBlocks = 2000,
             rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
             rotationMaxPosition = 1200, rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
@@ -90,7 +89,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 610, intakeDrivingPosition = 390;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 580, intakeDrivingPosition = 390;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -180,6 +179,8 @@ public class Master_Teleop extends LinearOpMode {
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         intakeCurrentPosition = 0;
 
@@ -301,8 +302,6 @@ d
                 hangReady = true;
             }
 
-            telemetry.addData("hang limit", hangLimit.getState());
-            telemetry.addData("hang Position", hang.getCurrentPosition());
 
             /*
 
@@ -482,24 +481,17 @@ d
             switch(intakePositionState){
                 case NOTHING:
                     if(gamepad1.x){
-                        intakePositionState = EXTENDING;
+                        intakePositionState = ROTATING;
                         intakeCurrentPosition = intakeIntakePosition;
-                        mineralExtensionPosition = extensionIntakePostition;
+                        mineralRotationPosition = 0;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
                     }
                     break;
 
-                case EXTENDING:
-                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
-                        intakePositionState = ROTATING;
-                        mineralRotationPosition = 0;
-                    }
-                    break;
-
                 case ROTATING:
-                    if(!intakeRotation.isBusy()){
+                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()){
                         intakePositionState = NOTHING;
                     }
 
@@ -526,29 +518,29 @@ d
                     intake.setPower(1);
                     break;
                 case ROTATION1:
-                    if(!mineralRotation.isBusy()){
+                    if(mineralRotation.getCurrentPosition()>rotationExtendPosition-30){
                         mineralExtensionPosition = extensionDumpPositionBalls;
                         intakeCurrentPosition = intakeDumpPosition2;
+                        mineralRotationPosition = rotationExtendPosition;
                         depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
                     }
                     intake.setPower(1);
                     break;
                 case EXTENSIONINTAKEROTATION:
-                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                    if(mineralExtension.getCurrentPosition()>extensionDumpPositionBalls-500){
                         mineralRotationPosition = mineralRotationDumpBallPosition;
                         depositPositionState = depositingPositionState.ROTATION2;
                     }
 
                     break;
                 case ROTATION2:
-                    if(!mineralRotation.isBusy()){
+                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
                         //mineralExtensionPosition = extensionDumpPosition2;
                         depositPositionState = depositingPositionState.NOTHING;
                     }
                     break;
 
             }
-            telemetry.addData("dump state", depositPositionState.toString());
 
             switch (depositBlocksState){
                 case NOTHING:
@@ -578,14 +570,14 @@ d
                     intake.setPower(1);
                     break;
                 case EXTENSIONINTAKEROTATION:
-                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                    if(mineralExtension.getCurrentPosition()>extensionDumpPositionBlocks-1000){
                         mineralRotationPosition = mineralRotationDumpBlocksPosition;
                         depositBlocksState = depositingBlocksPositionState.ROTATION2;
                     }
 
                     break;
                 case ROTATION2:
-                    if(!mineralRotation.isBusy()){
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
                         //mineralExtensionPosition = extensionDumpPosition2;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                     }
@@ -649,9 +641,6 @@ d
                         hangCurrentPosition = hang.getCurrentPosition();
                     }
             }
-            telemetry.addData("hang state", currentHangingState);
-            telemetry.addData("hang distance sensor", latch_detector.getDistance(DistanceUnit.CM));
-
         }
     }
 }
