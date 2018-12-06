@@ -75,7 +75,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1460, extensionDumpPositionBlocks = 2000,
+    final int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1500, extensionDumpPositionBlocks = 2000,
             rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
             rotationMaxPosition = 1200, rotationDrivePosition = 390;
     final double mineralExtensionPower = .5;
@@ -179,6 +179,8 @@ public class Master_Teleop extends LinearOpMode {
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         intakeCurrentPosition = 0;
 
@@ -525,7 +527,7 @@ d
                     intake.setPower(1);
                     break;
                 case EXTENSIONINTAKEROTATION:
-                    if(mineralExtension.getCurrentPosition()>500){
+                    if(mineralExtension.getCurrentPosition()>extensionDumpPositionBalls-500){
                         mineralRotationPosition = mineralRotationDumpBallPosition;
                         depositPositionState = depositingPositionState.ROTATION2;
                     }
@@ -568,14 +570,14 @@ d
                     intake.setPower(1);
                     break;
                 case EXTENSIONINTAKEROTATION:
-                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                    if(mineralExtension.getCurrentPosition()>extensionDumpPositionBlocks-1000){
                         mineralRotationPosition = mineralRotationDumpBlocksPosition;
                         depositBlocksState = depositingBlocksPositionState.ROTATION2;
                     }
 
                     break;
                 case ROTATION2:
-                    if(!mineralRotation.isBusy()){
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
                         //mineralExtensionPosition = extensionDumpPosition2;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                     }
