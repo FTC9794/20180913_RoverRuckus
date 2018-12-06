@@ -90,7 +90,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 610, intakeDrivingPosition = 390;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 580, intakeDrivingPosition = 390;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -517,22 +517,23 @@ d
                     intake.setPower(1);
                     break;
                 case ROTATION1:
-                    if(!mineralRotation.isBusy()){
+                    if(mineralRotation.getCurrentPosition()>rotationExtendPosition-30){
                         mineralExtensionPosition = extensionDumpPositionBalls;
                         intakeCurrentPosition = intakeDumpPosition2;
+                        mineralRotationPosition = mineralRotationDumpBallPosition;
                         depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
                     }
                     intake.setPower(1);
                     break;
                 case EXTENSIONINTAKEROTATION:
-                    if(!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                    if(mineralExtension.getCurrentPosition()>300){
                         mineralRotationPosition = mineralRotationDumpBallPosition;
                         depositPositionState = depositingPositionState.ROTATION2;
                     }
 
                     break;
                 case ROTATION2:
-                    if(!mineralRotation.isBusy()){
+                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
                         //mineralExtensionPosition = extensionDumpPosition2;
                         depositPositionState = depositingPositionState.NOTHING;
                     }
