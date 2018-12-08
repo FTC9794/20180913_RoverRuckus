@@ -90,7 +90,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 560, intakeDrivingPosition = 390;
+    final int intakeDumpPosition = 140, intakeDumpReadyPosition = 173, intakeDumpPosition2 = 255,intakeDumpPosition3 = 237, intakeIntakePosition = 210, intakeDrivingPosition = 130;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
