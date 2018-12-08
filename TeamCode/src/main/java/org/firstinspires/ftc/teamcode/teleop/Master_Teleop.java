@@ -637,7 +637,7 @@ d
                 case NOTHING:
                     if(gamepad2.a&&hangReady){
                         currentHangingState = hangState.HANGING;
-                        hangCurrentPosition = hangLatchPosition;
+                        hangCurrentPosition = 0;
                     }
                     break;
                 case HANGING:
