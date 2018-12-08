@@ -30,7 +30,7 @@ public class Master_Teleop extends LinearOpMode {
     DcMotor rf, rb, lf, lb;
     Servo phoneServo;
     double[] drivePower = new double[4];
-    final double reducedPower = .75, phoneStoredPosition = .5;
+    final double reducedPower = .75, phoneStoredPosition = .5, rotationMinPower = .1;
 
 
     /*
@@ -48,6 +48,7 @@ public class Master_Teleop extends LinearOpMode {
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
     boolean hangReady = false;
+    boolean yPressedToggle  = false, yPressed = false, latchReady = false;
 
     Rev2mDistanceSensor latch_detector;
 
@@ -75,10 +76,10 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1500, extensionDumpPositionBlocks = 2000,
+    final int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1400, extensionDumpPositionBlocks = 2000,
             rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
             rotationMaxPosition = 1200, rotationDrivePosition = 390;
-    final double mineralExtensionPower = .5;
+    final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
     int mineralExtensionPosition, mineralRotationPosition;
     double mineralRotationPower;
 
@@ -89,7 +90,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 580, intakeDrivingPosition = 390;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 765,intakeDumpPosition3 = 710, intakeIntakePosition = 560, intakeDrivingPosition = 390;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -224,11 +225,11 @@ d
             if(hand.equals("left")){
                 pitch = -gamepad1.left_stick_y;
                 roll = gamepad1.left_stick_x;
-                pivot = gamepad1.right_stick_x;
+                pivot = gamepad1.right_stick_x*(turnMultiplier*mineralExtensionPosition+1);
             }else{
                 pitch = -gamepad1.right_stick_y;
                 roll = gamepad1.right_stick_x;
-                pivot = gamepad1.left_stick_x;
+                pivot = gamepad1.left_stick_x*(turnMultiplier*mineralExtensionPosition+1);
             }
 
             drivePower[0] = pitch-roll-pivot;
@@ -264,7 +265,6 @@ d
             hangUpPower = gamepad2.right_trigger;
             hangDownPower = gamepad2.left_trigger;
 
-
             if(hangUpPower>0){
                 hangCurrentPosition = hang.getCurrentPosition();
                 hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -285,6 +285,7 @@ d
                     hang.setPower(0);
                 }
                 hangReady = false;
+                latchReady = false;
                 currentHangingState = hangState.NOTHING;
 
             }else{
@@ -297,10 +298,16 @@ d
                 hang.setPower(1);
             }
 
-            if(gamepad2.y){
+            yPressed = gamepad2.y;
+            if(yPressed&&!yPressedToggle&&!latchReady){
                 hangCurrentPosition = hangReadyPosition;
+                latchReady = true;
+            }else if(yPressed&&!yPressedToggle&&latchReady){
+                hangCurrentPosition = hangLatchPosition;
+                latchReady = false;
                 hangReady = true;
             }
+            yPressedToggle = yPressed;
 
 
             /*
@@ -487,6 +494,7 @@ d
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
+                        intaking = true;
                     }
                     break;
 
@@ -544,6 +552,7 @@ d
 
             switch (depositBlocksState){
                 case NOTHING:
+                    /*
                     if(gamepad2.b){
                         intakeCurrentPosition = intakeIntakePosition;
                         mineralRotationPosition = rotationDrivePosition;
@@ -552,7 +561,7 @@ d
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
-                    }
+                    }*/
                     break;
                 case INIT:
                     if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
@@ -590,6 +599,7 @@ d
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
+                        intaking = false;
                         if(mineralRotation.getCurrentPosition()>rotationExtendPosition){
                             drivePositionState = drivingPositionState.ROTATION1;
                             mineralRotationPosition = rotationExtendPosition;
@@ -626,15 +636,10 @@ d
             switch(currentHangingState){
                 case NOTHING:
                     if(gamepad2.a&&hangReady){
-                        currentHangingState = hangState.LATCHING;
+                        currentHangingState = hangState.HANGING;
                         hangCurrentPosition = hangLatchPosition;
                     }
                     break;
-                case LATCHING:
-                    if(!hang.isBusy()){
-                        hangCurrentPosition = 0;
-                        currentHangingState = hangState.HANGING;
-                    }
                 case HANGING:
                     if(latch_detector.getDistance(DistanceUnit.CM) > hangHungPosition){
                         currentHangingState = hangState.NOTHING;
