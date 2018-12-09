@@ -50,9 +50,9 @@ public class VisionScanningTest extends LinearOpMode {
         runtime.reset();
 
         boolean found = genericDetector.isFound();
-        if(found && (genericDetector.getScreenPosition().x < 250 && genericDetector.getScreenPosition().y > 10)){
+        if(found && (genericDetector.getScreenPosition().x < 375 && genericDetector.getScreenPosition().y > 50)){
             mineralLocation = location.CENTER;
-        }else if (found && genericDetector.getScreenPosition().x > 450 && genericDetector.getScreenPosition().y > 10) {
+        }else if (found && genericDetector.getScreenPosition().x > 450 && genericDetector.getScreenPosition().y > 50) {
             mineralLocation = location.RIGHT;
         }
          else{

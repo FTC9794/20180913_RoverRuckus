@@ -205,7 +205,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
         waitMilliseconds(250, runtime);
 
-        hang.setTargetPosition(9640);
+        hang.setTargetPosition(9575);
         hang.setPower(1);
         runtime.reset();
         while(hang.isBusy() && opModeIsActive() && runtime.milliseconds() < 6000){
@@ -235,9 +235,9 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         //Scan for mineral
         globalCoordinatePositionUpdate();
         boolean found = genericDetector.isFound();
-        if(found && (genericDetector.getScreenPosition().x < 300)){
+        if(found && (genericDetector.getScreenPosition().x < 375)){
             mineralLocation = location.CENTER;
-        }else if (found && genericDetector.getScreenPosition().x > 375) {
+        }else if (found && genericDetector.getScreenPosition().x > 450) {
             mineralLocation = location.RIGHT;
         }
         else{
@@ -253,7 +253,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             }
 
             found = genericDetector.isFound();
-            if(found && genericDetector.getScreenPosition().x > 100) {
+            if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 40) {
                 mineralLocation = location.RIGHT;
             }else {
                 mineralLocation = location.LEFT;
@@ -262,6 +262,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         globalCoordinatePositionUpdate();
         genericDetector.disable();
         scanner.setPosition(0.5);
+        team_marker.setPosition(0.5);
 
         switch (mineralLocation){
             case LEFT:
@@ -280,6 +281,9 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
             case CENTER:
@@ -298,6 +302,9 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
             case RIGHT:
@@ -316,15 +323,18 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
         }
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(0);
-        hang.setPower(1);
+        //hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //hang.setTargetPosition(0);
+        //hang.setPower(1);
 
         for(int i = 0; i < depot.length; i++){
             double x = depot[i][X_POS_INDEX];

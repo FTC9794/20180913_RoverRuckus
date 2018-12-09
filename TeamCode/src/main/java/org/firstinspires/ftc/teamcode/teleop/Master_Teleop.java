@@ -19,7 +19,7 @@ import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.intakingPositi
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@TeleOp(name = "Master Teleop", group = "Teleop")
+@TeleOp(name = "\uD83C\uDFAE Master Teleop", group = "Teleop")
 public class Master_Teleop extends LinearOpMode {
 
     /*
@@ -90,7 +90,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 140, intakeDumpReadyPosition = 173, intakeDumpPosition2 = 255,intakeDumpPosition3 = 237, intakeIntakePosition = 210, intakeDrivingPosition = 130;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 640,intakeDumpPosition3 = 710, intakeIntakePosition = 560, intakeDrivingPosition = 390;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -475,6 +475,7 @@ d
             }
 
             telemetry.addData("Intake Rotation Position", intakeRotation.getCurrentPosition());
+            telemetry.addData("Hang Current Position", hang.getCurrentPosition());
             telemetry.update();
 
 

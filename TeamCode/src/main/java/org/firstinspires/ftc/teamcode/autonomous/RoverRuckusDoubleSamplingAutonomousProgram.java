@@ -252,7 +252,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
         waitMilliseconds(250, runtime);
 
-        hang.setTargetPosition(9640);
+        hang.setTargetPosition(9575);
         hang.setPower(1);
         runtime.reset();
         while(hang.isBusy() && opModeIsActive() && runtime.milliseconds() < 6000){
@@ -285,13 +285,13 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         //Scan for mineral
         globalCoordinatePositionUpdate();
         boolean found = genericDetector.isFound();
-        if(found && (genericDetector.getScreenPosition().x < 300 && genericDetector.getScreenPosition().y > 10)){
+        if(found && (genericDetector.getScreenPosition().x < 375 && genericDetector.getScreenPosition().y > 50)){
             mineralLocation = location.CENTER;
-        }else if (found && genericDetector.getScreenPosition().x > 375 && genericDetector.getScreenPosition().y > 10) {
-            mineralLocation = RIGHT;
+        }else if (found && genericDetector.getScreenPosition().x > 450 && genericDetector.getScreenPosition().y > 50) {
+            mineralLocation = location.RIGHT;
         }
         else{
-            while(opModeIsActive() && scanner.getPosition() < 0.6){
+            while(opModeIsActive() && scanner.getPosition() < rightPosition){
                 scanner.setPosition(scanner.getPosition() + 0.001);
                 telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
                 telemetry.update();
@@ -304,7 +304,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
             found = genericDetector.isFound();
             if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 40) {
-                mineralLocation = RIGHT;
+                mineralLocation = location.RIGHT;
             }else {
                 mineralLocation = location.LEFT;
             }
@@ -312,6 +312,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
         globalCoordinatePositionUpdate();
         genericDetector.disable();
+        teamMarkerServo.setPosition(0.5);
 
         switch (mineralLocation){
             case LEFT:
@@ -330,6 +331,9 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
             case CENTER:
@@ -348,6 +352,9 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
             case RIGHT:
@@ -366,15 +373,18 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
         }
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(0);
-        hang.setPower(1);
+        //hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //hang.setTargetPosition(0);
+        //hang.setPower(1);
 
         if(mineralLocation == RIGHT){
             for(int i = 0; i < depotRight.length; i++){
@@ -526,6 +536,12 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                 drive.stop();
             }
 
+//            while (opModeIsActive()){
+//                telemetry.addData("Ultrasonic Reading", rightWallPing.cmUltrasonic());
+//                telemetry.addData("Wall Correction", wallCorrection);
+//                telemetry.update();
+//            }
+
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 12*COUNTS_PER_INCH,
                     0, 36*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 45
@@ -567,7 +583,17 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             teamMarker.hold();
 
-            //Pivot to face alliance depot
+            //Drive to crater to park
+            drive.softResetEncoder();
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                    0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                    0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
+                    ,0.5*COUNTS_PER_INCH, 0));
+            drive.stop();
+
+            /*//Pivot to face alliance depot
             runtime.reset();
             while (opModeIsActive() && runtime.milliseconds() < 1500){
                 drive.pivot(225, 115, 1, 0.25, 50, 2, Direction.FASTEST);
@@ -624,7 +650,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 55*COUNTS_PER_INCH, 24*COUNTS_PER_INCH,
                     0, 45*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
                     ,0.5*COUNTS_PER_INCH, 0));
-            drive.stop();
+            drive.stop();*/
 
 
         }

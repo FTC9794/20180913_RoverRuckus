@@ -234,7 +234,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         waitMilliseconds(250, runtime);
 
-        hang.setTargetPosition(9640);
+        hang.setTargetPosition(9575);
         hang.setPower(1);
         runtime.reset();
         while(hang.isBusy() && opModeIsActive() && runtime.milliseconds() < 6000){
@@ -267,13 +267,13 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         //Scan for mineral
         globalCoordinatePositionUpdate();
         boolean found = genericDetector.isFound();
-        if(found && (genericDetector.getScreenPosition().x < 300 && genericDetector.getScreenPosition().y > 10)){
+        if(found && (genericDetector.getScreenPosition().x < 375 && genericDetector.getScreenPosition().y > 50)){
             mineralLocation = location.CENTER;
-        }else if (found && genericDetector.getScreenPosition().x > 375 && genericDetector.getScreenPosition().y > 10) {
+        }else if (found && genericDetector.getScreenPosition().x > 450 && genericDetector.getScreenPosition().y > 50) {
             mineralLocation = location.RIGHT;
         }
         else{
-            while(opModeIsActive() && scanner.getPosition() < 0.6){
+            while(opModeIsActive() && scanner.getPosition() < rightPosition){
                 scanner.setPosition(scanner.getPosition() + 0.001);
                 telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
                 telemetry.update();
@@ -295,6 +295,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
         globalCoordinatePositionUpdate();
         genericDetector.disable();
         scanner.setPosition(0.5);
+        teamMarkerServo.setPosition(0.5);
 
         switch (mineralLocation){
             case LEFT:
@@ -313,6 +314,9 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
             case CENTER:
@@ -331,6 +335,9 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
             case RIGHT:
@@ -349,15 +356,18 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                     }
                     drive.stop();
                     globalCoordinatePositionUpdate();
+                    if(i == 0){
+                        waitMilliseconds(1000, runtime);
+                    }
                 }
                 break;
         }
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(0);
-        hang.setPower(1);
+        //hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //hang.setTargetPosition(0);
+        //hang.setPower(1);
 
         for(int i = 0; i < depot.length; i++){
             double x = depot[i][X_POS_INDEX];
@@ -408,7 +418,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
         //Drive to alliance depot
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 33*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
                 0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
@@ -425,7 +435,7 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
                 0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         teamMarker.hold();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 64*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
                 0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
