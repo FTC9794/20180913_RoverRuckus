@@ -268,11 +268,11 @@ d
             if(hangUpPower>0){
                 hangCurrentPosition = hang.getCurrentPosition();
                 hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                if(hangCurrentPosition>hangMaxPosition){
-                    hang.setPower(0);
-                }else{
+                //if(hangCurrentPosition>hangMaxPosition){
+                  //  hang.setPower(0);
+                //}else{
                     hang.setPower(hangUpPower);
-                }
+                //}
                 hangReady = false;
                 currentHangingState = hangState.NOTHING;
             }else if(hangDownPower>0){
