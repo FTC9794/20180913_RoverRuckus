@@ -252,7 +252,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
         waitMilliseconds(250, runtime);
 
-        hang.setTargetPosition(9575);
+        hang.setTargetPosition(9600);
         hang.setPower(1);
         runtime.reset();
         while(hang.isBusy() && opModeIsActive() && runtime.milliseconds() < 6000){
