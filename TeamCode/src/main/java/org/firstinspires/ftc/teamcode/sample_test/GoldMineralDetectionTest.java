@@ -46,19 +46,19 @@ public class GoldMineralDetectionTest extends LinearOpMode {
                 //telemetry.addData("Rect", genericDetector.getRect().toString());
                 blockLocation = genericDetector.getScreenPosition();
                 if(blockLocation != null) {
-                    telemetry.addData("X Value", blockLocation.x);
-                    if (blockLocation.x < 100) {
+                    telemetry.addData("X Value", blockLocation.robotGlobalXPosition);
+                    if (blockLocation.robotGlobalXPosition < 100) {
                         telemetry.addData("Position", "Left");
-                    } else if (blockLocation.x < 400) {
+                    } else if (blockLocation.robotGlobalXPosition < 400) {
                         telemetry.addData("Position", "Center");
-                    } else if (blockLocation.x > 500) {
+                    } else if (blockLocation.robotGlobalXPosition > 500) {
                         telemetry.addData("Position", "Right");
                     }
                 }else{
                     telemetry.addData("Position", "Unknown");
                 }
-                telemetry.addData("X Position", genericDetector.getScreenPosition().x);
-                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.addData("X Position", genericDetector.getScreenPosition().robotGlobalXPosition);
+                telemetry.addData("Y Position", genericDetector.getScreenPosition().robotGlobalYPosition);
             }*/
             telemetry.addData("Is Found", genericDetector.isFound());
             telemetry.addData("Pos", genericDetector.getScreenPosition().toString());

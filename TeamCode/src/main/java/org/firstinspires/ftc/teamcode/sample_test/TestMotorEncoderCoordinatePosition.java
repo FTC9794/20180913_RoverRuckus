@@ -1,17 +1,13 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
-import android.media.AudioManager;
 import android.media.SoundPool;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.teamcode.DataLogger;
-import org.firstinspires.ftc.teamcode.R;
 
 import java.util.Date;
 
@@ -72,8 +68,8 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         data.addField("Angle");
         data.addField("p");
         data.addField("n");
-        data.addField("x");
-        data.addField("y");
+        data.addField("robotGlobalXPosition");
+        data.addField("robotGlobalYPosition");
         data.newLine();
 
 

@@ -1,25 +1,27 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
-import com.disnodeteam.dogecv.CameraViewDisplay;
-import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
-import org.firstinspires.ftc.teamcode.Enums.Direction;
-import org.firstinspires.ftc.teamcode.subsystems.GlobalCoordinatePositionUpdate;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.DataLogger;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
-import org.firstinspires.ftc.teamcode.subsystems.drivetrain.directional.TankDrive2W;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
-import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
+import org.firstinspires.ftc.teamcode.subsystems.team_marker.ITeamMarker;
+import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by Sarthak on 10/26/2018.
@@ -30,54 +32,81 @@ public class AutonomousTesting extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
+    DcMotor mineral_rotation;
     ArrayList motors, encoders;
 
-    GlobalCoordinatePositionUpdate coordinate;
-    Thread positionThread;
+    ITeamMarker teamMarker;
+    Servo team_marker;
+
+    Servo scanner;
+    Servo hang_latch;
+
+    DigitalChannel rotation_limit;
+
+    DcMotor hang;
 
     IIMU imu;
     BNO055IMU boschIMU;
 
-    ElapsedTime timer = new ElapsedTime();
-
     //Declare OpMode timers
     private ElapsedTime runtime = new ElapsedTime();
-    private ElapsedTime centertimer;
 
     //Define possible mineral locations in enum
     enum location {
         LEFT, CENTER, RIGHT, UNKNOWN
     };
 
-    //Create location object to store the mineral location data
-    location mineralLocation;
-
-    //Create detector to be used for the gold mineral
-    private GoldMineralDetector genericDetector = null;
-
-    //define constants for drive movement parameters
-    final double DEFAULT_MAX_POWER = .75;
-    final double DEFAULT_MIN_POWER = .25;
-    final double DEFAULT_MIN_POWER_PIVOT = .15;
-
     final double DEFAULT_ERROR_DISTANCE = 10;
 
     final double[] DEFAULT_PID = {.05};
-    final double[] DEFAULT_PID_STRAFE = {.03};
-
-    private double vlPos, vrPos, hPos;
-    private double prevLeft, prevRight, prevHorizontal;
-
     final double COUNTS_PER_INCH = 307.699557;
-    private final double length = 13.25 * COUNTS_PER_INCH;
 
-    private double changeInAngle = 0, angle = 0;
-    private double x = 0, y = 0;
+    //Position variables
+    double verticalRightEncoderWheelPosition = 0, verticalLeftEncoderWheelPosition = 0, normalEncoderWheelPosition = 0;
+    double robotGlobalXPosition = 0, robotGlobalYPosition = 0, robotOrientationRadians = 0;
+
+    double previousVerticalRightEncoderWheelPosition = 0, previousVerticalLeftEncoderWheelPosition = 0, prevNormalEncoderWheelPosition = 0;
+    double robotEncoderWheelDistance = 12.75 * COUNTS_PER_INCH;
+    final double normalEncoderWheelPositionAngleFromRotationAxis = 20.63;
+
+    double changeInRobotOrientation = 0;
+
+    final int X_POS_INDEX = 0;
+    final int Y_POS_INDEX = 1;
+    final int THETA_INDEX = 2;
+    final int MAX_POWER_INDEX = 3;
+    final int MIN_POWER_INDEX = 4;
+
+    double[][] testCoordinates;
+
+    File testCoordinatesFile = AppUtil.getInstance().getSettingsFile("testCoordinatesFile.txt");
+
+    DataLogger dataLogger;
+    Date date;
 
     @Override
     public void runOpMode() throws InterruptedException {
         //Init motor hardware map and behaviors
         setMotorBehaviors();
+
+        telemetry.addData("Status", "Read Scan Position File");
+        telemetry.update();
+
+        String fileText = ReadWriteFile.readFile(testCoordinatesFile);
+        String[] inputs = fileText.split("~");
+        testCoordinates = new double[inputs.length][5];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                testCoordinates[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Test Position File");
+        telemetry.update();
+
+        telemetry.addData("Status", "Read Depot Position File");
+        telemetry.update();
 
         telemetry.addData("Status", "Vision Initialized.");
 
@@ -91,20 +120,26 @@ public class AutonomousTesting extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
-
-        /*//Initialize Global Coordinate Position Thread
-        coordinate = new GlobalCoordinatePositionUpdate(verticalLeft, verticalRight, horizontal, telemetry);
-        positionThread = new Thread(coordinate);*/
-
         telemetry.addData("Status", "Init Complete");
         telemetry.update();
 
-        waitForStart();
-        globalCoordinatePositionUpdate();
-        runtime.reset();
+        teamMarker.hold();
 
-        //positionThread.start();
-        //coordinate.enableTelemetry();
+        date = new Date();
+        dataLogger = new DataLogger(date.toString() + "Autonomous Motion Testing Calculations");
+        dataLogger.addField("X");
+        dataLogger.addField("Y");
+        dataLogger.addField("X Distance");
+        dataLogger.addField("Y Distance");
+        dataLogger.addField("Power");
+        dataLogger.addField("Orientation");
+        dataLogger.addField("Orientation Difference");
+        dataLogger.addField("Move Angle");
+        dataLogger.addField("Move Angle Calculated");
+        dataLogger.newLine();
+
+        waitForStart();
+        runtime.reset();
 
         /**
          * *****************************************************************************************
@@ -115,118 +150,45 @@ public class AutonomousTesting extends LinearOpMode {
          */
 
         globalCoordinatePositionUpdate();
-
-        globalCoordinatePositionUpdate();
-        while(goToPosition(0*COUNTS_PER_INCH, 10*COUNTS_PER_INCH, 0, 0.35, 0.15)
-                && opModeIsActive()){
+        drive.softResetEncoder();
+        while (drive.move(drive.getEncoderDistance(), 24 * COUNTS_PER_INCH, 24 * COUNTS_PER_INCH, 0,
+                24 * COUNTS_PER_INCH, 1, 1, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 0)) {
             globalCoordinatePositionUpdate();
         }
-        drive.stop();
-
-        /*globalCoordinatePositionUpdate();
-        while(goToPosition(0*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, 0, 0.35, 0.15)
-                && opModeIsActive()){
-            globalCoordinatePositionUpdate();
-        }
-        drive.stop();
-
-        waitMilliseconds(1000, runtime);
-
-        globalCoordinatePositionUpdate();
-        while(goToPosition(24*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 0, 0.35, 0.15)
-                && opModeIsActive()){
+        while(opModeIsActive()){
+            telemetry.addData("Encoder Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
             globalCoordinatePositionUpdate();
             telemetry.update();
         }
-        drive.stop();
 
-        waitMilliseconds(1000, runtime);
-
-        globalCoordinatePositionUpdate();
-        while(goToPosition(24*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, 0, 0.35, 0.15)
-                && opModeIsActive()){
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-        }
-        drive.stop();
-
-        waitMilliseconds(1000, runtime);
-
-        globalCoordinatePositionUpdate();
-        while(goToPosition(0*COUNTS_PER_INCH, 0*COUNTS_PER_INCH, 90, 0.35, 0.15)
-                && opModeIsActive()){
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-        }
-        drive.stop();
-
-        waitMilliseconds(1000, runtime);
-
-        globalCoordinatePositionUpdate();
-        while(goToPosition(24*COUNTS_PER_INCH, 24*COUNTS_PER_INCH, -45, 0.35, 0.15)
-                && opModeIsActive()){
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-        }
-        drive.stop();
-
-        waitMilliseconds(1000, runtime);
-
-        globalCoordinatePositionUpdate();
-        while(goToPosition(-24*COUNTS_PER_INCH, 48*COUNTS_PER_INCH, 180, 0.35, 0.15)
-                && opModeIsActive()){
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-        }
-        drive.stop();
-*/
-        while (opModeIsActive()){
-            telemetry.addData("X Position", x/COUNTS_PER_INCH);
-            telemetry.addData("Y Position", y/COUNTS_PER_INCH);
-            telemetry.addData("Orientation", Math.toDegrees(angle));
-            //telemetry.addData("Thread Active", positionThread.isAlive());
-            telemetry.update();
-        }
-
-    }
-
-    /**
-     * Pivot the robot so that the robot can find the gold mineral. The robot wants to get the gold mineral in the camera frame
-     * @param scanRadius degrees to pivot, to scan for the mineral in each direction
-     * @return true if the block was found, false if the block was not found
-     */
-    private boolean scanBlock(double scanRadius){
-        //Determine if the block is already in the frame
-        boolean blockFound = genericDetector.isFound();
-
-        //Pivot to -scanRadius degrees. If the block is in the frame as the robot pivots, the pivot will stop
-        while(drive.pivot(-scanRadius, -30, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
-            if(genericDetector.isFound()){ //Record whether the gold mineral is in the frame
-                blockFound = true;
-            }
-            telemetry.addData("IMU Angle", imu.getZAngle());
-            telemetry.addData("Block Detected", genericDetector.isFound());
-            telemetry.update();
-        }
-
-        drive.stop();
-
-        //If the block wasn't in the frame after the first pivot, pivot to scanRadius degrees
-        if(!blockFound){
-            while(drive.pivot(scanRadius, 0, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
-                if(genericDetector.isFound()){
-                    blockFound = true;
-                }
-                telemetry.addData("IMU Angle", imu.getZAngle());
-                telemetry.addData("Block Detected", genericDetector.isFound());
+        for(int i = 0; i < testCoordinates.length; i++){
+            double x = testCoordinates[i][X_POS_INDEX];
+            double y = testCoordinates[i][Y_POS_INDEX];
+            double theta = testCoordinates[i][THETA_INDEX];
+            double maxPower = testCoordinates[i][MAX_POWER_INDEX];
+            double minPower = testCoordinates[i][MIN_POWER_INDEX];
+            while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                    && opModeIsActive()){
+                globalCoordinatePositionUpdate();
+                telemetry.addData("Moving to Position", "(" + x +", " + y +")");
+                telemetry.addData("Target Angle", theta);
                 telemetry.update();
             }
+            drive.stop();
+            waitMilliseconds(1000, runtime);
+            globalCoordinatePositionUpdate();
         }
 
-        //Return whether the block was found after the scan
-        return blockFound;
-    }
+        while (opModeIsActive()){
+            drive.stop();
+            globalCoordinatePositionUpdate();
+            telemetry.addData("Status", "Program Finished");
+            telemetry.addData("X Position", robotGlobalXPosition /COUNTS_PER_INCH);
+            telemetry.addData("Y Position", robotGlobalYPosition /COUNTS_PER_INCH);
+            telemetry.update();
+        }
 
+    }
     /**
      * Stop all actions for a specified amount of time (in milliseconds)
      * @param milliseconds amount of time to wait
@@ -236,7 +198,9 @@ public class AutonomousTesting extends LinearOpMode {
         //Reset the timer
         timer.reset();
         //Wait until the time inputted has fully elapsed
-        while(opModeIsActive() && timer.milliseconds() < milliseconds);
+        while(opModeIsActive() && timer.milliseconds() < milliseconds){
+            globalCoordinatePositionUpdate();
+        }
     }
 
     /**
@@ -244,15 +208,37 @@ public class AutonomousTesting extends LinearOpMode {
      */
     private void setMotorBehaviors(){
         //Hardware Map
-        right_front = hardwareMap.dcMotor.get("right_front");
-        right_back = hardwareMap.dcMotor.get("right_back");
-        left_front = hardwareMap.dcMotor.get("left_front");
-        left_back = hardwareMap.dcMotor.get("left_back");
+        right_front = hardwareMap.dcMotor.get("rf");
+        right_back = hardwareMap.dcMotor.get("rb");
+        left_front = hardwareMap.dcMotor.get("lf");
+        left_back = hardwareMap.dcMotor.get("lb");
 
-        verticalLeft = hardwareMap.dcMotor.get("right_front");
-        verticalRight = hardwareMap.dcMotor.get("right_back");
-        horizontal = hardwareMap.dcMotor.get("left_front");
-        horizontal2 = hardwareMap.dcMotor.get("left_back");
+        verticalLeft = hardwareMap.dcMotor.get("rf");
+        verticalRight = hardwareMap.dcMotor.get("rb");
+        horizontal = hardwareMap.dcMotor.get("lf");
+        horizontal2 = hardwareMap.dcMotor.get("lb");
+
+        mineral_rotation = hardwareMap.dcMotor.get("mineral_rotation");
+        mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineral_rotation.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        team_marker = hardwareMap.servo.get("marker_servo");
+        teamMarker = new ServoArmDrop(team_marker);
+
+        scanner = hardwareMap.servo.get("scanner");
+        scanner.setPosition(0.5);
+
+        hang_latch = hardwareMap.servo.get("hang_stopper");
+        hang_latch.setPosition(0);
+
+        rotation_limit = hardwareMap.digitalChannel.get("rotation_limit");
+
+        hang = hardwareMap.dcMotor.get("hang");
+        hang.setDirection(DcMotorSimple.Direction.REVERSE);
+        hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //Set motor behaviors
         right_front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -299,35 +285,41 @@ public class AutonomousTesting extends LinearOpMode {
 
     private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower){
 
-        double xDistance = targetX - x;
-        double yDistance = targetY - y;
-
-        double orientationDifference = targetOrientation - imu.getZAngle();
+        double xDistance = targetX - robotGlobalXPosition;
+        double yDistance = targetY - robotGlobalYPosition;
 
         double distance = distanceFormula(xDistance, yDistance);
-        double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
 
-        if (Math.abs(power) > maxPower){
-            power = maxPower;
-        }else if(Math.abs(power) < minPower){
-            power = minPower;
-        }
+        double robotOrientationDifference = targetOrientation - imu.getZAngle();
 
-        double moveAngle = 0;
-        moveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
+        double power = maxPower;
+
+        double robotMoveAngle;
+        robotMoveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
         if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
-            moveAngle += 180;
+            robotMoveAngle += 180;
         }
-        moveAngle = (moveAngle % 360) - (Math.toDegrees(angle));
+        robotMoveAngle = (robotMoveAngle % 360);
 
-        if(!(Math.abs(yDistance) < 0.5 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.5 * COUNTS_PER_INCH
-                && Math.abs(orientationDifference) < 2)){
+        dataLogger.addField((float) robotGlobalXPosition);
+        dataLogger.addField((float) robotGlobalYPosition);
+        dataLogger.addField((float) xDistance);
+        dataLogger.addField((float) yDistance);
+        dataLogger.addField((float) power);
+        dataLogger.addField((float) imu.getZAngle());
+        dataLogger.addField((float) robotOrientationDifference);
+        dataLogger.addField((float) robotMoveAngle);
+        dataLogger.addField((float) (robotMoveAngle - imu.getZAngle()));
+        dataLogger.newLine();
+
+        if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
+                && Math.abs(robotOrientationDifference) < 5)){
             drive.move(0, distance, distance, 0, distance, power, power,
-                    moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
-            telemetry.addData("Distance", distance/COUNTS_PER_INCH);
+                    robotMoveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
+            telemetry.addData("Encoder Distance", distance/COUNTS_PER_INCH);
             telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
             telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
-            telemetry.addData("Move Angle", moveAngle);
+            telemetry.addData("Move Angle", robotMoveAngle);
 
             return true;
         }else{
@@ -336,41 +328,36 @@ public class AutonomousTesting extends LinearOpMode {
 
     }
 
+    private void globalCoordinatePositionUpdate(){
+        //Get Current Positions
+        verticalLeftEncoderWheelPosition = verticalLeft.getCurrentPosition();
+        verticalRightEncoderWheelPosition = -verticalRight.getCurrentPosition();
+        normalEncoderWheelPosition = horizontal.getCurrentPosition();
+
+        double leftChange = verticalLeftEncoderWheelPosition - previousVerticalLeftEncoderWheelPosition;
+        double rightChange = verticalRightEncoderWheelPosition - previousVerticalRightEncoderWheelPosition;
+        double horizontalChange = normalEncoderWheelPosition - prevNormalEncoderWheelPosition;
+
+        //Calculate Angle
+        changeInRobotOrientation = (leftChange - rightChange) / (robotEncoderWheelDistance);
+        robotOrientationRadians = ((robotOrientationRadians + changeInRobotOrientation));
+
+        double p = ((rightChange + leftChange) / 2);
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(normalEncoderWheelPositionAngleFromRotationAxis));
+        robotGlobalXPosition = robotGlobalXPosition + (p*Math.sin(robotOrientationRadians) + n*Math.cos(robotOrientationRadians));
+        robotGlobalYPosition = robotGlobalYPosition + -(p*Math.cos(robotOrientationRadians) - n*Math.sin(robotOrientationRadians));
+
+        previousVerticalLeftEncoderWheelPosition = verticalLeftEncoderWheelPosition;
+        previousVerticalRightEncoderWheelPosition = verticalRightEncoderWheelPosition;
+        prevNormalEncoderWheelPosition = normalEncoderWheelPosition;
+
+        telemetry.addData("X Position", robotGlobalXPosition / COUNTS_PER_INCH);
+        telemetry.addData("Y Position", robotGlobalYPosition / COUNTS_PER_INCH);
+    }
+
     public double distanceFormula(double x, double y){
         double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
         return distance;
-    }
-
-    private void globalCoordinatePositionUpdate(){
-        //Get Current Positions
-        vlPos = verticalLeft.getCurrentPosition();
-        vrPos = verticalRight.getCurrentPosition();
-        hPos = horizontal.getCurrentPosition();
-
-        double leftChange = vlPos - prevLeft;
-        double rightChange = vrPos - prevRight;
-        double horizontalChange = hPos - prevHorizontal;
-
-        //Calculate Angle
-        changeInAngle = (leftChange - rightChange) / (length);
-        angle = ((angle + changeInAngle));
-
-        double p = ((rightChange + leftChange) / 2);
-        double n = horizontalChange;
-        x = x + (p*Math.sin(angle) + n*Math.cos(angle));
-        y = y + -(p*Math.cos(angle) - n*Math.sin(angle));
-
-        prevLeft = vlPos;
-        prevRight = vrPos;
-        prevHorizontal = hPos;
-
-        //telemetry.addData("Vertical Right Position", vrPos);
-        //telemetry.addData("Vertical Left Position", vlPos);
-        //telemetry.addData("Horizontal Position", hPos);
-        //telemetry.addData("Angle Radians", angle);
-        //telemetry.addData("Angle (Degrees)", Math.toDegrees(angle) % 360);
-        telemetry.addData("X Position", x / COUNTS_PER_INCH);
-        telemetry.addData("Y Position", y / COUNTS_PER_INCH);
     }
 
 }

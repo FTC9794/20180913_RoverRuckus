@@ -109,6 +109,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
     File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineral.txt");
     File depotFile = AppUtil.getInstance().getSettingsFile("depot.txt");
 
+    double distance = 0;
+
     @Override
     public void runOpMode() throws InterruptedException {
         //Init motor hardware map and behaviors
@@ -272,6 +274,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     double theta = leftMineral[i][THETA_INDEX];
                     double maxPower = leftMineral[i][MAX_POWER_INDEX];
                     double minPower = leftMineral[i][MIN_POWER_INDEX];
+                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -293,6 +296,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     double theta = centerMineral[i][THETA_INDEX];
                     double maxPower = centerMineral[i][MAX_POWER_INDEX];
                     double minPower = centerMineral[i][MIN_POWER_INDEX];
+                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -314,6 +318,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     double theta = rightMineral[i][THETA_INDEX];
                     double maxPower = rightMineral[i][MAX_POWER_INDEX];
                     double minPower = rightMineral[i][MIN_POWER_INDEX];
+                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -733,7 +738,7 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
             moveAngle += 180;
         }
-        moveAngle = (moveAngle % 360) - (Math.toDegrees(angle));
+        moveAngle = (moveAngle % 360);
 
 //        data.addField((float) x);
 //        data.addField((float) y);

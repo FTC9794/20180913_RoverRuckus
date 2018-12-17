@@ -128,6 +128,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
     File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineralDoubleAuto.txt");
     File depotFileMain = AppUtil.getInstance().getSettingsFile("depotDoubleAutoMain.txt");
     File depotFileRight = AppUtil.getInstance().getSettingsFile("depotDoubleAutoRight.txt");
+    double distance = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -322,6 +323,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                     double theta = leftMineral[i][THETA_INDEX];
                     double maxPower = leftMineral[i][MAX_POWER_INDEX];
                     double minPower = leftMineral[i][MIN_POWER_INDEX];
+                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -343,6 +345,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                     double theta = centerMineral[i][THETA_INDEX];
                     double maxPower = centerMineral[i][MAX_POWER_INDEX];
                     double minPower = centerMineral[i][MIN_POWER_INDEX];
+                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -364,6 +367,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                     double theta = rightMineral[i][THETA_INDEX];
                     double maxPower = rightMineral[i][MAX_POWER_INDEX];
                     double minPower = rightMineral[i][MIN_POWER_INDEX];
+                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -393,6 +397,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                 double theta = depotRight[i][THETA_INDEX];
                 double maxPower = depotRight[i][MAX_POWER_INDEX];
                 double minPower = depotRight[i][MIN_POWER_INDEX];
+                distance = distanceFormula(x - this.x, y - this.y);
                 while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
@@ -410,6 +415,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                 double theta = depotMain[i][THETA_INDEX];
                 double maxPower = depotMain[i][MAX_POWER_INDEX];
                 double minPower = depotMain[i][MIN_POWER_INDEX];
+                distance = distanceFormula(x - this.x, y - this.y);
                 while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                         && opModeIsActive()){
                     globalCoordinatePositionUpdate();
@@ -801,53 +807,52 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
     private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower){
 
-            double xDistance = targetX - x;
-            double yDistance = targetY - y;
+        double xDistance = targetX - x;
+        double yDistance = targetY - y;
 
-            double orientationDifference = targetOrientation - imu.getZAngle();
+        double orientationDifference = targetOrientation - imu.getZAngle();
 
-            double distance = distanceFormula(xDistance, yDistance);
-            double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
+        double distance = distanceFormula(xDistance, yDistance);
+        double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
 
-            if (Math.abs(power) > maxPower){
-                power = maxPower;
-            }else if(Math.abs(power) < minPower){
-                power = minPower;
-            }
-
-            double moveAngle = 0;
-            moveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
-            if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
-                moveAngle += 180;
-            }
-            moveAngle = (moveAngle % 360) - (Math.toDegrees(angle));
-
-            data.addField((float) x);
-            data.addField((float) y);
-            data.addField((float) orientationDifference);
-            data.addField((float) xDistance);
-            data.addField((float) yDistance);
-            data.addField((float) moveAngle);
-            data.addField((float) power);
-            data.addField((float) distance);
-            data.newLine();
-
-            if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
-                    && Math.abs(orientationDifference) < 5)){
-                drive.move(0, distance, distance, 0, distance, power, power,
-                        moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
-                telemetry.addData("Distance", distance/COUNTS_PER_INCH);
-                telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
-                telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
-                telemetry.addData("Move Angle", moveAngle);
-
-                return true;
-            }else{
-                notReset = false;
-                return false;
-            }
-
+        if (Math.abs(power) > maxPower){
+            power = maxPower;
+        }else if(Math.abs(power) < minPower){
+            power = minPower;
         }
+
+        double moveAngle = 0;
+        moveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
+        if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
+            moveAngle += 180;
+        }
+        moveAngle = (moveAngle % 360);
+
+        data.addField((float) x);
+        data.addField((float) y);
+        data.addField((float) orientationDifference);
+        data.addField((float) xDistance);
+        data.addField((float) yDistance);
+        data.addField((float) moveAngle);
+        data.addField((float) power);
+        data.newLine();
+
+        if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
+                && Math.abs(orientationDifference) < 5)){
+            drive.move(0, distance, distance, 0, distance, power, power,
+                    moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
+            telemetry.addData("Distance", distance/COUNTS_PER_INCH);
+            telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
+            telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
+            telemetry.addData("Move Angle", moveAngle);
+
+            return true;
+        }else{
+            notReset = false;
+            return false;
+        }
+
+    }
 
 
         private void globalCoordinatePositionUpdate(){

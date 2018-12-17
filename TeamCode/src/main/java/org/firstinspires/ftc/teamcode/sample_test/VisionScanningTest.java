@@ -18,7 +18,7 @@ public class VisionScanningTest extends LinearOpMode {
         LEFT, CENTER, RIGHT, UNKNOWN
     };
 
-    //Create location object to store the mineral location data
+    //Create location object to store the mineral location dataLogger
     location mineralLocation;
 
     //Create detector to be used for the gold mineral
