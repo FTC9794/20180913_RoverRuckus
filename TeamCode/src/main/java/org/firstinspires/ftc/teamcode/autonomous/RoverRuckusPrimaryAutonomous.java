@@ -77,19 +77,17 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
     final double DEFAULT_ERROR_DISTANCE = 10;
 
     final double[] DEFAULT_PID = {.02};
-    final double[] DEFAULT_PID_STRAFE = {.03};
     final double COUNTS_PER_INCH = 307.699557;
 
     //Position variables
-    double vrPos = 0, vlPos = 0, hPos = 0;
-    double x = 0, y = 0, angle = 0;
+    double verticalRightEncoderWheelPosition = 0, verticalLeftEncoderWheelPosition = 0, normalEncoderWheelPosition = 0;
+    double robotGlobalXPosition = 0, robotGlobalYPosition = 0, robotOrientationRadians = 0;
 
-    double prevRight = 0, prevLeft = 0, prevHorizontal = 0;
-    double length = 12.75 * COUNTS_PER_INCH;
-    final double alpha = 20.63;
+    double previousVerticalRightEncoderWheelPosition = 0, previousVerticalLeftEncoderWheelPosition = 0, prevNormalEncoderWheelPosition = 0;
+    double robotEncoderWheelDistance = 12.75 * COUNTS_PER_INCH;
+    final double normalEncoderWheelPositionAngleFromRotationAxis = 20.63;
 
-    double changeInPosition = 0, changeInAngle = 0;
-    double changeInX = 0, changeInY = 0;
+    double changeInRobotOrientation = 0;
 
     ModernRoboticsI2cRangeSensor rightWallPing;
 
@@ -108,8 +106,6 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
     File middleMineralPositionFile = AppUtil.getInstance().getSettingsFile("centerMineral.txt");
     File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineral.txt");
     File depotFile = AppUtil.getInstance().getSettingsFile("depot.txt");
-
-    double distance = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -274,7 +270,6 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     double theta = leftMineral[i][THETA_INDEX];
                     double maxPower = leftMineral[i][MAX_POWER_INDEX];
                     double minPower = leftMineral[i][MIN_POWER_INDEX];
-                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -296,7 +291,6 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     double theta = centerMineral[i][THETA_INDEX];
                     double maxPower = centerMineral[i][MAX_POWER_INDEX];
                     double minPower = centerMineral[i][MIN_POWER_INDEX];
-                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -318,7 +312,6 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
                     double theta = rightMineral[i][THETA_INDEX];
                     double maxPower = rightMineral[i][MAX_POWER_INDEX];
                     double minPower = rightMineral[i][MIN_POWER_INDEX];
-                    distance = distanceFormula(x - this.x, y - this.y);
                     while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
                             && opModeIsActive()){
                         globalCoordinatePositionUpdate();
@@ -413,8 +406,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");
-            telemetry.addData("X Position", x/COUNTS_PER_INCH);
-            telemetry.addData("Y Position", y/COUNTS_PER_INCH);
+            telemetry.addData("X Position", robotGlobalXPosition /COUNTS_PER_INCH);
+            telemetry.addData("Y Position", robotGlobalYPosition /COUNTS_PER_INCH);
             telemetry.update();
         }
 
@@ -577,8 +570,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");
-            telemetry.addData("X Position", x/COUNTS_PER_INCH);
-            telemetry.addData("Y Position", y/COUNTS_PER_INCH);
+            telemetry.addData("X Position", robotGlobalXPosition/COUNTS_PER_INCH);
+            telemetry.addData("Y Position", robotGlobalYPosition/COUNTS_PER_INCH);
             telemetry.update();
         }*/
 
@@ -719,8 +712,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
     private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower){
 
-        double xDistance = targetX - x;
-        double yDistance = targetY - y;
+        double xDistance = targetX - robotGlobalXPosition;
+        double yDistance = targetY - robotGlobalYPosition;
 
         double orientationDifference = targetOrientation - imu.getZAngle();
 
@@ -740,8 +733,8 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
         }
         moveAngle = (moveAngle % 360);
 
-//        data.addField((float) x);
-//        data.addField((float) y);
+//        data.addField((float) robotGlobalXPosition);
+//        data.addField((float) robotGlobalYPosition);
 //        data.addField((float) orientationDifference);
 //        data.addField((float) xDistance);
 //        data.addField((float) yDistance);
@@ -769,29 +762,29 @@ public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
 
     private void globalCoordinatePositionUpdate(){
         //Get Current Positions
-        vlPos = verticalLeft.getCurrentPosition();
-        vrPos = -verticalRight.getCurrentPosition();
-        hPos = horizontal.getCurrentPosition();
+        verticalLeftEncoderWheelPosition = verticalLeft.getCurrentPosition();
+        verticalRightEncoderWheelPosition = -verticalRight.getCurrentPosition();
+        normalEncoderWheelPosition = horizontal.getCurrentPosition();
 
-        double leftChange = vlPos - prevLeft;
-        double rightChange = vrPos - prevRight;
-        double horizontalChange = hPos - prevHorizontal;
+        double leftChange = verticalLeftEncoderWheelPosition - previousVerticalLeftEncoderWheelPosition;
+        double rightChange = verticalRightEncoderWheelPosition - previousVerticalRightEncoderWheelPosition;
+        double horizontalChange = normalEncoderWheelPosition - prevNormalEncoderWheelPosition;
 
         //Calculate Angle
-        changeInAngle = (leftChange - rightChange) / (length);
-        angle = ((angle + changeInAngle));
+        changeInRobotOrientation = (leftChange - rightChange) / (robotEncoderWheelDistance);
+        robotOrientationRadians = (robotOrientationRadians + changeInRobotOrientation);
 
         double p = ((rightChange + leftChange) / 2);
-        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(alpha));
-        x = x + (p*Math.sin(angle) + n*Math.cos(angle));
-        y = y + -(p*Math.cos(angle) - n*Math.sin(angle));
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(normalEncoderWheelPositionAngleFromRotationAxis));
+        robotGlobalXPosition = robotGlobalXPosition + (p*Math.sin(robotOrientationRadians) + n*Math.cos(robotOrientationRadians));
+        robotGlobalYPosition = robotGlobalYPosition + -(p*Math.cos(robotOrientationRadians) - n*Math.sin(robotOrientationRadians));
 
-        prevLeft = vlPos;
-        prevRight = vrPos;
-        prevHorizontal = hPos;
+        previousVerticalLeftEncoderWheelPosition = verticalLeftEncoderWheelPosition;
+        previousVerticalRightEncoderWheelPosition = verticalRightEncoderWheelPosition;
+        prevNormalEncoderWheelPosition = normalEncoderWheelPosition;
 
-        telemetry.addData("X Position", x / COUNTS_PER_INCH);
-        telemetry.addData("Y Position", y / COUNTS_PER_INCH);
+        telemetry.addData("X Position", robotGlobalXPosition / COUNTS_PER_INCH);
+        telemetry.addData("Y Position", robotGlobalYPosition / COUNTS_PER_INCH);
     }
 
     public double distanceFormula(double x, double y){
