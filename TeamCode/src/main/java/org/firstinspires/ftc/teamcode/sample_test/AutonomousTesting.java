@@ -77,9 +77,9 @@ public class AutonomousTesting extends LinearOpMode {
     final int MAX_POWER_INDEX = 3;
     final int MIN_POWER_INDEX = 4;
 
-    double[][] testCoordinates;
+    //double[][] testCoordinates;
 
-    File testCoordinatesFile = AppUtil.getInstance().getSettingsFile("testCoordinatesFile.txt");
+    File moveAngle = AppUtil.getInstance().getSettingsFile("moveAngle.txt");
 
     DataLogger dataLogger;
     Date date;
@@ -89,26 +89,8 @@ public class AutonomousTesting extends LinearOpMode {
         //Init motor hardware map and behaviors
         setMotorBehaviors();
 
-        telemetry.addData("Status", "Read Scan Position File");
-        telemetry.update();
-
-        String fileText = ReadWriteFile.readFile(testCoordinatesFile);
-        String[] inputs = fileText.split("~");
-        testCoordinates = new double[inputs.length][5];
-        for(int i = 0; i < inputs.length; i++){
-            String[] params = inputs[i].split(",");
-            for(int j = 0; j < params.length; j++){
-                testCoordinates[i][j] = Double.parseDouble(params[j]);
-            }
-        }
-
-        telemetry.addData("Status", "Read Test Position File");
-        telemetry.update();
-
-        telemetry.addData("Status", "Read Depot Position File");
-        telemetry.update();
-
-        telemetry.addData("Status", "Vision Initialized.");
+        String fileText = ReadWriteFile.readFile(moveAngle);
+        int moveAngle = Integer.parseInt(fileText.trim());
 
         //Initialize IMU
         boschIMU = hardwareMap.get(BNO055IMU.class, "imu");
@@ -121,21 +103,16 @@ public class AutonomousTesting extends LinearOpMode {
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
         telemetry.addData("Status", "Init Complete");
+        telemetry.addData("Move Angle", moveAngle);
         telemetry.update();
 
-        teamMarker.hold();
-
         date = new Date();
-        dataLogger = new DataLogger(date.toString() + "Autonomous Motion Testing Calculations");
-        dataLogger.addField("X");
-        dataLogger.addField("Y");
-        dataLogger.addField("X Distance");
-        dataLogger.addField("Y Distance");
+        dataLogger = new DataLogger(date.toString() + "Autonomous Motion Testing Calculations Move Angle " + moveAngle);
+        dataLogger.addField("X (Inches)");
+        dataLogger.addField("Y (Inches)");
+        dataLogger.addField("Raw Encoder Distance (Inches)");
         dataLogger.addField("Power");
         dataLogger.addField("Orientation");
-        dataLogger.addField("Orientation Difference");
-        dataLogger.addField("Move Angle");
-        dataLogger.addField("Move Angle Calculated");
         dataLogger.newLine();
 
         waitForStart();
@@ -152,40 +129,24 @@ public class AutonomousTesting extends LinearOpMode {
         globalCoordinatePositionUpdate();
         drive.softResetEncoder();
         while (drive.move(drive.getEncoderDistance(), 24 * COUNTS_PER_INCH, 24 * COUNTS_PER_INCH, 0,
-                24 * COUNTS_PER_INCH, 1, 1, 0, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 0)) {
+                24 * COUNTS_PER_INCH, 1, 1, moveAngle, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 0)) {
             globalCoordinatePositionUpdate();
+            telemetry.update();
+            dataLogger.addField((float) (this.robotGlobalXPosition/COUNTS_PER_INCH));
+            dataLogger.addField((float) (this.robotGlobalYPosition/COUNTS_PER_INCH));
+            dataLogger.addField((float) (drive.getEncoderDistance()/COUNTS_PER_INCH));
+            dataLogger.addField((float) 1);
+            dataLogger.addField((float) imu.getZAngle());
         }
         while(opModeIsActive()){
             telemetry.addData("Encoder Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
             globalCoordinatePositionUpdate();
             telemetry.update();
-        }
-
-        for(int i = 0; i < testCoordinates.length; i++){
-            double x = testCoordinates[i][X_POS_INDEX];
-            double y = testCoordinates[i][Y_POS_INDEX];
-            double theta = testCoordinates[i][THETA_INDEX];
-            double maxPower = testCoordinates[i][MAX_POWER_INDEX];
-            double minPower = testCoordinates[i][MIN_POWER_INDEX];
-            while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
-                    && opModeIsActive()){
-                globalCoordinatePositionUpdate();
-                telemetry.addData("Moving to Position", "(" + x +", " + y +")");
-                telemetry.addData("Target Angle", theta);
-                telemetry.update();
-            }
-            drive.stop();
-            waitMilliseconds(1000, runtime);
-            globalCoordinatePositionUpdate();
-        }
-
-        while (opModeIsActive()){
-            drive.stop();
-            globalCoordinatePositionUpdate();
-            telemetry.addData("Status", "Program Finished");
-            telemetry.addData("X Position", robotGlobalXPosition /COUNTS_PER_INCH);
-            telemetry.addData("Y Position", robotGlobalYPosition /COUNTS_PER_INCH);
-            telemetry.update();
+            dataLogger.addField((float) (this.robotGlobalXPosition/COUNTS_PER_INCH));
+            dataLogger.addField((float) (this.robotGlobalYPosition/COUNTS_PER_INCH));
+            dataLogger.addField((float) (drive.getEncoderDistance()/COUNTS_PER_INCH));
+            dataLogger.addField((float) 1);
+            dataLogger.addField((float) imu.getZAngle());
         }
 
     }
