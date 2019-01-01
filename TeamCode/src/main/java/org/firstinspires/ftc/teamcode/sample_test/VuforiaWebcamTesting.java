@@ -32,8 +32,7 @@ package org.firstinspires.ftc.teamcode.sample_test;
 import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
-import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -45,6 +44,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +72,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 
 @TeleOp(name="Vuforia Webcam Testing", group="DogeCV")
 
-public class VuforiaWebcamTesting extends OpMode
+public class VuforiaWebcamTesting extends LinearOpMode
 {
 
     private ElapsedTime runtime = new ElapsedTime();
@@ -90,10 +90,10 @@ public class VuforiaWebcamTesting extends OpMode
     WebcamName webcamNameLeft;
     List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
 
-    GoldAlignDetector detector;
+    GoldMineralDetector detector;
 
     @Override
-    public void init() {
+    public void runOpMode() {
         webcamNameLeft = hardwareMap.get(WebcamName.class, "Webcam 1");
 
 
@@ -105,7 +105,13 @@ public class VuforiaWebcamTesting extends OpMode
 
         parameters.cameraName = webcamNameLeft;
 
+        telemetry.addData("Init", "Webcam and License Key Set");
+        telemetry.update();
+
         vuforia = new Dogeforia(parameters);
+        telemetry.addData("Init", "Dogeforia Params Set");
+        telemetry.update();
+
         vuforia.enableConvertFrameToBitmap();
 
         VuforiaTrackables targetsRoverRuckus = this.vuforia.loadTrackablesFromAsset("RoverRuckus");
@@ -118,9 +124,14 @@ public class VuforiaWebcamTesting extends OpMode
         VuforiaTrackable backSpace = targetsRoverRuckus.get(3);
         backSpace.setName("Back-Space");
 
+        telemetry.addData("Init", "Set Trackables Names");
+        telemetry.update();
+
         // For convenience, gather together all the trackable objects in one easily-iterable collection */
 
         allTrackables.addAll(targetsRoverRuckus);
+        telemetry.addData("Init", "Added Trackables");
+        telemetry.update();
 
         OpenGLMatrix blueRoverLocationOnField = OpenGLMatrix
                 .translation(0, mmFTCFieldWidth, mmTargetHeight)
@@ -142,6 +153,8 @@ public class VuforiaWebcamTesting extends OpMode
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90));
         backSpace.setLocation(backSpaceLocationOnField);
 
+        telemetry.addData("Init", "Set Target Locations");
+        telemetry.update();
 
         final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // eg: Camera is 110 mm in front of robot center
         final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // eg: Camera is 200 mm above ground
@@ -159,82 +172,61 @@ public class VuforiaWebcamTesting extends OpMode
 
         targetsRoverRuckus.activate();
 
-        detector = new GoldAlignDetector();
+        detector = new GoldMineralDetector();
         detector.init(hardwareMap.appContext,CameraViewDisplay.getInstance(), 0, true);
         detector.useDefaults();
         detector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
 
+        telemetry.addData("Init", "Set up detector");
+        telemetry.update();
+
         vuforia.setDogeCVDetector(detector);
         vuforia.enableDogeCV();
         vuforia.showDebug();
         vuforia.start();
 
-
-    }
-
-    @Override
-    public void init_loop() {
-    }
-
-    /*
-     * Code to run ONCE when the driver hits PLAY
-     */
-    @Override
-    public void start() {
-        runtime.reset();
-    }
-
-
-    @Override
-    public void loop() {
-        targetVisible = false;
-        for (VuforiaTrackable trackable : allTrackables) {
-            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
-                telemetry.addData("Visible Target", trackable.getName());
-                targetVisible = true;
-
-                // getUpdatedRobotLocation() will return null if no new information is available since
-                // the last time that call was made, or if the trackable is not currently visible.
-                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
-                if (robotLocationTransform != null) {
-                    lastLocation = robotLocationTransform;
-                }
-                break;
-            }
-        }
-
-        // Provide feedback as to where the robot is located (if we know).
-        if (targetVisible) {
-            // express position (translation) of robot in inches.
-            VectorF translation = lastLocation.getTranslation();
-            telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                    translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
-
-            // express the rotation of the robot in degrees.
-            Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
-            telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-        }
-        else {
-            telemetry.addData("Visible Target", "none");
-        }
-
-
+        telemetry.addData("Init", "Complete");
         telemetry.update();
 
+        waitForStart();
+
+        while(opModeIsActive()) {
+            targetVisible = false;
+            for (VuforiaTrackable trackable : allTrackables) {
+                if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
+                    telemetry.addData("Visible Target", trackable.getName());
+                    targetVisible = true;
+
+                    // getUpdatedRobotLocation() will return null if no new information is available since
+                    // the last time that call was made, or if the trackable is not currently visible.
+                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
+                    if (robotLocationTransform != null) {
+                        lastLocation = robotLocationTransform;
+                    }
+                    break;
+                }
+            }
+
+            // Provide feedback as to where the robot is located (if we know).
+            if (targetVisible) {
+                // express position (translation) of robot in inches.
+                VectorF translation = lastLocation.getTranslation();
+                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+
+                // express the rotation of the robot in degrees.
+                Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+            } else {
+                telemetry.addData("Visible Target", "none");
+            }
+            telemetry.addData("Detector X POS", detector.getScreenPosition().x);
+            telemetry.update();
 
 
+        }
 
     }
-
-    /*
-     * Code to run ONCE after the driver hits STOP
-     */
-    @Override
-    public void stop() {
-        vuforia.stop();
-
-    }
-
 }
