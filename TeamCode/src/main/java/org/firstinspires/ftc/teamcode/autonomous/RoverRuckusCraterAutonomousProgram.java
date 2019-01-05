@@ -4,7 +4,8 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 
 import com.disnodeteam.dogecv.CameraViewDisplay;
-import com.disnodeteam.dogecv.filters.LeviColorFilter;
+import com.disnodeteam.dogecv.DogeCV;
+import com.disnodeteam.dogecv.Dogeforia;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -16,6 +17,13 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.DataLogger;
 import org.firstinspires.ftc.teamcode.Enums.Direction;
@@ -31,15 +39,24 @@ import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
+import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
+import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.FRONT;
 
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "\uD83E\uDD16 Crater Autonomous", group = "Autonomous")
+@Autonomous(name = "Crater Autonomous", group = "Autonomous")
 public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
-    DcMotor mineral_rotation;
+    DcMotor mineral_rotation, mineralExtension;
+    DcMotor intakeRotation;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
 
@@ -58,8 +75,23 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     Servo teamMarkerServo;
 
     Servo scanner;
-    double rightPosition = 0.6;
-    double leftPosition = 0.35;
+    double rightPosition = 0.7;
+    double leftPosition = 0.3;
+
+    private static final float mmPerInch        = 25.4f;
+    private static final float mmFTCFieldWidth  = (12*6) * mmPerInch;       // the width of the FTC field (from the center point to the outer panels)
+    private static final float mmTargetHeight   = (6) * mmPerInch;          // the height of the center of the target image above the floor
+
+    // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.
+    // Valid choices are:  BACK or FRONT
+    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
+
+    private OpenGLMatrix lastLocation = null;
+    boolean targetVisible;
+    Dogeforia vuforia;
+    WebcamName webcamNameLeft;
+    List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
+
 
     DataLogger data;
     Date date;
@@ -79,7 +111,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     boolean notReset = false;
 
     //Create detector to be used for the gold mineral
-    private GoldMineralDetector genericDetector = null;
+    private GoldMineralDetector detector = null;
 
     //define constants for drive movement parameters
     final double DEFAULT_MAX_POWER = .75;
@@ -103,6 +135,9 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
     SoundPool sound;
     int beepID;
+
+    double motorPowerRampDownStartPosition = 10 * COUNTS_PER_INCH;
+    double motorPowerRampDownEndPosition = 5 * COUNTS_PER_INCH;
 
     final int X_POS_INDEX = 0;
     final int Y_POS_INDEX = 1;
@@ -180,9 +215,100 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         //Init motor hardware map and behaviors
         setMotorBehaviors();
 
-        genericDetector = new GoldMineralDetector();
-        genericDetector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
-        genericDetector.colorFilter = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW);
+        webcamNameLeft = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = "AWbfTmn/////AAABmY0xuIe3C0RHvL3XuzRxyEmOT2OekXBSbqN2jot1si3OGBObwWadfitJR/D6Vk8VEBiW0HG2Q8UAEd0//OliF9aWCRmyDJ1mMqKCJZxpZemfT5ELFuWnJIZWUkKyjQfDNe2RIaAh0ermSxF4Bq77IDFirgggdYJoRIyi2Ys7Gl9lD/tSonV8OnldIN/Ove4/MtEBJTKHqjUEjC5U2khV+26AqkeqbxhFTNiIMl0LcmSSfugGhmWFGFtuPtp/+flPBRGoBO+tSl9P2sV4mSUBE/WrpHqB0Jd/tAmeNvbtgQXtZEGYc/9NszwRLVNl9k13vrBcgsiNxs2UY5xAvA4Wb6LN7Yu+tChwc+qBiVKAQe09\n";
+        parameters.fillCameraMonitorViewParent = true;
+
+        parameters.cameraName = webcamNameLeft;
+
+        telemetry.addData("Init", "Webcam and License Key Set");
+        telemetry.update();
+
+        vuforia = new Dogeforia(parameters);
+        telemetry.addData("Init", "Dogeforia Params Set");
+        telemetry.update();
+
+        vuforia.enableConvertFrameToBitmap();
+
+        VuforiaTrackables targetsRoverRuckus = this.vuforia.loadTrackablesFromAsset("RoverRuckus");
+        VuforiaTrackable blueRover = targetsRoverRuckus.get(0);
+        blueRover.setName("Blue-Rover");
+        VuforiaTrackable redFootprint = targetsRoverRuckus.get(1);
+        redFootprint.setName("Red-Footprint");
+        VuforiaTrackable frontCraters = targetsRoverRuckus.get(2);
+        frontCraters.setName("Front-Craters");
+        VuforiaTrackable backSpace = targetsRoverRuckus.get(3);
+        backSpace.setName("Back-Space");
+
+        telemetry.addData("Init", "Set Trackables Names");
+        telemetry.update();
+
+        // For convenience, gather together all the trackable objects in one easily-iterable collection */
+
+        allTrackables.addAll(targetsRoverRuckus);
+        telemetry.addData("Init", "Added Trackables");
+        telemetry.update();
+
+        OpenGLMatrix blueRoverLocationOnField = OpenGLMatrix
+                .translation(0, mmFTCFieldWidth, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0));
+        blueRover.setLocation(blueRoverLocationOnField);
+
+        OpenGLMatrix redFootprintLocationOnField = OpenGLMatrix
+                .translation(0, -mmFTCFieldWidth, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180));
+        redFootprint.setLocation(redFootprintLocationOnField);
+
+        OpenGLMatrix frontCratersLocationOnField = OpenGLMatrix
+                .translation(-mmFTCFieldWidth, 0, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0 , 90));
+        frontCraters.setLocation(frontCratersLocationOnField);
+
+        OpenGLMatrix backSpaceLocationOnField = OpenGLMatrix
+                .translation(mmFTCFieldWidth, 0, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90));
+        backSpace.setLocation(backSpaceLocationOnField);
+
+        telemetry.addData("Init", "Set Target Locations");
+        telemetry.update();
+
+        final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // eg: Camera is 200 mm above ground
+        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
+
+        OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
+                .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
+                        CAMERA_CHOICE == FRONT ? 90 : -90, 0, 0));
+
+        for (VuforiaTrackable trackable : allTrackables)
+        {
+            ((VuforiaTrackableDefaultListener)trackable.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+        }
+
+        targetsRoverRuckus.activate();
+
+        detector = new GoldMineralDetector();
+        detector.init(hardwareMap.appContext,CameraViewDisplay.getInstance(), 0, true);
+        detector.useDefaults();
+        detector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
+        //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
+        detector.downscale = 0.8;
+
+        telemetry.addData("Init", "Set up detector");
+        telemetry.update();
+
+        vuforia.setDogeCVDetector(detector);
+        vuforia.showDebug();
+        vuforia.start();
+
+        telemetry.addData("Vision Init", "Complete");
+        telemetry.update();
 
         centertimer = new ElapsedTime();
 
@@ -226,70 +352,75 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
+        //Release Hang Latch
         hang_latch.setPosition(1);
+        waitMilliseconds(750, runtime);
 
-        waitMilliseconds(250, runtime);
-
-        hang.setTargetPosition(9600);
+        //Delatch from hanger
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.setTargetPosition(4900);
         hang.setPower(1);
+        mineral_rotation.setTargetPosition(170);
+        mineral_rotation.setPower(1);
+        intakeRotation.setTargetPosition(250);
+        intakeRotation.setPower(1);
+
         runtime.reset();
-        while(hang.isBusy() && opModeIsActive() && runtime.milliseconds() < 6000){
+        while(hang.isBusy() && opModeIsActive()){
+            if(!mineral_rotation.isBusy()){
+                if(rotation_limit.getState()){
+                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    mineral_rotation.setPower(-0.15);
+                }else{
+                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    mineral_rotation.setPower(0);
+                }
+            }
             telemetry.addData("hang pos", hang.getCurrentPosition());
             telemetry.update();
         }
         hang.setPower(0);
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        genericDetector.enable();
-        runtime.reset();
-
-        mineral_rotation.setTargetPosition(200);
-        mineral_rotation.setPower(1);
-
-        waitMilliseconds(1000, runtime);
-
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        while(opModeIsActive() && rotation_limit.getState()){
-            mineral_rotation.setPower(-0.15);
-        }
-        mineral_rotation.setPower(0);
-
-        while(runtime.milliseconds() < 1250 && opModeIsActive());
-
+        vuforia.enableDogeCV();
+        waitMilliseconds(750, runtime);
 
         //Scan for mineral
         globalCoordinatePositionUpdate();
 
         //Scan for mineral
         globalCoordinatePositionUpdate();
-        boolean found = genericDetector.isFound();
-        if(found && (genericDetector.getScreenPosition().x < 375 && genericDetector.getScreenPosition().y > 50)){
+        boolean found = detector.isFound();
+        if(found && detector.getScreenPosition().y > 140){
             mineralLocation = location.CENTER;
-        }else if (found && genericDetector.getScreenPosition().x > 450 && genericDetector.getScreenPosition().y > 50) {
+        }else if (found && detector.getScreenPosition().x > 450 && detector.getScreenPosition().y > 140) {
             mineralLocation = location.RIGHT;
         }
         else{
-            while(opModeIsActive() && scanner.getPosition() < rightPosition){
-                scanner.setPosition(scanner.getPosition() + 0.001);
-                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+            while(opModeIsActive() && scanner.getPosition() > leftPosition){
+                scanner.setPosition(scanner.getPosition() - 0.001);
+                telemetry.addData("Y Position", detector.getScreenPosition().y);
                 telemetry.update();
             }
             runtime.reset();
             while(runtime.milliseconds() < 1000 && opModeIsActive()){
-                telemetry.addData("Y Position", genericDetector.getScreenPosition().y);
+                telemetry.addData("Y Position", detector.getScreenPosition().y);
                 telemetry.update();
             }
 
-            found = genericDetector.isFound();
-            if(found && genericDetector.getScreenPosition().x > 100 && genericDetector.getScreenPosition().y > 40) {
-                mineralLocation = location.RIGHT;
-            }else {
+            found = detector.isFound();
+            if(found && detector.getScreenPosition().y > 140) {
                 mineralLocation = location.LEFT;
+            }else {
+                mineralLocation = location.RIGHT;
             }
         }
 
+        vuforia.disableDogeCV();
+
         globalCoordinatePositionUpdate();
-        genericDetector.disable();
         scanner.setPosition(0.5);
         teamMarkerServo.setPosition(0.5);
 
@@ -361,10 +492,6 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        //hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //hang.setTargetPosition(0);
-        //hang.setPower(1);
-
         for(int i = 0; i < depot.length; i++){
             double x = depot[i][X_POS_INDEX];
             double y = depot[i][Y_POS_INDEX];
@@ -381,6 +508,12 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             drive.stop();
             globalCoordinatePositionUpdate();
         }
+
+        intakeRotation.setTargetPosition(10);
+        intakeRotation.setPower(1);
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        hang.setTargetPosition(750);
+        hang.setPower(0.5);
 
         //Pivot to face alliance depot
         runtime.reset();
@@ -415,7 +548,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         //Drive to alliance depot
         drive.softResetEncoder();
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 33*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -215 , DEFAULT_PID, -45
+                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
 
@@ -427,14 +560,20 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Drive to crater to park
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        teamMarker.hold();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 64*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 55*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                0, 55*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
+                ,0.5*COUNTS_PER_INCH, 0)){
+            if(drive.getEncoderDistance() > 25 * COUNTS_PER_INCH){
+                teamMarker.hold();
+            }
+            telemetry.addData("Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
+            telemetry.update();
+        }
         drive.stop();
+
+        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setTargetPosition(1000);
+        mineralExtension.setPower(1);
 
         while (opModeIsActive()){
             drive.stop();
@@ -445,43 +584,6 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             telemetry.update();
         }
 
-    }
-
-    /**
-     * Pivot the robot so that the robot can find the gold mineral. The robot wants to get the gold mineral in the camera frame
-     * @param scanRadius degrees to pivot, to scan for the mineral in each direction
-     * @return true if the block was found, false if the block was not found
-     */
-    private boolean scanBlock(double scanRadius){
-        //Determine if the block is already in the frame
-        boolean blockFound = genericDetector.isFound();
-
-        //Pivot to -scanRadius degrees. If the block is in the frame as the robot pivots, the pivot will stop
-        while(drive.pivot(-scanRadius, -30, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
-            if(genericDetector.isFound()){ //Record whether the gold mineral is in the frame
-                blockFound = true;
-            }
-            telemetry.addData("IMU Angle", imu.getZAngle());
-            telemetry.addData("Block Detected", genericDetector.isFound());
-            telemetry.update();
-        }
-
-        drive.stop();
-
-        //If the block wasn't in the frame after the first pivot, pivot to scanRadius degrees
-        if(!blockFound){
-            while(drive.pivot(scanRadius, 0, 0.2, 0.15, 500, 1, Direction.FASTEST) && !blockFound &&opModeIsActive()){
-                if(genericDetector.isFound()){
-                    blockFound = true;
-                }
-                telemetry.addData("IMU Angle", imu.getZAngle());
-                telemetry.addData("Block Detected", genericDetector.isFound());
-                telemetry.update();
-            }
-        }
-
-        //Return whether the block was found after the scan
-        return blockFound;
     }
 
     /**
@@ -515,6 +617,16 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        mineralExtension = hardwareMap.dcMotor.get("mineral_extension");
+        mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         teamMarkerServo = hardwareMap.servo.get("marker_servo");
         teamMarker = new ServoArmDrop(teamMarkerServo);
@@ -584,51 +696,58 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         double xDistance = targetX - robotGlobalXPosition;
         double yDistance = targetY - robotGlobalYPosition;
 
-        double orientationDifference = targetOrientation - imu.getZAngle();
-
         double distance = distanceFormula(xDistance, yDistance);
-        double power = (distance/COUNTS_PER_INCH) * DEFAULT_PID[0];
 
-        if (Math.abs(power) > maxPower){
+        double robotOrientationDifference = targetOrientation - imu.getZAngle();
+
+        //double power = maxPower;
+        double power;
+        if(distance > motorPowerRampDownStartPosition){
             power = maxPower;
-        }else if(Math.abs(power) < minPower){
+        }else if (distance < motorPowerRampDownEndPosition){
             power = minPower;
+        }else{
+            double motorRampDownPositionDifference = motorPowerRampDownStartPosition - motorPowerRampDownEndPosition;
+            double distanceRampDownDifference = distance - motorPowerRampDownEndPosition;
+            power = -((minPower-maxPower)/(motorRampDownPositionDifference))*(distanceRampDownDifference) + minPower;
         }
 
-        double moveAngle = 0;
-        moveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
+        double robotMoveAngle;
+        robotMoveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
         if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
-            moveAngle += 180;
+            robotMoveAngle += 180;
         }
-        moveAngle = (moveAngle % 360);
+        robotMoveAngle = (robotMoveAngle % 360);
 
-            data.addField((float) robotGlobalXPosition);
-            data.addField((float) robotGlobalYPosition);
-            data.addField((float) orientationDifference);
-            data.addField((float) xDistance);
-            data.addField((float) yDistance);
-            data.addField((float) moveAngle);
-            data.addField((float) power);
-            data.newLine();
+        /*dataLogger.addField((float) robotGlobalXPosition);
+        dataLogger.addField((float) robotGlobalYPosition);
+        dataLogger.addField((float) xDistance);
+        dataLogger.addField((float) yDistance);
+        dataLogger.addField((float) power);
+        dataLogger.addField((float) imu.getZAngle());
+        dataLogger.addField((float) robotOrientationDifference);
+        dataLogger.addField((float) robotMoveAngle);
+        dataLogger.addField((float) (robotMoveAngle - imu.getZAngle()));
+        dataLogger.newLine();*/
 
         if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
-                && Math.abs(orientationDifference) < 5)){
+                && Math.abs(robotOrientationDifference) < 5)){
             drive.move(0, distance, distance, 0, distance, power, power,
-                    moveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
-            telemetry.addData("Distance", distance/COUNTS_PER_INCH);
+                    robotMoveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
+            telemetry.addData("Encoder Distance", distance/COUNTS_PER_INCH);
             telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
             telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
-            telemetry.addData("Move Angle", moveAngle);
+            telemetry.addData("Move Angle", robotMoveAngle);
 
             return true;
         }else{
-            notReset = false;
             return false;
         }
+
     }
 
 
-        private void globalCoordinatePositionUpdate(){
+    private void globalCoordinatePositionUpdate(){
         //Get Current Positions
         verticalLeftEncoderWheelPosition = verticalLeft.getCurrentPosition();
         verticalRightEncoderWheelPosition = -verticalRight.getCurrentPosition();

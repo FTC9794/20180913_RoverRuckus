@@ -71,15 +71,22 @@ public class AutonomousTesting extends LinearOpMode {
 
     double changeInRobotOrientation = 0;
 
+    double motorPowerRampDownStartPosition = 10 * COUNTS_PER_INCH;
+    double motorPowerRampDownEndPosition = 5 * COUNTS_PER_INCH;
+
+    final double DEFAULT_MAX_POWER = 0.75, DEFAULT_MIN_POWER = 0.15, DEFAULT_MIN_POWER_STRAFE = 0.25;
+
     final int X_POS_INDEX = 0;
     final int Y_POS_INDEX = 1;
     final int THETA_INDEX = 2;
     final int MAX_POWER_INDEX = 3;
     final int MIN_POWER_INDEX = 4;
 
-    //double[][] testCoordinates;
+    double[][] testCoordinates;
 
     File moveAngle = AppUtil.getInstance().getSettingsFile("moveAngle.txt");
+    File testCoordinatesFile = AppUtil.getInstance().getSettingsFile("testCoordinates.txt");
+
 
     DataLogger dataLogger;
     Date date;
@@ -91,6 +98,19 @@ public class AutonomousTesting extends LinearOpMode {
 
         String fileText = ReadWriteFile.readFile(moveAngle);
         int moveAngle = Integer.parseInt(fileText.trim());
+
+        fileText = ReadWriteFile.readFile(testCoordinatesFile);
+        String[] inputs = fileText.split("~");
+        testCoordinates = new double[inputs.length][5];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                testCoordinates[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Test Position File");
+        telemetry.update();
 
         //Initialize IMU
         boschIMU = hardwareMap.get(BNO055IMU.class, "imu");
@@ -106,14 +126,14 @@ public class AutonomousTesting extends LinearOpMode {
         telemetry.addData("Move Angle", moveAngle);
         telemetry.update();
 
-        date = new Date();
+        /*date = new Date();
         dataLogger = new DataLogger(date.toString() + "Autonomous Motion Testing Calculations Move Angle " + moveAngle);
         dataLogger.addField("X (Inches)");
         dataLogger.addField("Y (Inches)");
         dataLogger.addField("Raw Encoder Distance (Inches)");
         dataLogger.addField("Power");
         dataLogger.addField("Orientation");
-        dataLogger.newLine();
+        dataLogger.newLine();*/
 
         waitForStart();
         runtime.reset();
@@ -127,6 +147,26 @@ public class AutonomousTesting extends LinearOpMode {
          */
 
         globalCoordinatePositionUpdate();
+
+        for(int i = 0; i < testCoordinates.length; i++){
+            double x = testCoordinates[i][X_POS_INDEX];
+            double y = testCoordinates[i][Y_POS_INDEX];
+            double theta = testCoordinates[i][THETA_INDEX];
+            double maxPower = testCoordinates[i][MAX_POWER_INDEX];
+            double minPower = testCoordinates[i][MIN_POWER_INDEX];
+            while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
+                    && opModeIsActive()){
+                globalCoordinatePositionUpdate();
+                telemetry.addData("Moving to Position", "(" + x +", " + y +")");
+                telemetry.addData("Target Angle", theta);
+                telemetry.update();
+            }
+            drive.stop();
+            waitMilliseconds(500, runtime);
+            globalCoordinatePositionUpdate();
+        }
+
+        /*globalCoordinatePositionUpdate();
         drive.softResetEncoder();
         while (drive.getEncoderDistance() < 24*COUNTS_PER_INCH && opModeIsActive()) {
             drive.move(drive.getEncoderDistance(), 30 * COUNTS_PER_INCH, 30 * COUNTS_PER_INCH, 0,
@@ -141,16 +181,17 @@ public class AutonomousTesting extends LinearOpMode {
         }
         globalCoordinatePositionUpdate();
         drive.stop();
-        globalCoordinatePositionUpdate();
+        globalCoordinatePositionUpdate();*/
+
         while(opModeIsActive()){
-            telemetry.addData("Encoder Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
+            //telemetry.addData("Encoder Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
             globalCoordinatePositionUpdate();
             telemetry.update();
-            dataLogger.addField((float) (this.robotGlobalXPosition/COUNTS_PER_INCH));
+            /*dataLogger.addField((float) (this.robotGlobalXPosition/COUNTS_PER_INCH));
             dataLogger.addField((float) (this.robotGlobalYPosition/COUNTS_PER_INCH));
             dataLogger.addField((float) (drive.getEncoderDistance()/COUNTS_PER_INCH));
             dataLogger.addField((float) 1);
-            dataLogger.addField((float) imu.getZAngle());
+            dataLogger.addField((float) imu.getZAngle());*/
         }
 
     }
@@ -257,7 +298,17 @@ public class AutonomousTesting extends LinearOpMode {
 
         double robotOrientationDifference = targetOrientation - imu.getZAngle();
 
-        double power = maxPower;
+        //double power = maxPower;
+        double power;
+        if(distance > motorPowerRampDownStartPosition){
+            power = maxPower;
+        }else if (distance < motorPowerRampDownEndPosition){
+            power = minPower;
+        }else{
+            double motorRampDownPositionDifference = motorPowerRampDownStartPosition - motorPowerRampDownEndPosition;
+            double distanceRampDownDifference = distance - motorPowerRampDownEndPosition;
+            power = -((minPower-maxPower)/(motorRampDownPositionDifference))*(distanceRampDownDifference) + minPower;
+        }
 
         double robotMoveAngle;
         robotMoveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
@@ -266,7 +317,7 @@ public class AutonomousTesting extends LinearOpMode {
         }
         robotMoveAngle = (robotMoveAngle % 360);
 
-        dataLogger.addField((float) robotGlobalXPosition);
+        /*dataLogger.addField((float) robotGlobalXPosition);
         dataLogger.addField((float) robotGlobalYPosition);
         dataLogger.addField((float) xDistance);
         dataLogger.addField((float) yDistance);
@@ -275,7 +326,7 @@ public class AutonomousTesting extends LinearOpMode {
         dataLogger.addField((float) robotOrientationDifference);
         dataLogger.addField((float) robotMoveAngle);
         dataLogger.addField((float) (robotMoveAngle - imu.getZAngle()));
-        dataLogger.newLine();
+        dataLogger.newLine();*/
 
         if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
                 && Math.abs(robotOrientationDifference) < 5)){

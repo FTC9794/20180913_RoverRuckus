@@ -17,10 +17,11 @@ import java.util.ArrayList;
 /**
  * Created by Sarthak on 1/5/2019.
  */
-@Autonomous (name = "Hand Delatch and Mineral Mechanism Positioning Test", group = "Test")
+@Autonomous (name = "Hang Delatch and Mineral Mechanism Positioning Test", group = "Test")
 public class HangDelatchMineralInitTest extends LinearOpMode {
     DcMotor right_front, right_back, left_front, left_back;
     DcMotor mineral_rotation;
+    DcMotor intakeRotation;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
 
@@ -61,31 +62,42 @@ public class HangDelatchMineralInitTest extends LinearOpMode {
          */
         //Release Hang Latch
         hang_latch.setPosition(1);
-        waitMilliseconds(250, runtime);
+        waitMilliseconds(750, runtime);
 
         //Delatch from hanger
+        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setTargetPosition(4900);
         hang.setPower(1);
+        mineral_rotation.setTargetPosition(170);
+        mineral_rotation.setPower(1);
+        intakeRotation.setTargetPosition(250);
+        intakeRotation.setPower(1);
+
         runtime.reset();
-        while(hang.isBusy() && opModeIsActive() && runtime.milliseconds() < 6000){
+        while(hang.isBusy() && opModeIsActive()){
+            if(!mineral_rotation.isBusy()){
+                if(rotation_limit.getState()){
+                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    mineral_rotation.setPower(-0.15);
+                }else{
+                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    mineral_rotation.setPower(0);
+                }
+            }
             telemetry.addData("hang pos", hang.getCurrentPosition());
             telemetry.update();
         }
         hang.setPower(0);
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        /*//Raise mineral arm
-        runtime.reset();
-        mineral_rotation.setTargetPosition(200);
-        mineral_rotation.setPower(1);
-
-        waitMilliseconds(500, runtime);
-
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        while(opModeIsActive() && rotation_limit.getState()){
-            mineral_rotation.setPower(-0.15);
+        while(opModeIsActive()){
+            telemetry.addData("Hang Current Position", hang.getCurrentPosition());
+            telemetry.addData("Mineral Rotation Current Position", mineral_rotation.getCurrentPosition());
+            telemetry.addData("Intake Rotation Current Position", intakeRotation.getCurrentPosition());
+            telemetry.update();
         }
-        mineral_rotation.setPower(0);*/
     }
 
     /**
@@ -119,6 +131,11 @@ public class HangDelatchMineralInitTest extends LinearOpMode {
         mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         teamMarkerServo = hardwareMap.servo.get("marker_servo");
         teamMarker = new ServoArmDrop(teamMarkerServo);

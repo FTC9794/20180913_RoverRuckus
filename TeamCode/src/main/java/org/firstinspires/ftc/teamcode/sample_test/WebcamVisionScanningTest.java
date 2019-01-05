@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.sample_test;
 import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -29,6 +30,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Created by Sarthak on 1/5/2019.
  */
+@Autonomous (name = "Webcam Vision Scanning Test", group = "Test")
 public class WebcamVisionScanningTest extends LinearOpMode {
     //Define possible mineral locations in enum
     enum location {
@@ -38,8 +40,8 @@ public class WebcamVisionScanningTest extends LinearOpMode {
     location mineralLocation;
 
     Servo scanner;
-    double rightPosition = 0.6;
-    double leftPosition = 0.35;
+    double rightPosition = 0.7;
+    double leftPosition = 0.3;
 
     ElapsedTime runtime = new ElapsedTime();
 
@@ -179,8 +181,8 @@ public class WebcamVisionScanningTest extends LinearOpMode {
             mineralLocation = location.RIGHT;
         }
         else{
-            while(opModeIsActive() && scanner.getPosition() < rightPosition){
-                scanner.setPosition(scanner.getPosition() + 0.001);
+            while(opModeIsActive() && scanner.getPosition() > leftPosition){
+                scanner.setPosition(scanner.getPosition() - 0.001);
                 telemetry.addData("Y Position", detector.getScreenPosition().y);
                 telemetry.update();
             }
@@ -192,11 +194,14 @@ public class WebcamVisionScanningTest extends LinearOpMode {
 
             found = detector.isFound();
             if(found && detector.getScreenPosition().y > 140) {
-                mineralLocation = location.RIGHT;
-            }else {
                 mineralLocation = location.LEFT;
+            }else {
+                mineralLocation = location.RIGHT;
             }
         }
+
+        vuforia.disableDogeCV();
+
         while (opModeIsActive()){
             if(gamepad1.dpad_right){
                 scanner.setPosition(scanner.getPosition() + 0.001);
@@ -205,10 +210,10 @@ public class WebcamVisionScanningTest extends LinearOpMode {
             }
 
             telemetry.addData("Status", "Program Finished");
-            telemetry.addData("Mineral Found", detector.isFound());
+            //telemetry.addData("Mineral Found", detector.isFound());
             telemetry.addData("Mineral Location", mineralLocation);
-            telemetry.addData("X Position", detector.getScreenPosition().x);
-            telemetry.addData("Y Position", detector.getScreenPosition().y);
+            //telemetry.addData("X Position", detector.getScreenPosition().x);
+            //telemetry.addData("Y Position", detector.getScreenPosition().y);
             telemetry.addData("Servo Position", scanner.getPosition());
             telemetry.update();
         }
