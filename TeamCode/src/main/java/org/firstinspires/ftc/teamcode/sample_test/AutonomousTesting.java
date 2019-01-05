@@ -128,8 +128,9 @@ public class AutonomousTesting extends LinearOpMode {
 
         globalCoordinatePositionUpdate();
         drive.softResetEncoder();
-        while (drive.move(drive.getEncoderDistance(), 24 * COUNTS_PER_INCH, 24 * COUNTS_PER_INCH, 0,
-                24 * COUNTS_PER_INCH, 1, 1, moveAngle, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 0)) {
+        while (drive.getEncoderDistance() < 24*COUNTS_PER_INCH && opModeIsActive()) {
+            drive.move(drive.getEncoderDistance(), 30 * COUNTS_PER_INCH, 30 * COUNTS_PER_INCH, 0,
+                    30 * COUNTS_PER_INCH, 1, 1, moveAngle, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 0);
             globalCoordinatePositionUpdate();
             telemetry.update();
             dataLogger.addField((float) (this.robotGlobalXPosition/COUNTS_PER_INCH));
@@ -138,6 +139,9 @@ public class AutonomousTesting extends LinearOpMode {
             dataLogger.addField((float) 1);
             dataLogger.addField((float) imu.getZAngle());
         }
+        globalCoordinatePositionUpdate();
+        drive.stop();
+        globalCoordinatePositionUpdate();
         while(opModeIsActive()){
             telemetry.addData("Encoder Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
             globalCoordinatePositionUpdate();
