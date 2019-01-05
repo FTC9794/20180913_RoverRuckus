@@ -37,7 +37,7 @@ import static org.firstinspires.ftc.teamcode.autonomous.RoverRuckusDoubleSamplin
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "Double Sampling Autonomous", group = "Autonomous")
+@Autonomous(name = "\uD83E\uDD16 Double Sampling Autonomous", group = "Autonomous")
 public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;

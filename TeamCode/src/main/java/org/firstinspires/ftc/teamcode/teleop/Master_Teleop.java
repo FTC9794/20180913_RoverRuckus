@@ -173,6 +173,7 @@ public class Master_Teleop extends LinearOpMode {
 
          */
         intake = hardwareMap.crservo.get("intake");
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
 
         latch_detector = (Rev2mDistanceSensor) hardwareMap.get("latch_detector");

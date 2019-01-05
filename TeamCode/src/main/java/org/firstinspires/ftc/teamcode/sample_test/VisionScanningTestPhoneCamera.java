@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 /**
  * Created by Sarthak on 11/12/2018.
  */
-@Autonomous(name = "Vision Scanning Test", group ="Test")
-public class VisionScanningTest extends LinearOpMode {
+@Autonomous(name = "Phone Camera Vision Scanning Test", group ="Test")
+public class VisionScanningTestPhoneCamera extends LinearOpMode {
     //Define possible mineral locations in enum
     enum location {
         LEFT, CENTER, RIGHT, UNKNOWN

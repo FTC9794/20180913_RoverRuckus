@@ -28,8 +28,8 @@ import java.util.ArrayList;
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@Autonomous(name = "Depot Autonomous", group = "Autonomous")
-public class RoverRuckusPrimaryAutonomous extends LinearOpMode {
+@Autonomous(name = "\uD83E\uDD16 Depot Autonomous", group = "Autonomous")
+public class RoverRuckusDepotAutonomous extends LinearOpMode {
 
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;

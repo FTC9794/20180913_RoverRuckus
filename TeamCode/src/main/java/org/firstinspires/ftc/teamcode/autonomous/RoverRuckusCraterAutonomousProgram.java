@@ -35,8 +35,8 @@ import java.util.Date;
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "Crater Autonomous", group = "Autonomous")
-public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
+@Autonomous(name = "\uD83E\uDD16 Crater Autonomous", group = "Autonomous")
+public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
     DcMotor mineral_rotation;
@@ -63,8 +63,6 @@ public class RoverRuckusSecondaryAutonomousProgram extends LinearOpMode {
 
     DataLogger data;
     Date date;
-
-    ElapsedTime timer = new ElapsedTime();
 
     //Declare OpMode timers
     private ElapsedTime runtime = new ElapsedTime();
