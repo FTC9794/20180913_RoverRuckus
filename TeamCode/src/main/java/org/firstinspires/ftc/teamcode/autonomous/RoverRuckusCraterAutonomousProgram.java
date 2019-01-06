@@ -155,6 +155,10 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineralCraterAuto.txt");
     File depotFile = AppUtil.getInstance().getSettingsFile("depotCraterAuto.txt");
 
+    File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
+    File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
+    File intakeRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("intakeRotationEncoderPosition.txt");
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -575,7 +579,14 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         mineralExtension.setTargetPosition(1000);
         mineralExtension.setPower(1);
 
+        boolean write = false;
         while (opModeIsActive()){
+            if(!mineralExtension.isBusy() && !write){
+                ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
+                ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+                ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
+                write = true;
+            }
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");

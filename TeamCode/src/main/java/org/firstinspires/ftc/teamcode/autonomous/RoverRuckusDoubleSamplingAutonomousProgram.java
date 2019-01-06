@@ -162,6 +162,10 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
     File depotFileMain = AppUtil.getInstance().getSettingsFile("depotDoubleAutoMain.txt");
     File depotFileRight = AppUtil.getInstance().getSettingsFile("depotDoubleAutoRight.txt");
 
+    File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
+    File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
+    File intakeRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("intakeRotationEncoderPosition.txt");
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -801,7 +805,14 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
         }
 
+        boolean write = false;
         while (opModeIsActive()){
+            if(!mineralExtension.isBusy() && !write){
+                ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
+                ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+                ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
+                write = true;
+            }
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");

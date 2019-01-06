@@ -8,8 +8,12 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+
+import java.io.File;
 
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.INIT;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop.depositingPositionState.ROTATION1;
@@ -43,7 +47,7 @@ public class Master_Teleop extends LinearOpMode {
     DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 5300, hangMaxPosition = 10750, hangLatchPosition = 8100, hangHungPosition = 13;
+    final int hangReadyPosition = 2640, hangMaxPosition = 5000, hangLatchPosition = 3560, hangHungPosition = 13;
     final double hangStopperStoredPosition = 1;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
@@ -76,12 +80,6 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor mineralRotation, mineralExtension;
     DigitalChannel rotationLimit;
-    final int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1400, extensionDumpPositionBlocks = 2000,
-            rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
-            rotationMaxPosition = 1200, rotationDrivePosition = 390;
-    final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
-    int mineralExtensionPosition, mineralRotationPosition;
-    double mineralRotationPower;
 
     /*
 
@@ -90,7 +88,7 @@ public class Master_Teleop extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 640,intakeDumpPosition3 = 710, intakeIntakePosition = 560, intakeDrivingPosition = 390;
+    final int intakeDumpPosition = 420, intakeDumpReadyPosition = 520, intakeDumpPosition2 = 640,intakeDumpPosition3 = 710, intakeIntakePosition = 650, intakeDrivingPosition = 390;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -99,6 +97,8 @@ public class Master_Teleop extends LinearOpMode {
 
     boolean intakePressed = false;
     boolean intaking = false;
+
+    File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -165,15 +165,26 @@ public class Master_Teleop extends LinearOpMode {
         mineralRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        int mineralExtensionPositionAuto = Integer.parseInt(ReadWriteFile.readFile(mineralExtensionEncoderPosition).trim());
+        String fileText = ReadWriteFile.readFile(mineralExtensionEncoderPosition);
+
+        int mineralExtensionPosition, mineralRotationPosition;
+        double mineralRotationPower;
+        int mineralExtensionOffset = mineralExtensionPositionAuto;
         mineralExtensionPosition = 0;
         mineralRotationPosition = 0;
+
+        final int extensionMaxPosition = 2700 - mineralExtensionOffset, extensionDumpPositionBalls = 1400 - mineralExtensionOffset,
+                extensionDumpPositionBlocks = 2000 - mineralExtensionOffset,
+                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
+                rotationMaxPosition = 1200, rotationDrivePosition = 390;
+        final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
         /*
 
         Mineral Intake initialization
 
          */
         intake = hardwareMap.crservo.get("intake");
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
 
         latch_detector = (Rev2mDistanceSensor) hardwareMap.get("latch_detector");
@@ -183,7 +194,6 @@ public class Master_Teleop extends LinearOpMode {
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
-
         intakeCurrentPosition = 0;
 
         telemetry.addData("initialization", "done");
@@ -205,6 +215,7 @@ public class Master_Teleop extends LinearOpMode {
         }
 
         telemetry.addLine("Init Complete");
+        telemetry.addData("Extension Position", fileText.trim());
         telemetry.addData("Hand Selected", hand);
         telemetry.update();
         waitForStart();
@@ -318,7 +329,7 @@ d
              */
 
             if(gamepad2.right_bumper){
-                mineralExtensionPosition = 0;
+                mineralExtensionPosition = 0 - mineralExtensionOffset;
                 intakeCurrentPosition = 0;
                 mineralRotationPosition = 0;
                 drivePositionState = drivingPositionState.NOTHING;
@@ -512,7 +523,7 @@ d
                     if(gamepad2.x){
                         intakeCurrentPosition = intakeIntakePosition;
                         mineralRotationPosition = rotationDrivePosition;
-                        mineralExtensionPosition = 0;
+                        mineralExtensionPosition = 0 - mineralExtensionOffset;
                         depositPositionState = INIT;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         intakePositionState = NOTHING;
@@ -522,34 +533,17 @@ d
 
                 case INIT:
                     if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
-                        mineralRotationPosition = rotationExtendPosition;
+                        mineralRotationPosition = mineralRotationDumpBallPosition;
+                        mineralExtensionPosition = extensionDumpPositionBalls;
+                        intakeCurrentPosition = 800;
                         depositPositionState = ROTATION1;
                     }
-                    intake.setPower(1);
                     break;
                 case ROTATION1:
-                    if(mineralRotation.getCurrentPosition()>rotationExtendPosition-30){
-                        mineralExtensionPosition = extensionDumpPositionBalls;
-                        intakeCurrentPosition = intakeDumpPosition2;
-                        mineralRotationPosition = rotationExtendPosition;
-                        depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
-                    }
-                    intake.setPower(1);
-                    break;
-                case EXTENSIONINTAKEROTATION:
-                    if(mineralExtension.getCurrentPosition()>extensionDumpPositionBalls-500){
-                        mineralRotationPosition = mineralRotationDumpBallPosition;
-                        depositPositionState = depositingPositionState.ROTATION2;
-                    }
-
-                    break;
-                case ROTATION2:
                     if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
-                        //mineralExtensionPosition = extensionDumpPosition2;
                         depositPositionState = depositingPositionState.NOTHING;
                     }
                     break;
-
             }
 
             switch (depositBlocksState){
@@ -605,12 +599,12 @@ d
                         if(mineralRotation.getCurrentPosition()>rotationExtendPosition){
                             drivePositionState = drivingPositionState.ROTATION1;
                             mineralRotationPosition = rotationExtendPosition;
-                            mineralExtensionPosition = 0;
+                            mineralExtensionPosition = 0 - mineralExtensionOffset;
                             intakeCurrentPosition = intakeIntakePosition;
 
                         }else{
                             drivePositionState = drivingPositionState.FINALPOSITION;
-                            mineralExtensionPosition = 0;
+                            mineralExtensionPosition = 0 - mineralExtensionOffset;
                             mineralRotationPosition = rotationDrivePosition;
                             intakeCurrentPosition = intakeIntakePosition;
                         }
@@ -620,7 +614,7 @@ d
                 case ROTATION1:
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
                         drivePositionState = drivingPositionState.FINALPOSITION;
-                        mineralExtensionPosition = 0;
+                        mineralExtensionPosition = 0 - mineralExtensionOffset;
                         mineralRotationPosition = rotationDrivePosition;
                         intakeCurrentPosition = intakeIntakePosition;
                     }
@@ -649,5 +643,6 @@ d
                     }
             }
         }
+        ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition() + mineralExtensionOffset));
     }
 }

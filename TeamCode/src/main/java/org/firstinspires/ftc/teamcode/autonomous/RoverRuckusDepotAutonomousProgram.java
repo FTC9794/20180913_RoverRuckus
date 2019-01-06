@@ -145,6 +145,10 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
     File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineral.txt");
     File depotFile = AppUtil.getInstance().getSettingsFile("depot.txt");
 
+    File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
+    File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
+    File intakeRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("intakeRotationEncoderPosition.txt");
+
     @Override
     public void runOpMode() throws InterruptedException {
         //Init motor hardware map and behaviors
@@ -517,7 +521,7 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         intakeRotation.setTargetPosition(10);
         intakeRotation.setPower(1);
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(750);
+        hang.setTargetPosition(2950);
         hang.setPower(0.5);
 
 
@@ -534,8 +538,8 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
 
         //Drive to crater to park
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 138 , DEFAULT_PID, 135
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 55*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                0, 55*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 138 , DEFAULT_PID, 135
                 ,0.5*COUNTS_PER_INCH, 0)){
             if(drive.getEncoderDistance() > 25 * COUNTS_PER_INCH){
                 teamMarker.hold();
@@ -543,7 +547,18 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         }
         drive.stop();
 
+        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setTargetPosition(1000);
+        mineralExtension.setPower(1);
+        boolean write = false;
+
         while (opModeIsActive()){
+            if(!mineralExtension.isBusy() && !write){
+                ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
+                ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+                ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
+                write = true;
+            }
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");
