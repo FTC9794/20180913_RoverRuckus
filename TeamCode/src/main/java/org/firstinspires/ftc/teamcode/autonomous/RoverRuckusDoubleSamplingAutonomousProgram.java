@@ -388,7 +388,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
-        intakeRotation.setTargetPosition(250);
+        intakeRotation.setTargetPosition(175);
         intakeRotation.setPower(1);
 
         runtime.reset();
@@ -602,7 +602,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             }
 
             drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 35*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 38*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
                     0, 35*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
                     ,0.5*COUNTS_PER_INCH, 0));
             drive.stop();
@@ -628,8 +628,8 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
             drive.softResetEncoder();
             drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 54*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                    0, 54*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -65 , DEFAULT_PID, -45
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                    0, 46*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -65 , DEFAULT_PID, -45
                     ,0.5*COUNTS_PER_INCH, 0)){
                 if(drive.getEncoderDistance() > 25 * COUNTS_PER_INCH){
                     teamMarker.hold();

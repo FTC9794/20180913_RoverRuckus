@@ -368,7 +368,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
-        intakeRotation.setTargetPosition(250);
+        intakeRotation.setTargetPosition(175);
         intakeRotation.setPower(1);
 
         runtime.reset();
@@ -551,7 +551,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Drive to alliance depot
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 33*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 35*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
                 0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();

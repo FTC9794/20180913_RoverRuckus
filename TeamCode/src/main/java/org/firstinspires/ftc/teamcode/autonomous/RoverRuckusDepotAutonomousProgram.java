@@ -345,7 +345,7 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
-        intakeRotation.setTargetPosition(250);
+        intakeRotation.setTargetPosition(175);
         intakeRotation.setPower(1);
 
         runtime.reset();
@@ -527,7 +527,7 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
 
         //Drive to alliance depot
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 44*COUNTS_PER_INCH, 10*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 10*COUNTS_PER_INCH,
                 0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -50 , DEFAULT_PID, 135
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
