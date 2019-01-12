@@ -400,6 +400,10 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         scanner.setPosition(0.5);
         team_marker.setPosition(0.5);
 
+        ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
+        ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+        ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
+
         switch (mineralLocation){
             case LEFT:
                 for(int i = 0; i < leftMineral.length; i++){
@@ -468,9 +472,9 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        //hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //hang.setTargetPosition(0);
-        //hang.setPower(1);
+        ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
+        ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+        ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
 
         for(int i = 0; i < depot.length; i++){
             double x = depot[i][X_POS_INDEX];
@@ -536,6 +540,10 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         teamMarker.drop();
         waitMilliseconds(500, runtime);
 
+        ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
+        ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+        ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
+
         //Drive to crater to park
         drive.softResetEncoder();
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 55*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
@@ -550,15 +558,11 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineralExtension.setTargetPosition(1000);
         mineralExtension.setPower(1);
-        boolean write = false;
 
         while (opModeIsActive()){
-            if(!mineralExtension.isBusy() && !write){
-                ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-                ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-                ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
-                write = true;
-            }
+            ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
+            ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+            ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");
