@@ -236,7 +236,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
             /*
 
             Drivetrain code
-d
+
              */
 
             //Get gamepad values
@@ -403,10 +403,10 @@ d
                         }
 
                     }
-                    if(mineralRotation.getCurrentPosition() > mineralRotationPosition && mineralRotationPosition > rotationDrivePosition){
-                        mineralRotation.setPower(0.25);
+                    if(mineralRotation.getCurrentPosition() > mineralRotationPosition){
+                        mineralRotation.setPower(0.175);
                     }else{
-                        mineralRotation.setPower(1);
+                        mineralRotation.setPower(0.8);
                     }
                     mineralRotation.setTargetPosition(mineralRotationPosition);
 
@@ -417,10 +417,10 @@ d
                     mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 }
-                if(mineralRotation.getCurrentPosition() > mineralRotationPosition && mineralRotationPosition > rotationDrivePosition){
-                    mineralRotation.setPower(0.25);
+                if(mineralRotation.getCurrentPosition() > mineralRotationPosition){
+                    mineralRotation.setPower(0.175);
                 }else{
-                    mineralRotation.setPower(1);
+                    mineralRotation.setPower(0.8);
                 }
                 mineralRotation.setTargetPosition(mineralRotationPosition);
             }
@@ -659,17 +659,6 @@ d
                         hangCurrentPosition = hang.getCurrentPosition();
                     }
             }
-
-            /*if(gamepad2.b){
-                mineralExtensionPosition = 0;
-                mineralExtensionOffset = 0;
-                mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                extensionMaxPosition = 2700 - mineralExtensionOffset; extensionDumpPositionBalls = 1400 - mineralExtensionOffset;
-                        extensionDumpPositionBlocks = 2000 - mineralExtensionOffset;
-            }*/
-            //ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
         }
     }
 }
