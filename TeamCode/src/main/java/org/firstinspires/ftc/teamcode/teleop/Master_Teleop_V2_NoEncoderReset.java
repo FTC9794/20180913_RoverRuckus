@@ -15,7 +15,6 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.io.File;
 
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderReset.depositingPositionState.INIT;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderReset.depositingPositionState.ROTATION1;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderReset.intakingPositionState.NOTHING;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderReset.intakingPositionState.ROTATING;
@@ -177,7 +176,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
 
         int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1400,
                 extensionDumpPositionBlocks = 2000,
-                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
+                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 1000, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
                 rotationMaxPosition = 1200, rotationDrivePosition = 390;
 
         final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
@@ -404,9 +403,9 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
 
                     }
                     if(mineralRotation.getCurrentPosition() > mineralRotationPosition){
-                        mineralRotation.setPower(0.175);
+                        mineralRotation.setPower(0.2);
                     }else{
-                        mineralRotation.setPower(0.8);
+                        mineralRotation.setPower(0.2);
                     }
                     mineralRotation.setTargetPosition(mineralRotationPosition);
 
@@ -415,13 +414,23 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
             }else{
                 if(!mineralRotation.getMode().equals(DcMotor.RunMode.RUN_TO_POSITION)){
                     mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
                 }
                 if(mineralRotation.getCurrentPosition() > mineralRotationPosition){
-                    mineralRotation.setPower(0.175);
+                    mineralRotation.setPower(0.2);
                 }else{
-                    mineralRotation.setPower(0.8);
+                    mineralRotation.setPower(0.2);
                 }
+
+//                if(mineralRotationPosition <= mineralRotationDumpBallPosition - 50){
+//                    if(mineralRotation.getCurrentPosition() > mineralRotationPosition && mineralRotation.isBusy()){
+//                        mineralRotation.setPower(0.175);
+//                    }else{
+//                        mineralRotation.setPower(0.175);
+//                    }
+//                }else{
+//                    mineralRotation.setPower(0);
+//                }
+
                 mineralRotation.setTargetPosition(mineralRotationPosition);
             }
 
@@ -452,7 +461,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
                     intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 }
-                intakeRotation.setTargetPosition(intakeCurrentPosition);
+                intakeRotation.setTargetPosition(intakeRotation.getCurrentPosition());
                 intakeRotation.setPower(1);
             }
 
@@ -527,7 +536,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
                     break;
 
                 case ROTATING:
-                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()){
+                    if(!mineralRotation.isBusy()){
                         intakePositionState = NOTHING;
                     }
 
@@ -537,19 +546,11 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
                 case NOTHING:
                     if(gamepad2.x){
                         intakeCurrentPosition = intakeIntakePosition;
-                        mineralRotationPosition = rotationDrivePosition;
-                        mineralExtensionPosition = 0;
-                        depositPositionState = INIT;
+                        mineralExtensionPosition = extensionDumpPositionBalls;
+                        depositPositionState = ROTATION1;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         intakePositionState = NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
-                    }
-                    break;
-
-                case INIT:
-                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
-                        mineralExtensionPosition = extensionDumpPositionBalls;
-                        depositPositionState = ROTATION1;
                     }
                     break;
                 case ROTATION1:
@@ -557,7 +558,8 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
                         mineralRotationPosition = mineralRotationDumpBallPosition;
                         intakeCurrentPosition = 750;
                     }
-                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
+                        mineralRotation.setPower(0);
                         depositPositionState = depositingPositionState.NOTHING;
                     }
                     break;
@@ -577,7 +579,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
                     }*/
                     break;
                 case INIT:
-                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotationPosition = rotationExtendPosition;
                         depositBlocksState = depositingBlocksPositionState.ROTATION1;
                     }
@@ -599,7 +601,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
 
                     break;
                 case ROTATION2:
-                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         //mineralExtensionPosition = extensionDumpPosition2;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                     }
@@ -616,7 +618,6 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
                         if(mineralRotation.getCurrentPosition()>rotationExtendPosition){
                             drivePositionState = drivingPositionState.ROTATION1;
                             mineralRotationPosition = rotationExtendPosition;
-                            mineralExtensionPosition = 50;
                             intakeCurrentPosition = intakeIntakePosition;
 
                         }else{
@@ -629,15 +630,17 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
                     break;
 
                 case ROTATION1:
-                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
-                        drivePositionState = drivingPositionState.FINALPOSITION;
+                    if(mineralRotation.getCurrentPosition() < 775){
                         mineralExtensionPosition = 0;
+                    }
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
+                        drivePositionState = drivingPositionState.FINALPOSITION;
                         mineralRotationPosition = rotationDrivePosition;
                         intakeCurrentPosition = intakeIntakePosition;
                     }
                     break;
                 case FINALPOSITION:
-                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
+                    if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         drivePositionState = drivingPositionState.NOTHING;
                     }
             }
