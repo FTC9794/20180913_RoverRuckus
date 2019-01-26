@@ -3,18 +3,16 @@ package org.firstinspires.ftc.teamcode.sample_test;
 
 import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldDetector;
-import com.disnodeteam.dogecv.filters.LeviColorFilter;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
 import org.opencv.core.Point;
-import org.opencv.core.Size;
 
 
 @Autonomous(name="Gold Mineral Detection Test", group="Test")
+@Disabled
 public class GoldMineralDetectionTest extends LinearOpMode {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();

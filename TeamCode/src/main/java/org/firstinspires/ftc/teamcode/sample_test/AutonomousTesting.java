@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.sample_test;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -27,6 +28,7 @@ import java.util.Date;
  * Created by Sarthak on 10/26/2018.
  */
 @Autonomous(name = "Autonomous Testing", group = "Autonomous")
+@Disabled
 public class AutonomousTesting extends LinearOpMode {
 
     IDrivetrain drive;

@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.sample_test;
 
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
  * Created by Sarthak on 1/5/2019.
  */
 @Autonomous (name = "Hang Delatch and Mineral Mechanism Positioning Test", group = "Test")
+@Disabled
 public class HangDelatchMineralInitTest extends LinearOpMode {
     DcMotor right_front, right_back, left_front, left_back;
     DcMotor mineral_rotation;
