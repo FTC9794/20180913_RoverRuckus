@@ -43,6 +43,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
     IIMU imu;
     BNO055IMU boschIMU;
+    boolean fieldCentric;
+
 
     /*
 
@@ -140,6 +142,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        fieldCentric = true;
 
         /*
 
@@ -261,6 +265,16 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
              */
 
+            //Check if still field centric
+            if(gamepad1.dpad_down){
+                fieldCentric = false;
+            }
+
+            //check to reset IMU value
+            if(gamepad1.dpad_up){
+                imu.setAsZero();
+            }
+
             //Get gamepad values
             if(hand.equals("left")){
                 joystickY = -gamepad1.left_stick_y;
@@ -269,7 +283,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 if(pivot < 0 && pivot > -0.1){
                     pivot = -0.25;
                 }else if (pivot > 0 && pivot < 0.1){
-                    pivot = 0.25;
+
                 }
             }else{
                 joystickY = -gamepad1.right_stick_y;
@@ -282,32 +296,37 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 }
             }
 
-            robotAngle = imu.getZAngle(); //put imu value in here
+            //determine if we are driving field centricly or not
+            if(!fieldCentric) {
+                robotAngle = imu.getZAngle();
+            }else{
+                robotAngle = 0;
+            }
+
+            //calculate the polar vector of the joystick
             joystickAngle = Math.toDegrees(Math.atan2(joystickX, joystickY));
             joystickMagnitude = Math.sqrt(Math.pow(joystickX, 2)+Math.pow(joystickY,2));
-            telemetry.addData("robot angle", robotAngle);
-            telemetry.addData("Joystick Angle", joystickAngle);
-            telemetry.addData("Joystick Magnitude", joystickMagnitude);
-            telemetry.addData("Pivot Power", pivot);
 
+            //calculate the motion polar vector
             motionAngle = joystickAngle-robotAngle;
             if(joystickMagnitude>1){
                 motionMagnitude = 1;
             }else{
                 motionMagnitude = joystickMagnitude;
             }
-            telemetry.addData("motion angle", motionAngle);
-            telemetry.addData("motion magnitude", motionMagnitude);
+
+            //break the motion vector up into it's components
             motionComponentX = motionMagnitude*(Math.sin(Math.toRadians(motionAngle)));
             motionComponentY = motionMagnitude*(Math.cos(Math.toRadians(motionAngle)));
 
-            telemetry.addData("component x", motionComponentX);
-            telemetry.addData("component y", motionComponentY);
+            //determine motor powers
             drivePower[0] = motionComponentY*Math.abs(motionComponentY)-motionComponentX*Math.abs(motionComponentX)-pivot;
             drivePower[1] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)-pivot;
             drivePower[2] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)+pivot;
             drivePower[3] = motionComponentY*Math.abs(motionComponentY)-motionComponentX*Math.abs(motionComponentX)+pivot;
 
+
+            //crop powers to fit in limits
             for(int i=0; i<drivePower.length; i++){
                 if(drivePower[i]>1){
                     drivePower[i] = 1;
@@ -315,6 +334,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     drivePower[i] = -1;
                 }
             }
+
+            //reduce power if desired
             if(!(gamepad1.right_stick_button||gamepad1.left_stick_button)){
                 for(int i=0; i<drivePower.length; i++){
                     drivePower[i] = drivePower[i]*reducedPower;
@@ -323,7 +344,6 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
 
             //set motor power
-
             rf.setPower(drivePower[0]);
             rb.setPower(drivePower[1]);
             lf.setPower(drivePower[2]);
@@ -712,9 +732,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     }
             }
 
-            if(isStopRequested()){
-                ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle()));
-            }
+            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(robotAngle));
+
         }
     }
 }
