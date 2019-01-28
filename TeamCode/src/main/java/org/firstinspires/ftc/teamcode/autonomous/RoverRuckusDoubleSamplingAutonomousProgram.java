@@ -57,7 +57,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
     DcMotor mineral_rotation, mineralExtension;
-    DcMotor intakeRotation;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
 
@@ -383,13 +382,10 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setTargetPosition(4900);
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
-        intakeRotation.setTargetPosition(175);
-        intakeRotation.setPower(1);
 
         runtime.reset();
         while(hang.isBusy() && opModeIsActive()){
@@ -446,7 +442,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
         ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
         ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-        ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
 
         globalCoordinatePositionUpdate();
         scanner.setPosition(0.5);
@@ -522,7 +517,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
         ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
         ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-        ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
 
         if(mineralLocation == RIGHT){
             for(int i = 0; i < depotRight.length; i++){
@@ -570,8 +564,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         drive.stop();
         globalCoordinatePositionUpdate();
 
-        intakeRotation.setTargetPosition(10);
-        intakeRotation.setPower(1);
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setTargetPosition(750);
         hang.setPower(0.5);
@@ -632,7 +624,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-            ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
 
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
@@ -718,7 +709,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-            ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
 
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 12*COUNTS_PER_INCH,
@@ -800,7 +790,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-            ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
 
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 52*COUNTS_PER_INCH, 24*COUNTS_PER_INCH,
@@ -817,7 +806,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         while (opModeIsActive()){
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-            ReadWriteFile.writeFile(intakeRotationEncoderPosition, String.valueOf(intakeRotation.getCurrentPosition()));
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");
@@ -864,11 +852,6 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
-        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         teamMarkerServo = hardwareMap.servo.get("marker_servo");
         teamMarker = new ServoArmDrop(teamMarkerServo);

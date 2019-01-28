@@ -1,18 +1,22 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 /**
  * Created by Sarthak on 1/26/2019.
  */
+@TeleOp(name = "Mineral Mechanism Driver Position Test", group = "Test")
 public class MineralMechanismDriverPositionTest extends LinearOpMode {
-    DcMotor mineralExtension, mineralRotation;
+    DcMotor mineralExtension, mineralRotation, intakeRotation;
 
     int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1400,
             extensionDumpPositionBlocks = 2000,
             rotationExtendPosition = 650, mineralRotationDumpBallPosition = 1000, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
             rotationMaxPosition = 1200, rotationDrivePosition = 390;
+
+    final int intakeDumpReadyPosition = 700, intakeDumpPosition2 = 640, intakeIntakePosition = 550;
 
     final double mineralRotationPower = 0.2, mineralExtensionPower = 1;
 
@@ -29,6 +33,11 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
         mineralRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         boolean selected = false;
         while(!selected && !isStopRequested()){
@@ -59,7 +68,9 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
         mineralRotation.setTargetPosition(rotationDrivePosition);
         mineralExtension.setPower(mineralExtensionPower);
         mineralRotation.setPower(mineralRotationPower);
-        while(mineralExtension.isBusy() && mineralRotation.isBusy() && opModeIsActive()){
+        intakeRotation.setTargetPosition(intakeIntakePosition);
+        intakeRotation.setPower(1);
+        while(mineralExtension.isBusy() && mineralRotation.isBusy() && opModeIsActive() && intakeRotation.isBusy()){
             telemetry.addData("Mineral Mechanism Driver Position Test", "Moving to Drive Position");
             telemetry.update();
         }
@@ -74,7 +85,9 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
             //Intake Position
             mineralRotation.setTargetPosition(0);
             mineralRotation.setPower(mineralRotationPower);
-            while(mineralRotation.isBusy() && opModeIsActive()){
+            intakeRotation.setTargetPosition(intakeIntakePosition);
+            intakeRotation.setPower(1);
+            while(mineralRotation.isBusy() && opModeIsActive() && intakeRotation.isBusy()){
                 telemetry.addData("Mineral Mechanism Driver Position Test", "Moving to Intake Position");
                 telemetry.update();
             }
@@ -87,13 +100,14 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
             //Deposit Position
             mineralExtension.setTargetPosition(extensionDumpPositionBalls);
             mineralExtension.setPower(mineralExtensionPower);
+            mineralRotation.setTargetPosition(mineralRotationDumpBallPosition);
+            mineralRotation.setPower(mineralRotationPower);
             while(mineralExtension.getCurrentPosition() < (extensionDumpPositionBalls/4) && opModeIsActive()){
+                intakeRotation.setTargetPosition(intakeDumpReadyPosition);
                 telemetry.addData("Mineral Mechanism Driver Position Test", "Moving to Deposit Position");
                 telemetry.update();
             }
-            mineralRotation.setTargetPosition(mineralRotationDumpBallPosition);
-            mineralRotation.setPower(mineralRotationPower);
-            while(mineralExtension.isBusy() && mineralRotation.isBusy() && opModeIsActive()){
+            while(mineralExtension.isBusy() && mineralRotation.isBusy() && opModeIsActive() && intakeRotation.isBusy()){
                 telemetry.addData("Mineral Mechanism Driver Position Test", "Moving to Deposit Position");
                 telemetry.update();
             }
@@ -112,7 +126,9 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
             }
             mineralExtension.setTargetPosition(0);
             mineralExtension.setPower(mineralExtensionPower);
-            while(mineralRotation.isBusy() && mineralExtension.isBusy() && opModeIsActive()){
+            intakeRotation.setTargetPosition(intakeIntakePosition);
+            intakeRotation.setPower(1);
+            while(mineralRotation.isBusy() && mineralExtension.isBusy() && intakeRotation.isBusy() && opModeIsActive()){
                 telemetry.addData("Mineral Mechanism Driver Position Test", "Moving to Drive Position");
                 telemetry.update();
             }
