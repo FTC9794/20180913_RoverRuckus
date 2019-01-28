@@ -223,7 +223,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         imu = new BoschIMU(boschIMU);
         imu.initialize();
         imuOffset = Double.parseDouble(ReadWriteFile.readFile(autoIMUOffset).trim());
-        imu.setOffset(imuOffset);
+        imu.setOffset(-imuOffset);
 
         boolean selected = false;
         String hand = "";
@@ -242,7 +242,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
         telemetry.addLine("Init Complete");
         telemetry.addData("Extension Position", mineralExtension.getCurrentPosition());
-        telemetry.addData("Auto Angle Offset", autoIMUOffset);
+        telemetry.addData("Auto Angle Offset", ReadWriteFile.readFile(autoIMUOffset));
         telemetry.addData("Hand Selected", hand);
         telemetry.update();
 
@@ -273,8 +273,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             }
 
             robotAngle = imu.getZAngle(); //put imu value in here
-            joystickAngle = 90-Math.atan2(joystickX, joystickY);
-            joystickMagnitude = Math.pow((Math.pow(joystickX, 2)+Math.pow(joystickY,2)),(1/2));
+            joystickAngle = Math.toDegrees(Math.atan2(joystickX, joystickY));
+            joystickMagnitude = Math.sqrt(Math.pow(joystickX, 2)+Math.pow(joystickY,2));
             telemetry.addData("robot angle", robotAngle);
             telemetry.addData("Joystick Angle", joystickAngle);
             telemetry.addData("Joystick Magnitude", joystickMagnitude);
@@ -287,9 +287,11 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             }
             telemetry.addData("motion angle", motionAngle);
             telemetry.addData("motion magnitude", motionMagnitude);
-            motionComponentX = motionMagnitude*(Math.cos(joystickAngle));
-            motionComponentY = motionMagnitude*(Math.sin(joystickAngle));
+            motionComponentX = motionMagnitude*(Math.sin(Math.toRadians(motionAngle)));
+            motionComponentY = motionMagnitude*(Math.cos(Math.toRadians(motionAngle)));
 
+            telemetry.addData("component x", motionComponentX);
+            telemetry.addData("component y", motionComponentY);
             drivePower[0] = motionComponentY*Math.abs(motionComponentY)-motionComponentX*Math.abs(motionComponentX)-pivot;
             drivePower[1] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)-pivot;
             drivePower[2] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)+pivot;
@@ -308,13 +310,14 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 }
             }
 
-            /*
+
             //set motor power
+
             rf.setPower(drivePower[0]);
             rb.setPower(drivePower[1]);
             lf.setPower(drivePower[2]);
             lb.setPower(drivePower[3]);
-*/
+
             if(intakeRotation.getCurrentPosition() < 100){
                 intakeGate.setPosition(GATE_OPEN);
             }else if(gamepad1.a){

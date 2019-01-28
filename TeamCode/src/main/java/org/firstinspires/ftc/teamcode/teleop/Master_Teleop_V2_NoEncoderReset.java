@@ -89,7 +89,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpReadyPosition = 425, intakeDumpPosition2 = 640, intakeIntakePosition = 550;
+    int intakeDumpReadyPosition = 425, intakeDumpPosition2 = 640, intakeIntakePosition = 550;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -455,6 +455,11 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
             Mineral Intake Code
 
              */
+
+            if(gamepad2.left_bumper){
+                intakeIntakePosition = intakeRotation.getCurrentPosition();
+                intakeDumpReadyPosition = intakeIntakePosition - 125;
+            }
 
             if(gamepad1.left_trigger>.01){
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);

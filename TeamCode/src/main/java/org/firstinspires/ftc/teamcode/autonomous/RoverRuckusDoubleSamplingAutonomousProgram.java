@@ -360,7 +360,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         data.addField("Distance");
         data.newLine();
 
-        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() + 135));
+        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
         telemetry.addData("Status", "Init Complete");
         telemetry.update();
@@ -642,6 +642,8 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             mineralExtension.setTargetPosition(1000);
             mineralExtension.setPower(1);
 
+            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
+
             globalCoordinatePositionUpdate();
 
         }else if (mineralLocation == location.LEFT){
@@ -712,10 +714,15 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
 
             drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 12*COUNTS_PER_INCH,
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 28*COUNTS_PER_INCH, 12*COUNTS_PER_INCH,
                     0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 45
                     ,0.5*COUNTS_PER_INCH, 0));
             drive.stop();
+
+            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
+            mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            mineralExtension.setTargetPosition(1000);
+            mineralExtension.setPower(1);
 
 
         }else if(mineralLocation == location.CENTER){
@@ -798,6 +805,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
                     ,0.5*COUNTS_PER_INCH, 0));
             drive.stop();
 
+            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
             mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             mineralExtension.setTargetPosition(1000);
             mineralExtension.setPower(1);
@@ -807,7 +815,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         while (opModeIsActive()){
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() + 135));
+            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");

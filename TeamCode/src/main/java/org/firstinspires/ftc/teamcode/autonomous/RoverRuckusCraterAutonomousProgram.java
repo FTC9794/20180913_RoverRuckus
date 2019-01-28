@@ -156,6 +156,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
     File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
+    File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -339,6 +340,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         data.addField("Distance");
         data.newLine();
 
+        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
         telemetry.addData("Status", "Init Complete");
         telemetry.update();
@@ -576,6 +578,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineralExtension.setTargetPosition(1000);
         mineralExtension.setPower(1);
+
+        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
         while (opModeIsActive()){
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
