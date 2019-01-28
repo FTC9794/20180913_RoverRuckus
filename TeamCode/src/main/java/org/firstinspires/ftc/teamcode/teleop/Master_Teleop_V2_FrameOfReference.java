@@ -275,6 +275,9 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             robotAngle = imu.getZAngle(); //put imu value in here
             joystickAngle = 90-Math.atan2(joystickX, joystickY);
             joystickMagnitude = Math.pow((Math.pow(joystickX, 2)+Math.pow(joystickY,2)),(1/2));
+            telemetry.addData("robot angle", robotAngle);
+            telemetry.addData("Joystick Angle", joystickAngle);
+            telemetry.addData("Joystick Magnitude", joystickMagnitude);
 
             motionAngle = joystickAngle-robotAngle;
             if(joystickMagnitude>1){
@@ -282,7 +285,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             }else{
                 motionMagnitude = joystickMagnitude;
             }
-
+            telemetry.addData("motion angle", motionAngle);
+            telemetry.addData("motion magnitude", motionMagnitude);
             motionComponentX = motionMagnitude*(Math.cos(joystickAngle));
             motionComponentY = motionMagnitude*(Math.sin(joystickAngle));
 
@@ -303,12 +307,14 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     drivePower[i] = drivePower[i]*reducedPower;
                 }
             }
+
+            /*
             //set motor power
             rf.setPower(drivePower[0]);
             rb.setPower(drivePower[1]);
             lf.setPower(drivePower[2]);
             lb.setPower(drivePower[3]);
-
+*/
             if(intakeRotation.getCurrentPosition() < 100){
                 intakeGate.setPosition(GATE_OPEN);
             }else if(gamepad1.a){
