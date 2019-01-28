@@ -338,7 +338,7 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(4900);
+        hang.setTargetPosition(6000);
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
@@ -613,7 +613,7 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         rotation_limit = hardwareMap.digitalChannel.get("rotation_limit");
 
         hang = hardwareMap.dcMotor.get("hang");
-        hang.setDirection(DcMotorSimple.Direction.REVERSE);
+        //hang.setDirection(DcMotorSimple.Direction.REVERSE);
         hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

@@ -163,7 +163,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
 
     File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
-    File intakeRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("intakeRotationEncoderPosition.txt");
+    File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -360,6 +360,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         data.addField("Distance");
         data.newLine();
 
+        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() + 135));
 
         telemetry.addData("Status", "Init Complete");
         telemetry.update();
@@ -382,7 +383,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(4900);
+        hang.setTargetPosition(6000);
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
@@ -806,6 +807,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         while (opModeIsActive()){
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
+            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() + 135));
             drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");
@@ -869,7 +871,7 @@ public class RoverRuckusDoubleSamplingAutonomousProgram extends LinearOpMode {
         rightWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("right_us");
 
         hang = hardwareMap.dcMotor.get("hang");
-        hang.setDirection(DcMotorSimple.Direction.REVERSE);
+        //hang.setDirection(DcMotorSimple.Direction.REVERSE);
         hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

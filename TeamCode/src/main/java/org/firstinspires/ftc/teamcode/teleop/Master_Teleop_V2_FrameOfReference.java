@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -9,21 +10,24 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
+import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 
 import java.io.File;
 
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderReset.depositingPositionState.ROTATION1;
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderReset.intakingPositionState.NOTHING;
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderReset.intakingPositionState.ROTATING;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_FrameOfReference.depositingPositionState.ROTATION1;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_FrameOfReference.intakingPositionState.NOTHING;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_FrameOfReference.intakingPositionState.ROTATING;
 
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@TeleOp(name = "\uD83C\uDFAE Master Teleop V2", group = "Teleop")
-public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
+@TeleOp(name = "\uD83C\uDFAE Master Teleop V2 Frame of Reference", group = "Teleop")
+public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
     /*
 
@@ -37,6 +41,8 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
     double[] drivePower = new double[4];
     final double reducedPower = .75, phoneStoredPosition = .5, rotationMinPower = .1;
 
+    IIMU imu;
+    BNO055IMU boschIMU;
 
     /*
 
@@ -94,7 +100,7 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
 
-    double pitch, roll, pivot;
+    double joystickX, joystickY, joystickAngle, joystickMagnitude, robotAngle, motionAngle, motionMagnitude, motionComponentX, motionComponentY, pivot;
 
     boolean intakePressed = false;
     boolean intaking = false;
@@ -102,6 +108,9 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
     File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
     File intakeRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("intakeRotationEncoderPosition.txt");
+
+    File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
+    double imuOffset = 0;
 
     ElapsedTime extensionTimer = new ElapsedTime();
 
@@ -205,6 +214,17 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
         telemetry.addData("initialization", "done");
         telemetry.addData("intake rotation position", intakeRotation.getCurrentPosition());
         telemetry.update();
+
+        mineralExtensionPosition = mineralExtension.getCurrentPosition();
+        intakeCurrentPosition = intakeRotation.getCurrentPosition();
+
+        //Initialize IMU
+        boschIMU = hardwareMap.get(BNO055IMU.class, "imu");
+        imu = new BoschIMU(boschIMU);
+        imu.initialize();
+        imuOffset = Double.parseDouble(ReadWriteFile.readFile(autoIMUOffset).trim());
+        imu.setOffset(imuOffset);
+
         boolean selected = false;
         String hand = "";
         while(!selected && !isStopRequested()){
@@ -220,12 +240,9 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
             }
         }
 
-        mineralExtensionPosition = mineralExtension.getCurrentPosition();
-        intakeCurrentPosition = intakeRotation.getCurrentPosition();
-
         telemetry.addLine("Init Complete");
         telemetry.addData("Extension Position", mineralExtension.getCurrentPosition());
-        telemetry.addData("Intake Rotation Position", intakeRotation.getCurrentPosition());
+        telemetry.addData("Auto Angle Offset", autoIMUOffset);
         telemetry.addData("Hand Selected", hand);
         telemetry.update();
 
@@ -246,19 +263,33 @@ public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
 
             //Get gamepad values
             if(hand.equals("left")){
-                pitch = -gamepad1.left_stick_y;
-                roll = gamepad1.left_stick_x;
+                joystickY = -gamepad1.left_stick_y;
+                joystickX = gamepad1.left_stick_x;
                 pivot = gamepad1.right_stick_x*(turnMultiplier*mineralExtensionPosition+1);
             }else{
-                pitch = -gamepad1.right_stick_y;
-                roll = gamepad1.right_stick_x;
+                joystickY = -gamepad1.right_stick_y;
+                joystickX = gamepad1.right_stick_x;
                 pivot = gamepad1.left_stick_x*(turnMultiplier*mineralExtensionPosition+1);
             }
 
-            drivePower[0] = pitch-roll-pivot;
-            drivePower[1] = pitch+roll-pivot;
-            drivePower[2] = pitch+roll+pivot;
-            drivePower[3] = pitch-roll+pivot;
+            robotAngle = imu.getZAngle(); //put imu value in here
+            joystickAngle = 90-Math.atan2(joystickX, joystickY);
+            joystickMagnitude = Math.pow((Math.pow(joystickX, 2)+Math.pow(joystickY,2)),(1/2));
+
+            motionAngle = joystickAngle-robotAngle;
+            if(joystickMagnitude>1){
+                motionMagnitude = 1;
+            }else{
+                motionMagnitude = joystickMagnitude;
+            }
+
+            motionComponentX = motionMagnitude*(Math.cos(joystickAngle));
+            motionComponentY = motionMagnitude*(Math.sin(joystickAngle));
+
+            drivePower[0] = motionComponentY*Math.abs(motionComponentY)-motionComponentX*Math.abs(motionComponentX)-pivot;
+            drivePower[1] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)-pivot;
+            drivePower[2] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)+pivot;
+            drivePower[3] = motionComponentY*Math.abs(motionComponentY)-motionComponentX*Math.abs(motionComponentX)+pivot;
 
             for(int i=0; i<drivePower.length; i++){
                 if(drivePower[i]>1){
