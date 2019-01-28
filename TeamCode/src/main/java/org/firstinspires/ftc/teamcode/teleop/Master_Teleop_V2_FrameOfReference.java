@@ -95,7 +95,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    final int intakeDumpReadyPosition = 425, intakeDumpPosition2 = 640, intakeIntakePosition = 550;
+    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 270, intakeIntakePosition = 550;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -185,9 +185,9 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         mineralExtensionPosition = 0;
         mineralRotationPosition = 0;
 
-        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1300,
-                extensionDumpPositionBlocks = 2000,
-                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 1000, mineralRotationDumpBlocksPosition = 1100, mineralRotationIncrement = 6,
+        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1400,
+                extensionDumpPositionBlocks = 2140,
+                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 1000, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 6,
                 rotationMaxPosition = 1200, rotationDrivePosition = 390;
 
         final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
@@ -266,10 +266,20 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 joystickY = -gamepad1.left_stick_y;
                 joystickX = gamepad1.left_stick_x;
                 pivot = gamepad1.right_stick_x*(turnMultiplier*mineralExtensionPosition+1);
+                if(pivot < 0 && pivot > -0.1){
+                    pivot = -0.25;
+                }else if (pivot > 0 && pivot < 0.1){
+                    pivot = 0.25;
+                }
             }else{
                 joystickY = -gamepad1.right_stick_y;
                 joystickX = gamepad1.right_stick_x;
                 pivot = gamepad1.left_stick_x*(turnMultiplier*mineralExtensionPosition+1);
+                if(pivot < 0 && pivot > -0.1){
+                    pivot = -0.25;
+                }else if (pivot > 0 && pivot < 0.1){
+                    pivot = 0.25;
+                }
             }
 
             robotAngle = imu.getZAngle(); //put imu value in here
@@ -278,6 +288,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             telemetry.addData("robot angle", robotAngle);
             telemetry.addData("Joystick Angle", joystickAngle);
             telemetry.addData("Joystick Magnitude", joystickMagnitude);
+            telemetry.addData("Pivot Power", pivot);
 
             motionAngle = joystickAngle-robotAngle;
             if(joystickMagnitude>1){
@@ -459,9 +470,9 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
                     }
                     if(mineralRotation.getCurrentPosition() > mineralRotationPosition){
-                        mineralRotation.setPower(0.2);
+                        mineralRotation.setPower(0.175);
                     }else{
-                        mineralRotation.setPower(0.2);
+                        mineralRotation.setPower(0.175);
                     }
                     mineralRotation.setTargetPosition(mineralRotationPosition);
 
@@ -472,9 +483,9 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 }
                 if(mineralRotation.getCurrentPosition() > mineralRotationPosition){
-                    mineralRotation.setPower(0.2);
+                    mineralRotation.setPower(0.175);
                 }else{
-                    mineralRotation.setPower(0.2);
+                    mineralRotation.setPower(0.175);
                 }
 
 //                if(mineralRotationPosition <= mineralRotationDumpBallPosition - 50){
@@ -495,6 +506,11 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             Mineral Intake Code
 
              */
+
+            if(gamepad2.left_bumper){
+                intakeIntakePosition = intakeRotation.getCurrentPosition();
+                intakeDumpReadyPosition = intakeIntakePosition - 125;
+            }
 
             if(gamepad1.left_trigger>.01){
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -636,7 +652,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     break;
                 case ROTATION1:
                     if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/8)){
-                        intakeCurrentPosition = intakeDumpReadyPosition;
+                        intakeCurrentPosition = intakeDumpReadyPositionBlocks;
                     }
                     if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotation.setPower(0);
@@ -694,6 +710,10 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                         currentHangingState = hangState.NOTHING;
                         hangCurrentPosition = hang.getCurrentPosition();
                     }
+            }
+
+            if(isStopRequested()){
+                ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle()));
             }
         }
     }
