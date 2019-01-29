@@ -97,7 +97,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 270, intakeIntakePosition = 550;
+    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 270, intakeIntakePosition = 535;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -664,7 +664,6 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     if(gamepad2.b){
                         intakeCurrentPosition = intakeIntakePosition;
                         mineralRotationPosition = mineralRotationDumpBallPosition;
-                        mineralExtensionPosition = extensionDumpPositionBlocks;
                         depositBlocksState = depositingBlocksPositionState.ROTATION1;
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
@@ -674,6 +673,9 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 case ROTATION1:
                     if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/8)){
                         intakeCurrentPosition = intakeDumpReadyPositionBlocks;
+                    }
+                    if(mineralRotation.getCurrentPosition() > 500){
+                        mineralExtensionPosition = extensionDumpPositionBlocks;
                     }
                     if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotation.setPower(0);
@@ -707,7 +709,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     }
                     break;
                 case FINALPOSITION:
-                    if(mineralRotation.getCurrentPosition() < 850){
+                    if(mineralRotation.getCurrentPosition() < 900){
                         mineralExtensionPosition = 0;
                     }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
