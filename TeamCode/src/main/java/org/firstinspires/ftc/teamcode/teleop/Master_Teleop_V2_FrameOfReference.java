@@ -297,7 +297,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             }
 
             //determine if we are driving field centricly or not
-            if(!fieldCentric) {
+            if(fieldCentric) {
                 robotAngle = imu.getZAngle();
             }else{
                 robotAngle = 0;
