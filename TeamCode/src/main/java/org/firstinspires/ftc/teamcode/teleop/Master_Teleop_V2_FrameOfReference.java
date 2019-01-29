@@ -273,6 +273,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             //check to reset IMU value
             if(gamepad1.dpad_up){
                 imu.setAsZero();
+                fieldCentric = true;
             }
 
             //Get gamepad values
