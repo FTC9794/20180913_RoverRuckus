@@ -51,8 +51,8 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "Crater Autonomous", group = "Autonomous")
-public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
+@Autonomous(name = "vector Autonomous", group = "Autonomous")
+public class TestingVectorAutonomous extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
     DcMotor mineral_rotation, mineralExtension;
@@ -363,240 +363,75 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
-        //Release Hang Latch
-        hang_latch.setPosition(1);
-        waitMilliseconds(750, runtime);
 
-        //Delatch from hanger
-        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(6000);
-        hang.setPower(1);
-        mineral_rotation.setTargetPosition(170);
-        mineral_rotation.setPower(1);
-
-        runtime.reset();
-        while(hang.isBusy() && opModeIsActive()){
-            if(!mineral_rotation.isBusy()){
-                if(rotation_limit.getState()){
-                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    mineral_rotation.setPower(-0.15);
-                }else{
-                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    mineral_rotation.setPower(0);
-                }
-            }
-            telemetry.addData("hang pos", hang.getCurrentPosition());
-            telemetry.update();
-        }
-        hang.setPower(0);
-        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        vuforia.enableDogeCV();
-        waitMilliseconds(750, runtime);
-
-        //Scan for mineral
-        globalCoordinatePositionUpdate();
-
-        //Scan for mineral
-        globalCoordinatePositionUpdate();
-        boolean found = detector.isFound();
-        if(found && detector.getScreenPosition().y > 140){
-            mineralLocation = location.CENTER;
-        }else if (found && detector.getScreenPosition().x > 450 && detector.getScreenPosition().y > 140) {
-            mineralLocation = location.RIGHT;
-        }
-        else{
-            while(opModeIsActive() && scanner.getPosition() > leftPosition){
-                scanner.setPosition(scanner.getPosition() - 0.001);
-                telemetry.addData("Y Position", detector.getScreenPosition().y);
-                telemetry.update();
-            }
-            runtime.reset();
-            while(runtime.milliseconds() < 1000 && opModeIsActive()){
-                telemetry.addData("Y Position", detector.getScreenPosition().y);
-                telemetry.update();
-            }
-
-            found = detector.isFound();
-            if(found && detector.getScreenPosition().y > 140) {
-                mineralLocation = location.LEFT;
-            }else {
-                mineralLocation = location.RIGHT;
-            }
-        }
-
-        vuforia.disableDogeCV();
-
-        ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-        ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-
-        globalCoordinatePositionUpdate();
-        scanner.setPosition(0.5);
-        teamMarkerServo.setPosition(0.5);
-
-        switch (mineralLocation){
-            case LEFT:
-                for(int i = 0; i < leftMineral.length; i++){
-                    double x = leftMineral[i][X_POS_INDEX];
-                    double y = leftMineral[i][Y_POS_INDEX];
-                    double theta = leftMineral[i][THETA_INDEX];
-                    double maxPower = leftMineral[i][MAX_POWER_INDEX];
-                    double minPower = leftMineral[i][MIN_POWER_INDEX];
-                    while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
-                            && opModeIsActive()){
-                        globalCoordinatePositionUpdate();
-                        telemetry.addData("Moving to Position", "(" + x +", " + y +")");
-                        telemetry.addData("Target Angle", theta);
-                        telemetry.update();
-                    }
-                    drive.stop();
-                    globalCoordinatePositionUpdate();
-                    if(i == 0){
-                        waitMilliseconds(1000, runtime);
-                    }
-                }
-                break;
-            case CENTER:
-                for(int i = 0; i < centerMineral.length; i++){
-                    double x = centerMineral[i][X_POS_INDEX];
-                    double y = centerMineral[i][Y_POS_INDEX];
-                    double theta = centerMineral[i][THETA_INDEX];
-                    double maxPower = centerMineral[i][MAX_POWER_INDEX];
-                    double minPower = centerMineral[i][MIN_POWER_INDEX];
-                    while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
-                            && opModeIsActive()){
-                        globalCoordinatePositionUpdate();
-                        telemetry.addData("Moving to Position", "(" + x + ", " + y + ")");
-                        telemetry.addData("Target Angle", theta);
-                        telemetry.update();
-                    }
-                    drive.stop();
-                    globalCoordinatePositionUpdate();
-                    if(i == 0){
-                        waitMilliseconds(1000, runtime);
-                    }
-                }
-                break;
-            case RIGHT:
-                for(int i = 0; i < rightMineral.length; i++){
-                    double x = rightMineral[i][X_POS_INDEX];
-                    double y = rightMineral[i][Y_POS_INDEX];
-                    double theta = rightMineral[i][THETA_INDEX];
-                    double maxPower = rightMineral[i][MAX_POWER_INDEX];
-                    double minPower = rightMineral[i][MIN_POWER_INDEX];
-                    while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
-                            && opModeIsActive()){
-                        globalCoordinatePositionUpdate();
-                        telemetry.addData("Moving to Position", "(" + x +", " + y +")");
-                        telemetry.addData("Target Angle", theta);
-                        telemetry.update();
-                    }
-                    drive.stop();
-                    globalCoordinatePositionUpdate();
-                    if(i == 0){
-                        waitMilliseconds(1000, runtime);
-                    }
-                }
-                break;
-        }
-        drive.stop();
-        globalCoordinatePositionUpdate();
-
-        for(int i = 0; i < depot.length; i++){
-            double x = depot[i][X_POS_INDEX];
-            double y = depot[i][Y_POS_INDEX];
-            double theta = depot[i][THETA_INDEX];
-            double maxPower = depot[i][MAX_POWER_INDEX];
-            double minPower = depot[i][MIN_POWER_INDEX];
-            while(goToPosition(x*COUNTS_PER_INCH, y*COUNTS_PER_INCH, theta, maxPower, minPower)
-                    && opModeIsActive()){
-                globalCoordinatePositionUpdate();
-                telemetry.addData("Moving to Position", "(" + x +", " + y +")");
-                telemetry.addData("Target Angle", theta);
-                telemetry.update();
-            }
-            drive.stop();
+        double desiredX = 6000;
+        double desiredY = 10000;
+        double xDifference;
+        double yDifference;
+        double distanceLeft;
+        double motionAngle;
+        double motionMagnitude;
+        double pivot;
+        double rotationGain = .025;
+        double desiredAngle = 0;
+        double motionComponentX;
+        double motionComponentY;
+        double[] drivePower = new double[4];
+        while(opModeIsActive()){
             globalCoordinatePositionUpdate();
-        }
-        hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(750);
-        hang.setPower(0.5);
+            xDifference = desiredX-robotGlobalXPosition;
+            yDifference = desiredY-robotGlobalYPosition;
 
-        //Pivot to face alliance depot
-        runtime.reset();
-        while (opModeIsActive() && runtime.milliseconds() < 1500){
-            drive.pivot(-45, -25, 1, 0.25, 50, 2, Direction.FASTEST);
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-        }
-        drive.stop();
-        globalCoordinatePositionUpdate();
+            distanceLeft = distanceFormula(xDifference, yDifference);
+            motionMagnitude = 1;//(.5/distanceFormula(desiredX, desiredY))*distanceLeft +.5;
+            motionAngle = Math.toDegrees(Math.atan2(xDifference, yDifference));
 
-        double wallReading = leftWallPing.cmUltrasonic();
-        while (wallReading == 255){
-            wallReading = leftWallPing.cmUltrasonic();
-        }
+            pivot = (desiredAngle-imu.getZAngle(desiredAngle))*rotationGain;
 
-        double wallCorrection = (10 - wallReading) / 2.54;
-        if(wallCorrection > 0.75){
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                    0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
-            drive.stop();
-        }else if (wallCorrection < -0.75){
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                    0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
-            drive.stop();
-        }
+            //break the motion vector up into it's components
+            motionComponentX = motionMagnitude*(Math.sin(Math.toRadians(motionAngle)));
+            motionComponentY = motionMagnitude*(Math.cos(Math.toRadians(motionAngle)));
 
-        //Drive to alliance depot
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 35*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
-        drive.stop();
+            //determine motor powers
+            drivePower[0] = motionComponentY*Math.abs(motionComponentY)-motionComponentX*Math.abs(motionComponentX)-pivot;
+            drivePower[1] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)-pivot;
+            drivePower[2] = motionComponentY*Math.abs(motionComponentY)+motionComponentX*Math.abs(motionComponentX)+pivot;
+            drivePower[3] = motionComponentY*Math.abs(motionComponentY)-motionComponentX*Math.abs(motionComponentX)+pivot;
 
-        //Drop team marker
-        teamMarker.drop();
-        waitMilliseconds(500, runtime);
-        hang.setPower(0);
-        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            data.addField((float)desiredX);
+            data.addField((float) robotGlobalXPosition);
+            data.addField((float)desiredY);
+            data.addField((float) robotGlobalYPosition);
+            data.addField((float) xDifference);
+            data.addField((float) yDifference);
+            data.addField((float)distanceLeft);
+            data.addField((float)1);
+            data.addField((float).25);
+            data.addField((float) motionMagnitude);
+            data.addField((float) imu.getZAngle());
+            data.addField((float) desiredAngle);
+            data.addField((float) pivot);
+            data.addField((float) motionAngle);
+            data.newLine();
 
-        ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-        ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
 
-        //Drive to crater to park
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 55*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                0, 55*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0)){
-            if(drive.getEncoderDistance() > 25 * COUNTS_PER_INCH){
-                teamMarker.hold();
+            //crop powers to fit in limits
+            for(int i=0; i<drivePower.length; i++){
+                if(drivePower[i]>1){
+                    drivePower[i] = 1;
+                }else if(drivePower[i]<-1){
+                    drivePower[i] = -1;
+                }
             }
-            telemetry.addData("Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
-            telemetry.update();
-        }
-        drive.stop();
 
-        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineralExtension.setTargetPosition(1000);
-        mineralExtension.setPower(1);
-
-        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
-
-        while (opModeIsActive()){
-            ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-            ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-            drive.stop();
-            globalCoordinatePositionUpdate();
-            telemetry.addData("Status", "Program Finished");
-            telemetry.addData("X Position", robotGlobalXPosition /COUNTS_PER_INCH);
-            telemetry.addData("Y Position", robotGlobalYPosition /COUNTS_PER_INCH);
-            telemetry.update();
+            //set motor power
+            right_front.setPower(drivePower[0]);
+            right_back.setPower(drivePower[1]);
+            left_front.setPower(drivePower[2]);
+            left_back.setPower(drivePower[3]);
+            if(isStopRequested()){
+                data.closeDataLogger();
+            }
         }
 
     }
