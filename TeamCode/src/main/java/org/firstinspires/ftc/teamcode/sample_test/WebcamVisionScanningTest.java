@@ -3,8 +3,8 @@ package org.firstinspires.ftc.teamcode.sample_test;
 import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -30,7 +30,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Created by Sarthak on 1/5/2019.
  */
-@Autonomous (name = "Webcam Vision Scanning Test", group = "Test")
+@TeleOp(name = "Webcam Vision Scanning Test", group = "Test")
 public class WebcamVisionScanningTest extends LinearOpMode {
     //Define possible mineral locations in enum
     enum location {

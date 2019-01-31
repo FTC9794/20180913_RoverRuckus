@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -9,6 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
  * Created by Sarthak on 1/26/2019.
  */
 @TeleOp(name = "Hang Mechanism (Hang and Delatch) Test", group = "Test")
+@Disabled
 public class HangMechanismTest extends LinearOpMode {
     DcMotor hang;
     final int latchPosition = 3560, hangPosition = 1750, startPosition = 50;

@@ -327,25 +327,28 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
-
         date = new Date();
-        data = new DataLogger(date.toString() + "Crater Autonomous Calculations");
-        data.addField("target x");
-        data.addField("X");
-        data.addField("target y");
-        data.addField("Y");
-        data.addField("X Distance");
-        data.addField("Y Distance");
-        data.addField("total distance");
-        data.addField("max power");
-        data.addField("min power");
-        data.addField("Power");
-        data.addField("imu angle");
-        data.addField("target orientation");
-        data.addField("robot orientation difference");
-        data.addField("Move Angle");
-        data.addField("absolute move angle");
-        data.newLine();
+        boolean logData = false;
+
+        if(logData) {
+            data = new DataLogger(date.toString() + "Crater Autonomous Calculations");
+            data.addField("target x");
+            data.addField("X");
+            data.addField("target y");
+            data.addField("Y");
+            data.addField("X Distance");
+            data.addField("Y Distance");
+            data.addField("total distance");
+            data.addField("max power");
+            data.addField("min power");
+            data.addField("Power");
+            data.addField("imu angle");
+            data.addField("target orientation");
+            data.addField("robot orientation difference");
+            data.addField("Move Angle");
+            data.addField("absolute move angle");
+            data.newLine();
+        }
 
         ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
@@ -730,22 +733,22 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         }
         robotMoveAngle = (robotMoveAngle % 360);
 
-        data.addField((float)targetX);
-        data.addField((float) robotGlobalXPosition);
-        data.addField((float)targetY);
-        data.addField((float) robotGlobalYPosition);
-        data.addField((float) xDistance);
-        data.addField((float) yDistance);
-        data.addField((float)distance);
-        data.addField((float)maxPower);
-        data.addField((float)minPower);
-        data.addField((float) power);
-        data.addField((float) imu.getZAngle());
-        data.addField((float) targetOrientation);
-        data.addField((float) robotOrientationDifference);
-        data.addField((float) robotMoveAngle);
-        data.addField((float) (robotMoveAngle - imu.getZAngle()));
-        data.newLine();
+//        data.addField((float)targetX);
+//        data.addField((float) robotGlobalXPosition);
+//        data.addField((float)targetY);
+//        data.addField((float) robotGlobalYPosition);
+//        data.addField((float) xDistance);
+//        data.addField((float) yDistance);
+//        data.addField((float)distance);
+//        data.addField((float)maxPower);
+//        data.addField((float)minPower);
+//        data.addField((float) power);
+//        data.addField((float) imu.getZAngle());
+//        data.addField((float) targetOrientation);
+//        data.addField((float) robotOrientationDifference);
+//        data.addField((float) robotMoveAngle);
+//        data.addField((float) (robotMoveAngle - imu.getZAngle()));
+//        data.newLine();
 
         if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
                 && Math.abs(robotOrientationDifference) < 5)){

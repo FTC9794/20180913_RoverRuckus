@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -23,6 +24,7 @@ import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderRe
  * Created by Sarthak on 10/26/2018.
  */
 @TeleOp(name = "\uD83C\uDFAE Master Teleop V2", group = "Teleop")
+@Disabled
 public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
 
     /*
