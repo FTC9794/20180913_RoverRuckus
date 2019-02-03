@@ -158,6 +158,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
     File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
 
+    int delay = 0;
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -352,7 +354,32 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
+        boolean selectedDelay = false;
+        while(!selectedDelay && !isStopRequested()){
+            if(gamepad1.dpad_up){
+                delay += 1;
+                while(gamepad1.dpad_up && !isStopRequested());
+            }else if(gamepad1.dpad_down){
+                delay -= 1;
+                while(gamepad1.dpad_down && !isStopRequested());
+            }
+            if(gamepad1.x){
+                selectedDelay = true;
+            }
+            if(delay < 0){
+                delay = 0;
+            }else if (delay > 8){
+                delay = 8;
+            }
+            telemetry.addLine("Press Gamepad 1 DPad Up to Increase Delay");
+            telemetry.addLine("Press Gamepad 1 DPad Down to Decrease Delay");
+            telemetry.addLine("Press Gamepad 1 X to Exit");
+            telemetry.addData("Delay (Seconds)", delay);
+            telemetry.update();
+        }
+
         telemetry.addData("Status", "Init Complete");
+        telemetry.addData("Delay (Seconds)", delay);
         telemetry.update();
 
         waitForStart();
@@ -373,7 +400,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(6000);
+        hang.setTargetPosition(6500);
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
@@ -437,6 +464,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         globalCoordinatePositionUpdate();
         scanner.setPosition(0.5);
         teamMarkerServo.setPosition(0.5);
+
+        waitMilliseconds(delay*1000, runtime);
 
         switch (mineralLocation){
             case LEFT:

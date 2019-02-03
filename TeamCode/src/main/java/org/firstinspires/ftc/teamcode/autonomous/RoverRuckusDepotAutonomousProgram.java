@@ -148,6 +148,8 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
     File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
 
+    int delay = 0;
+
     @Override
     public void runOpMode() throws InterruptedException {
         //Init motor hardware map and behaviors
@@ -317,7 +319,33 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
+
+        boolean selectedDelay = false;
+        while(!selectedDelay && !isStopRequested()){
+            if(gamepad1.dpad_up){
+                delay += 1;
+                while(gamepad1.dpad_up && !isStopRequested());
+            }else if(gamepad1.dpad_down){
+                delay -= 1;
+                while(gamepad1.dpad_down && !isStopRequested());
+            }
+            if(gamepad1.x){
+                selectedDelay = true;
+            }
+            if(delay < 0){
+                delay = 0;
+            }else if (delay > 10){
+                delay = 10;
+            }
+            telemetry.addLine("Press Gamepad 1 DPad Up to Increase Delay");
+            telemetry.addLine("Press Gamepad 1 DPad Down to Decrease Delay");
+            telemetry.addLine("Press Gamepad 1 X to Exit");
+            telemetry.addData("Delay (Seconds)", delay);
+            telemetry.update();
+        }
+
         telemetry.addData("Status", "Init Complete");
+        telemetry.addData("Delay (Seconds)", delay);
         telemetry.update();
 
         teamMarker.hold();
@@ -341,7 +369,7 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(6000);
+        hang.setTargetPosition(6500);
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);
@@ -397,6 +425,8 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         vuforia.disableDogeCV();
         scanner.setPosition(0.5);
         team_marker.setPosition(0.5);
+
+        waitMilliseconds(delay*1000, runtime);
 
         ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
         ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));

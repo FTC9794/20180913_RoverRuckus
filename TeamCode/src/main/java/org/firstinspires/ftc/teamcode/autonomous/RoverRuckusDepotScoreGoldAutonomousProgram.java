@@ -6,6 +6,7 @@ import com.disnodeteam.dogecv.Dogeforia;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -47,6 +48,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Created by Sarthak on 10/26/2018.
  */
 @Autonomous(name = "Depot Autonomous Score Gold", group = "Autonomous")
+@Disabled
 public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
     IDrivetrain drive;

@@ -383,7 +383,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        hang.setTargetPosition(6000);
+        hang.setTargetPosition(6500);
         hang.setPower(1);
         mineral_rotation.setTargetPosition(170);
         mineral_rotation.setPower(1);

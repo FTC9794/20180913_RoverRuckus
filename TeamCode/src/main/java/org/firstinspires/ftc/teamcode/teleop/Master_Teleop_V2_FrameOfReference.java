@@ -97,7 +97,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 270, intakeIntakePosition = 535;
+    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 340, intakeIntakePosition = 535;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -189,9 +189,9 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         mineralExtensionPosition = 0;
         mineralRotationPosition = 0;
 
-        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1400,
-                extensionDumpPositionBlocks = 2140,
-                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 1000, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 6,
+        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1580,
+                extensionDumpPositionBlocks = 2190,
+                rotationExtendPosition = 720, mineralRotationDumpBallPosition = 1000, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 6,
                 rotationMaxPosition = 1200, rotationDrivePosition = 390;
 
         final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
@@ -350,7 +350,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             lf.setPower(drivePower[2]);
             lb.setPower(drivePower[3]);
 
-            if(intakeRotation.getCurrentPosition() < 100){
+            if(intakeRotation.getCurrentPosition() < (intakeIntakePosition-435)){
                 intakeGate.setPosition(GATE_OPEN);
             }else if(gamepad1.a){
                 intakeGate.setPosition(GATE_OPEN);
@@ -531,6 +531,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             if(gamepad2.left_bumper){
                 intakeIntakePosition = intakeRotation.getCurrentPosition();
                 intakeDumpReadyPosition = intakeIntakePosition - 125;
+                intakeDumpReadyPositionBlocks = intakeIntakePosition - 215;
             }
 
             if(gamepad1.left_trigger>.01){
@@ -663,6 +664,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 case NOTHING:
                     if(gamepad2.b){
                         intakeCurrentPosition = intakeIntakePosition;
+                        mineralExtensionPosition = extensionDumpPositionBlocks;
                         mineralRotationPosition = mineralRotationDumpBallPosition;
                         depositBlocksState = depositingBlocksPositionState.ROTATION1;
                         depositPositionState = depositingPositionState.NOTHING;
@@ -673,9 +675,6 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 case ROTATION1:
                     if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/8)){
                         intakeCurrentPosition = intakeDumpReadyPositionBlocks;
-                    }
-                    if(mineralRotation.getCurrentPosition() > 500){
-                        mineralExtensionPosition = extensionDumpPositionBlocks;
                     }
                     if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotation.setPower(0);
