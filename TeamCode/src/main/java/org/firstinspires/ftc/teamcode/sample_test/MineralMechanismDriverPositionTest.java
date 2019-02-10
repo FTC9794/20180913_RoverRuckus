@@ -51,7 +51,7 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 270, intakeIntakePosition = 535;
+    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 340, intakeIntakePosition = 535;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -85,10 +85,10 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
         mineralExtensionPosition = 0;
         mineralRotationPosition = 0;
 
-        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1400,
-                extensionDumpPositionBlocks = 2140,
-                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 1000, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 6,
-                rotationMaxPosition = 1200, rotationDrivePosition = 390;
+        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1580,
+                extensionDumpPositionBlocks = 2190,
+                rotationExtendPosition = 620, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 6,
+                rotationMaxPosition = 1200, rotationDrivePosition = 950;
 
         final double mineralExtensionPower = 1;
         /*
@@ -133,6 +133,13 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
             Mineral Rotation and extension code
 
              */
+
+            if(gamepad2.right_bumper){
+                mineralExtensionPosition = 0;
+                intakeCurrentPosition = 0;
+                mineralRotationPosition = 0;
+                drivePositionState = drivingPositionState.NOTHING;
+            }
 
             if(gamepad2.dpad_up){
                 mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -319,8 +326,7 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
                 case NOTHING:
                     if(gamepad1.a){
                         intakeCurrentPosition = intakeIntakePosition;
-                        mineralExtensionPosition = extensionDumpPositionBalls;
-                        mineralRotationPosition = mineralRotationDumpBallPosition;
+                        mineralRotationPosition = rotationExtendPosition;
                         depositPositionState = ROTATION1;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         intakePositionState = NOTHING;
@@ -328,12 +334,19 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
                     }
                     break;
                 case ROTATION1:
-                    if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/8)){
+                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                        mineralRotationPosition = mineralRotationDumpBallPosition;
+                        mineralExtensionPosition = extensionDumpPositionBalls;
+                        depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
+                    }
+                    break;
+
+                case EXTENSIONINTAKEROTATION:
+                    if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/4)){
                         intakeCurrentPosition = intakeDumpReadyPosition;
                     }
                     if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
-                        mineralRotation.setPower(0);
-                        depositPositionState = depositingPositionState.NOTHING;
+                        depositPositionState = depositPositionState.NOTHING;
                     }
                     break;
             }
@@ -342,7 +355,7 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
                 case NOTHING:
                     if(gamepad1.y){
                         intakeCurrentPosition = intakeIntakePosition;
-                        mineralRotationPosition = mineralRotationDumpBallPosition;
+                        mineralRotationPosition = rotationExtendPosition;
                         depositBlocksState = depositingBlocksPositionState.ROTATION1;
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
@@ -350,14 +363,18 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
                     }
                     break;
                 case ROTATION1:
-                    if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/8)){
+                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                        mineralRotationPosition = mineralRotationDumpBallPosition;
+                        mineralExtensionPosition = extensionDumpPositionBlocks;
+                        depositBlocksState = depositingBlocksPositionState.EXTENSIONINTAKEROTATION;
+                    }
+                    break;
+
+                case EXTENSIONINTAKEROTATION:
+                    if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/4)){
                         intakeCurrentPosition = intakeDumpReadyPositionBlocks;
                     }
-                    if(mineralRotation.getCurrentPosition() > 500){
-                        mineralExtensionPosition = extensionDumpPositionBlocks;
-                    }
                     if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
-                        mineralRotation.setPower(0);
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                     }
                     break;
@@ -370,10 +387,9 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
                         intaking = false;
-
-                        drivePositionState = drivingPositionState.FINALPOSITION;
-                        mineralRotationPosition = rotationDrivePosition;
+                        mineralRotationPosition = rotationExtendPosition;
                         intakeCurrentPosition = intakeIntakePosition;
+                        drivePositionState = drivingPositionState.ROTATION1;
                     }
                     break;
 
@@ -382,15 +398,12 @@ public class MineralMechanismDriverPositionTest extends LinearOpMode {
                         mineralExtensionPosition = 0;
                     }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
-                        drivePositionState = drivingPositionState.FINALPOSITION;
                         mineralRotationPosition = rotationDrivePosition;
                         intakeCurrentPosition = intakeIntakePosition;
+                        drivePositionState = drivingPositionState.FINALPOSITION;
                     }
                     break;
                 case FINALPOSITION:
-                    if(mineralRotation.getCurrentPosition() < 900){
-                        mineralExtensionPosition = 0;
-                    }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()&&!intakeRotation.isBusy()){
                         drivePositionState = drivingPositionState.NOTHING;
                     }
