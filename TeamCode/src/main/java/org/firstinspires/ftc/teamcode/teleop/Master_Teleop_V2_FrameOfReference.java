@@ -193,7 +193,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
         int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1580,
                 extensionDumpPositionBlocks = 2190,
-                rotationExtendPosition = 600, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 6,
+                rotationExtendPosition = 650, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 6,
                 rotationMaxPosition = 1200, rotationDrivePosition = 950;
 
         final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
@@ -607,6 +607,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             }
 
             telemetry.addData("Intake Rotation Position", intakeRotation.getCurrentPosition());
+            telemetry.addData("Intake Intake Position", intakeIntakePosition);
             telemetry.addData("Hang Current Position", hang.getCurrentPosition());
             telemetry.update();
 
@@ -625,7 +626,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                         intakeCurrentPosition = intakeIntakePosition;
                         mineralExtension.setTargetPosition(0);
                         mineralRotationPosition = 0;
-                        mineralRotationMechPower = 0.4;
+                        mineralRotationMechPower = 0.3;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
@@ -654,7 +655,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     }
                     break;
                 case ROTATION1:
-                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                    if(mineralRotation.getCurrentPosition() < 670){
                         mineralExtensionPosition = extensionDumpPositionBalls;
                         mineralRotationMechPower = 0.2;
                         depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
@@ -685,7 +686,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     }
                     break;
                 case ROTATION1:
-                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                    if(mineralRotation.getCurrentPosition() < 670){
                         mineralExtensionPosition = extensionDumpPositionBlocks;
                         mineralRotationMechPower = 0.2;
                         depositBlocksState = depositingBlocksPositionState.EXTENSIONINTAKEROTATION;
