@@ -56,7 +56,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
     DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 2640, hangMaxPosition = 5000, hangLatchPosition = 3560, hangHungPosition = 13;
+    final int hangReadyPosition = 2640, hangMaxPosition = 5000, hangLatchPosition = 5150, hangHungPosition = 13;
     final double hangStopperStoredPosition = 0.5;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
@@ -406,15 +406,19 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             }
 
             yPressed = gamepad2.y;
-            if(yPressed&&!yPressedToggle&&!latchReady){
+            if(yPressed&&!yPressedToggle&&!hangReady){
+                hangCurrentPosition = hangLatchPosition;
+                hangReady = true;
+            }
+            yPressedToggle = yPressed;
+            /*if(yPressed&&!yPressedToggle&&!latchReady){
                 hangCurrentPosition = hangReadyPosition;
                 latchReady = true;
             }else if(yPressed&&!yPressedToggle&&latchReady){
                 hangCurrentPosition = hangLatchPosition;
                 latchReady = false;
                 hangReady = true;
-            }
-            yPressedToggle = yPressed;
+            }*/
 
 
             /*
