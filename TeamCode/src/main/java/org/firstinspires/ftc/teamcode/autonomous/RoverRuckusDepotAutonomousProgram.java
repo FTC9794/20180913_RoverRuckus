@@ -568,7 +568,7 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setTargetPosition(1000);
-        mineral_rotation.setPower(0.2);
+        mineral_rotation.setPower(0.15);
         while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
         waitMilliseconds(1000, runtime);
 
