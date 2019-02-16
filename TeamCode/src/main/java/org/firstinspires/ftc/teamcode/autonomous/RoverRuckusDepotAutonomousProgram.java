@@ -23,6 +23,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+import org.firstinspires.ftc.teamcode.DataLogger;
 import org.firstinspires.ftc.teamcode.Enums.Direction;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.MecanumDrive;
@@ -34,6 +35,7 @@ import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
@@ -57,6 +59,10 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
 
     CRServo intake;
     final double intakeInPower = .73, intakeOutPower = -.73;
+
+    DataLogger dataLogger;
+    Date date;
+    boolean logData = true;
 
     DcMotor intakeRotation;
 
@@ -327,6 +333,28 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
+
+        date = new Date();
+
+        if(logData) {
+            dataLogger = new DataLogger(date.toString() + "Depot Autonomous Calculations");
+            dataLogger.addField("target x");
+            dataLogger.addField("X");
+            dataLogger.addField("target y");
+            dataLogger.addField("Y");
+            dataLogger.addField("X Distance");
+            dataLogger.addField("Y Distance");
+            dataLogger.addField("total distance");
+            dataLogger.addField("max power");
+            dataLogger.addField("min power");
+            dataLogger.addField("Power");
+            dataLogger.addField("imu angle");
+            dataLogger.addField("target orientation");
+            dataLogger.addField("robot orientation difference");
+            dataLogger.addField("Move Angle");
+            dataLogger.addField("absolute move angle");
+            dataLogger.newLine();
+        }
 
         boolean selectedDelay = false;
         while(!selectedDelay && !isStopRequested()){
@@ -749,16 +777,24 @@ public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
         }
         robotMoveAngle = (robotMoveAngle % 360);
 
-        /*dataLogger.addField((float) robotGlobalXPosition);
-        dataLogger.addField((float) robotGlobalYPosition);
-        dataLogger.addField((float) xDistance);
-        dataLogger.addField((float) yDistance);
-        dataLogger.addField((float) power);
-        dataLogger.addField((float) imu.getZAngle());
-        dataLogger.addField((float) robotOrientationDifference);
-        dataLogger.addField((float) robotMoveAngle);
-        dataLogger.addField((float) (robotMoveAngle - imu.getZAngle()));
-        dataLogger.newLine();*/
+        if(logData) {
+            dataLogger.addField((float) targetX);
+            dataLogger.addField((float) robotGlobalXPosition);
+            dataLogger.addField((float) targetY);
+            dataLogger.addField((float) robotGlobalYPosition);
+            dataLogger.addField((float) xDistance);
+            dataLogger.addField((float) yDistance);
+            dataLogger.addField((float) distance);
+            dataLogger.addField((float) maxPower);
+            dataLogger.addField((float) minPower);
+            dataLogger.addField((float) power);
+            dataLogger.addField((float) imu.getZAngle());
+            dataLogger.addField((float) targetOrientation);
+            dataLogger.addField((float) robotOrientationDifference);
+            dataLogger.addField((float) robotMoveAngle);
+            dataLogger.addField((float) (robotMoveAngle - imu.getZAngle()));
+            dataLogger.newLine();
+        }
 
         if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
                 && Math.abs(robotOrientationDifference) < 5)){
