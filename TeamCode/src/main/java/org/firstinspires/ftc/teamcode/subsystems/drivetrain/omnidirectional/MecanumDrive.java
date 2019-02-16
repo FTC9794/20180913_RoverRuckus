@@ -273,7 +273,7 @@ public class MecanumDrive implements IDrivetrain {
      * @return true if the action has been completed, false if the robot is still pivoting
      */
     @Override
-    public boolean pivot(double desiredAngle, double rampDownAngle, double maxPower, double minPower, double correctionAngleError, double correctionTime, Direction direction) {
+    public boolean pivot(double desiredAngle, double rampDownAngle, double maxPower, double minPower, double correctionTime, double correctionAngleError, Direction direction) {
         double currentAngle = imu.getZAngle(desiredAngle);
         double angleDifference = desiredAngle-currentAngle;
         double rampDownDifference = desiredAngle - rampDownAngle;
@@ -286,7 +286,7 @@ public class MecanumDrive implements IDrivetrain {
             power = (maxPower-minPower)/(Math.abs(rampDownDifference)) * Math.abs(angleDifference) + minPower;
         }
         //turn clockwise or counterclockwise depending on which side of desired angle current angle is
-        if(direction== Direction.FASTEST||needsToPivot){
+        if(direction== Direction.FASTEST||targetReached){
             if(angleDifference>0){
                 this.setPowerAll(-power, -power, power, power);
             }else{
@@ -300,12 +300,12 @@ public class MecanumDrive implements IDrivetrain {
 
 
         //determine if the pivoting angle is in the desired range
-        if(Math.abs(angleDifference)<correctionAngleError&&!needsToPivot){
+        if(Math.abs(angleDifference)<correctionAngleError&&!targetReached){
             pivotTime.reset();
-            needsToPivot = true;
+            targetReached = true;
         }
-        if(needsToPivot && pivotTime.milliseconds()>=correctionTime){
-            needsToPivot = false;
+        if(targetReached && pivotTime.milliseconds()>=correctionTime){
+            targetReached = false;
             this.stop();
             return false;
         }else{

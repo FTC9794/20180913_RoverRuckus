@@ -159,7 +159,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         //hang.setDirection(DcMotorSimple.Direction.REVERSE);
 
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         /*
