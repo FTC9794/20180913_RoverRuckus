@@ -373,15 +373,15 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
         //Release Hang Latch
         hang_latch.setPosition(1);
-        waitMilliseconds(250, runtime);
+        waitMilliseconds(1000, runtime);
 
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         //hang.setTargetPosition(6500);
         hang.setPower(1);
-        mineral_rotation.setTargetPosition(170);
-        mineral_rotation.setPower(1);
+        mineral_rotation.setTargetPosition(80);
+        mineral_rotation.setPower(0.2);
 
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         intakeRotation.setTargetPosition(100);
@@ -489,7 +489,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
                 while(intakeRotation.getCurrentPosition() < 535 && opModeIsActive());
 
-                mineralExtension.setTargetPosition(750);
+                mineralExtension.setTargetPosition(725);
                 mineralExtension.setPower(1);
                 while(mineralExtension.isBusy() && opModeIsActive());
 
@@ -682,7 +682,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
                 break;
         }
 
-        waitMilliseconds(250, runtime);
+        waitMilliseconds(1000, runtime);
         mineral_rotation.setPower(0);
 
         while(intakeRotation.getCurrentPosition() > 150 && opModeIsActive());
@@ -733,7 +733,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         }
 
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 10*COUNTS_PER_INCH, 4*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 5*COUNTS_PER_INCH, 4*COUNTS_PER_INCH,
                 0, 4*COUNTS_PER_INCH, 0.5, 0.5, 135 , DEFAULT_PID, 135
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();

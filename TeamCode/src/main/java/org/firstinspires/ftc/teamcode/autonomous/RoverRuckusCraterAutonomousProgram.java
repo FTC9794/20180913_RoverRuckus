@@ -422,15 +422,15 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         //hang.setTargetPosition(6500);
         hang.setPower(1);
-        mineral_rotation.setTargetPosition(170);
+        mineral_rotation.setTargetPosition(80);
         mineral_rotation.setPower(1);
 
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setTargetPosition(85);
+        intakeRotation.setTargetPosition(100);
         intakeRotation.setPower(1);
 
         runtime.reset();
-        while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
+        while(hang.getCurrentPosition() < 6490 && opModeIsActive()){
             if(runtime.milliseconds() > 1250 && opModeIsActive()){
                 mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 mineral_rotation.setPower(-0.3);
@@ -598,8 +598,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         intakeRotation.setTargetPosition(75);
         intakeRotation.setPower(1);
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 30*COUNTS_PER_INCH, 325*COUNTS_PER_INCH,
-                0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 20*COUNTS_PER_INCH,
+                0, 25*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
 
@@ -621,7 +621,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         mineral_rotation.setTargetPosition(0);
         mineral_rotation.setPower(0.3);
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 50*COUNTS_PER_INCH, 40*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 49*COUNTS_PER_INCH, 40*COUNTS_PER_INCH,
                 0, 50*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0)){
             if(drive.getEncoderDistance() > 25 * COUNTS_PER_INCH){
@@ -657,6 +657,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         while(mineralExtension.isBusy() && opModeIsActive());
         mineralExtension.setTargetPosition(500);
         while(mineralExtension.isBusy() && opModeIsActive());
+
+        waitMilliseconds(500, runtime);
 
 
 

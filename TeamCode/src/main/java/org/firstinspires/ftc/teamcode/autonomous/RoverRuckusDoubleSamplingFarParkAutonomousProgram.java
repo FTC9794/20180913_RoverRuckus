@@ -404,8 +404,11 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         //hang.setTargetPosition(6500);
         hang.setPower(1);
-        mineral_rotation.setTargetPosition(170);
+        mineral_rotation.setTargetPosition(80);
         mineral_rotation.setPower(1);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setTargetPosition(100);
+        intakeRotation.setPower(1);
 
         runtime.reset();
         while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
@@ -568,10 +571,6 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
         hang.setTargetPosition(hangReadyPosition);
         hang.setPower(0.5);
 
-        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setTargetPosition(75);
-        intakeRotation.setPower(1);
-
         //Drive to alliance depot
         if(mineralLocation == RIGHT){
             //Drive to alliance depot and knock second mineral
@@ -631,10 +630,10 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
             mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.15);
-            //teamMarker.drop();
+            mineral_rotation.setPower(0.4);
             while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
             waitMilliseconds(1000, runtime);
+
             mineral_rotation.setTargetPosition(0);
             mineral_rotation.setPower(0.3);
 
@@ -711,14 +710,13 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
 
         }else if (mineralLocation == location.LEFT){
             //Drop team marker
-            //Drop team marker
             mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.15);
-            //teamMarker.drop();
+            mineral_rotation.setPower(0.4);
             while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
             waitMilliseconds(1000, runtime);
+
             mineral_rotation.setTargetPosition(0);
             mineral_rotation.setPower(0.3);
 
@@ -813,10 +811,10 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
             mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.15);
-            //teamMarker.drop();
+            mineral_rotation.setPower(0.4);
             while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
             waitMilliseconds(1000, runtime);
+
             mineral_rotation.setTargetPosition(0);
             mineral_rotation.setPower(0.3);
 

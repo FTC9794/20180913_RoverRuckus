@@ -25,6 +25,7 @@ import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_NoEncoderRe
  */
 @TeleOp(name = "\uD83C\uDFAE Master Teleop V2", group = "Teleop")
 @Disabled
+@Deprecated
 public class Master_Teleop_V2_NoEncoderReset extends LinearOpMode {
 
     /*

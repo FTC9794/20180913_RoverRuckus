@@ -387,7 +387,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         waitMilliseconds(500, runtime);
         boolean found = detector.isFound();
         boolean selected = false;
-        if(found && detector.getScreenPosition().y > 200) {
+        if(found && detector.getScreenPosition().y > 150) {
             mineralLocation = location.CENTER;
             selected = true;
             vuforia.disableDogeCV();
@@ -397,19 +397,27 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
         //Release Hang Latch
         hang_latch.setPosition(1);
-        waitMilliseconds(750, runtime);
+        waitMilliseconds(250, runtime);
 
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         //hang.setTargetPosition(6500);
         hang.setPower(1);
-        mineral_rotation.setTargetPosition(170);
+        mineral_rotation.setTargetPosition(80);
         mineral_rotation.setPower(1);
+
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setTargetPosition(100);
+        intakeRotation.setPower(1);
 
         runtime.reset();
         while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
-            if(!mineral_rotation.isBusy()){
+            if(runtime.milliseconds() > 1250 && opModeIsActive()){
+                mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                mineral_rotation.setPower(-0.3);
+            }
+            /*if(!mineral_rotation.isBusy()){
                 if(rotation_limit.getState()){
                     mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     mineral_rotation.setPower(-0.15);
@@ -417,7 +425,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
                     mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     mineral_rotation.setPower(0);
                 }
-            }
+            }*/
             telemetry.addData("hang pos", hang.getCurrentPosition());
             telemetry.update();
         }
@@ -465,7 +473,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
                     drive.stop();
                     globalCoordinatePositionUpdate();
                     if(i == 0){
-                        waitMilliseconds(1000, runtime);
+                        waitMilliseconds(500, runtime);
                     }
                 }
                 break;
@@ -486,7 +494,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
                     drive.stop();
                     globalCoordinatePositionUpdate();
                     if(i == 0){
-                        waitMilliseconds(1000, runtime);
+                        waitMilliseconds(500, runtime);
                     }
                 }
                 break;
@@ -507,7 +515,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
                     drive.stop();
                     globalCoordinatePositionUpdate();
                     if(i == 0){
-                        waitMilliseconds(1000, runtime);
+                        waitMilliseconds(500, runtime);
                     }
                 }
                 break;
@@ -630,8 +638,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
             mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.15);
-            //teamMarker.drop();
+            mineral_rotation.setPower(0.4);
             while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
             waitMilliseconds(1000, runtime);
 
@@ -670,8 +677,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
             mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.15);
-            //teamMarker.drop();
+            mineral_rotation.setPower(0.4);
             while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
             waitMilliseconds(1000, runtime);
             mineral_rotation.setTargetPosition(0);
@@ -802,8 +808,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
             mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.15);
-            //teamMarker.drop();
+            mineral_rotation.setPower(0.4);
             while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
             waitMilliseconds(1000, runtime);
             mineral_rotation.setTargetPosition(0);
