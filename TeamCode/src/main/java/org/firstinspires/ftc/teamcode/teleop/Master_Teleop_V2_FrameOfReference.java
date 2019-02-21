@@ -97,7 +97,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
      */
     DcMotor intakeRotation;
     CRServo intake;
-    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 340, intakeIntakePosition = 535;
+    int intakeDumpReadyPosition = 425, intakeDumpReadyPositionBlocks = 270, intakeIntakePosition = 535;
     final double intakeInPower = .73, intakeOutPower = -.73;
     double intakeRotationPower = .5;
     int intakeCurrentPosition;
@@ -145,7 +145,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        fieldCentric = true;
+        //Disable field centric driving by default
+        fieldCentric = false;
 
         /*
 
@@ -192,7 +193,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         mineralRotationPosition = 0;
 
         int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1580,
-                extensionDumpPositionBlocks = 2190,
+                extensionDumpPositionBlocks = 1700,
                 rotationExtendPosition = 725, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 24,
                 rotationMaxPosition = 1200, rotationDrivePosition = 880;
 
@@ -729,7 +730,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
                         intaking = false;
-                        mineralRotationPosition = rotationExtendPosition+75;
+                        mineralRotationPosition = rotationExtendPosition+100;
                         if(mineralRotation.getCurrentPosition() < rotationExtendPosition){
                             mineralRotationMechPower = 0.5;
                         }else{
@@ -744,7 +745,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     break;
 
                 case ROTATION1:
-                    if(mineralRotation.getCurrentPosition() < 850){
+                    if(mineralRotation.getCurrentPosition() < 865){
                         mineralExtensionPosition = 0;
                     }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
