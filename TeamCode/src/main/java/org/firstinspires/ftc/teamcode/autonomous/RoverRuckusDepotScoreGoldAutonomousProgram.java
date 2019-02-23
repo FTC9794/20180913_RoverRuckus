@@ -451,7 +451,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
         waitMilliseconds(250, runtime);
 
-        while (opModeIsActive() && drive.pivot(-90, -45, 1, 0.15,
+        while (opModeIsActive() && drive.pivot(-75, -25, 1, 0.15,
                 750, 5, Direction.FASTEST)){
             globalCoordinatePositionUpdate();
             telemetry.update();
@@ -459,7 +459,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         drive.stop();
 
         mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineralExtension.setTargetPosition(2250);
+        mineralExtension.setTargetPosition(2650);
         mineralExtension.setPower(1);
         while(mineralExtension.getCurrentPosition() < 1800 && opModeIsActive());
         intakeRotation.setTargetPosition(450);
@@ -717,7 +717,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
             wallReading = rightWallPing.cmUltrasonic();
         }
 
-        double wallCorrection = (9 - wallReading) / 2.54;
+        double wallCorrection = (10 - wallReading) / 2.54;
         if(wallCorrection > 0.75){
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
@@ -749,6 +749,23 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
         intake.setPower(0.73);
         intakeRotation.setTargetPosition(535);
+
+        while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
+
+        int extensionPosition = 1250; int numExtends = 0;
+        while(opModeIsActive()){
+            mineralExtension.setTargetPosition(extensionPosition);
+            while(mineralExtension.isBusy() && opModeIsActive());
+            mineralExtension.setTargetPosition(500);
+            while(mineralExtension.isBusy() && opModeIsActive());
+            numExtends++;
+
+            if(numExtends == 2){
+                extensionPosition = 1750;
+            }else if(numExtends == 4){
+                extensionPosition = 2250;
+            }
+        }
 
 
         while(opModeIsActive()){

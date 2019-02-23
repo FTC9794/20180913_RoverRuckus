@@ -430,7 +430,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         intakeRotation.setPower(1);
 
         runtime.reset();
-        while(hang.getCurrentPosition() < 6490 && opModeIsActive()){
+        while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
             if(runtime.milliseconds() > 1250 && opModeIsActive()){
                 mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 mineral_rotation.setPower(-0.3);
@@ -633,7 +633,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         drive.stop();
 
         mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineralExtension.setTargetPosition(1000);
+        mineralExtension.setTargetPosition(750);
         mineralExtension.setPower(1);
 
         while(mineralExtension.isBusy() && opModeIsActive());
@@ -645,22 +645,22 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
 
-        mineralExtension.setTargetPosition(1750);
-        while(mineralExtension.isBusy() && opModeIsActive());
-        mineralExtension.setTargetPosition(500);
-        while(mineralExtension.isBusy() && opModeIsActive());
-        mineralExtension.setTargetPosition(1750);
-        while(mineralExtension.isBusy() && opModeIsActive());
-        mineralExtension.setTargetPosition(500);
-        while(mineralExtension.isBusy() && opModeIsActive());
-        mineralExtension.setTargetPosition(1750);
-        while(mineralExtension.isBusy() && opModeIsActive());
-        mineralExtension.setTargetPosition(500);
-        while(mineralExtension.isBusy() && opModeIsActive());
+        int extensionPosition = 1250; int numExtends = 0;
+        while(opModeIsActive()){
+            mineralExtension.setTargetPosition(extensionPosition);
+            while(mineralExtension.isBusy() && opModeIsActive());
+            mineralExtension.setTargetPosition(500);
+            while(mineralExtension.isBusy() && opModeIsActive());
+            numExtends++;
 
-        waitMilliseconds(500, runtime);
+            if(numExtends == 2){
+                extensionPosition = 1750;
+            }else if(numExtends == 4){
+                extensionPosition = 2250;
+            }
+        }
 
-
+        intake.setPower(0);
 
         ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
