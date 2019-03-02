@@ -9,6 +9,7 @@ import com.disnodeteam.dogecv.Dogeforia;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -54,6 +55,7 @@ import static org.firstinspires.ftc.teamcode.autonomous.RoverRuckusDoubleSamplin
  * Created by Sarthak on 10/29/2018.
  */
 @Autonomous(name = "\uD83E\uDD16 Double Sampling Far Crater Park Autonomous", group = "Autonomous")
+@Disabled
 public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
@@ -374,6 +376,9 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
 
         waitForStart();
 
+        ElapsedTime gameTime = new ElapsedTime();
+        gameTime.reset();
+
         runtime.reset();
 
         /**
@@ -397,22 +402,23 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
 
         //Release Hang Latch
         hang_latch.setPosition(1);
-        waitMilliseconds(750, runtime);
+        waitMilliseconds(250, runtime);
+
+        //Release Hang Latch
+        hang_latch.setPosition(1);
+        waitMilliseconds(250, runtime);
 
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //hang.setTargetPosition(6500);
         hang.setPower(1);
-        mineral_rotation.setTargetPosition(80);
-        mineral_rotation.setPower(1);
-        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setTargetPosition(100);
-        intakeRotation.setPower(1);
 
         runtime.reset();
         while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
-            if(!mineral_rotation.isBusy()){
+            /*if(runtime.milliseconds() > 1250 && opModeIsActive()){
+                mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                mineral_rotation.setPower(-0.4);
+            }
+            /*if(!mineral_rotation.isBusy()){
                 if(rotation_limit.getState()){
                     mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     mineral_rotation.setPower(-0.15);
@@ -420,7 +426,7 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
                     mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     mineral_rotation.setPower(0);
                 }
-            }
+            }*/
             telemetry.addData("hang pos", hang.getCurrentPosition());
             telemetry.update();
         }
@@ -559,7 +565,7 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
         }
 
         //Pivot to face alliance depot
-        while (opModeIsActive() && drive.pivot(-45, -25, 1, 0.15,
+        while (opModeIsActive() && drive.pivot(-45, -25, 0.75, 0.15,
                 250, 5, Direction.FASTEST)){
             globalCoordinatePositionUpdate();
             telemetry.update();
@@ -570,6 +576,29 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setTargetPosition(hangReadyPosition);
         hang.setPower(0.5);
+
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setTargetPosition(75);
+        intakeRotation.setPower(1);
+
+        //Unlatch mineral arm
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineral_rotation.setTargetPosition(0);
+        mineral_rotation.setPower(1);
+
+        //Rotate intake rotation up to secure team marker
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setTargetPosition(100);
+        intakeRotation.setPower(1);
+
+        //Extend mineral extension
+        mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setTargetPosition(300);
+        mineralExtension.setPower(1);
+
+        mineral_rotation.setTargetPosition(-100);
+        mineral_rotation.setPower(0.5);
 
         //Drive to alliance depot
         if(mineralLocation == RIGHT){
@@ -627,15 +656,16 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
             globalCoordinatePositionUpdate();
 
             //Drop team marker
-            mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.4);
-            while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
+            mineralExtension.setTargetPosition(50);
+            mineral_rotation.setTargetPosition(200);
+            waitMilliseconds(500, runtime);
+            intake.setPower(intakeOutPower);
             waitMilliseconds(1000, runtime);
+            intake.setPower(0);
 
-            mineral_rotation.setTargetPosition(0);
-            mineral_rotation.setPower(0.3);
+            mineral_rotation.setTargetPosition(-350);
+            mineral_rotation.setTargetPosition(350);
+            mineral_rotation.setPower(0.5);
 
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -644,7 +674,7 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
 
             //Pivot to read perimeter wall
-            while (opModeIsActive() && drive.pivot(45, 25, 1, 0.15,
+            while (opModeIsActive() && drive.pivot(45, 25, 0.75, 0.15,
                     250, 5, Direction.FASTEST)){
                 globalCoordinatePositionUpdate();
                 telemetry.update();
@@ -701,8 +731,41 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
             drive.stop();*/
 
             mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineralExtension.setTargetPosition(1000);
+            mineralExtension.setTargetPosition(750);
             mineralExtension.setPower(1);
+
+            while(mineralExtension.isBusy() && opModeIsActive());
+
+            intakeRotation.setTargetPosition(535);
+            intakeRotation.setPower(1);
+
+            intake.setPower(intakeInPower);
+
+            while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
+
+            int extensionPosition = 1250; int numExtends = 0;
+            while(opModeIsActive() && gameTime.milliseconds() < 27500){
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+
+                mineralExtension.setTargetPosition(extensionPosition);
+                while(mineralExtension.isBusy() && opModeIsActive());
+                mineralExtension.setTargetPosition(500);
+                while(mineralExtension.isBusy() && opModeIsActive());
+                numExtends++;
+
+                if(numExtends == 2){
+                    extensionPosition = 1750;
+                }else if(numExtends == 4){
+                    extensionPosition = 2250;
+                }
+            }
+
+            while(opModeIsActive()){
+                mineralExtension.setTargetPosition(2250);
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
@@ -710,15 +773,16 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
 
         }else if (mineralLocation == location.LEFT){
             //Drop team marker
-            mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.4);
-            while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
+            mineralExtension.setTargetPosition(50);
+            mineral_rotation.setTargetPosition(200);
+            waitMilliseconds(500, runtime);
+            intake.setPower(intakeOutPower);
             waitMilliseconds(1000, runtime);
+            intake.setPower(0);
 
-            mineral_rotation.setTargetPosition(0);
-            mineral_rotation.setPower(0.3);
+            mineral_rotation.setTargetPosition(-350);
+            mineralExtension.setTargetPosition(350);
+            mineral_rotation.setPower(0.5);
 
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -802,21 +866,56 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
             mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineralExtension.setTargetPosition(1000);
+            mineralExtension.setTargetPosition(750);
             mineralExtension.setPower(1);
+
+            while(mineralExtension.isBusy() && opModeIsActive());
+
+            intakeRotation.setTargetPosition(535);
+            intakeRotation.setPower(1);
+
+            intake.setPower(intakeInPower);
+
+            while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
+
+            int extensionPosition = 1250; int numExtends = 0;
+            while(opModeIsActive() && gameTime.milliseconds() < 27500){
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+
+                mineralExtension.setTargetPosition(extensionPosition);
+                while(mineralExtension.isBusy() && opModeIsActive());
+                mineralExtension.setTargetPosition(500);
+                while(mineralExtension.isBusy() && opModeIsActive());
+                numExtends++;
+
+                if(numExtends == 2){
+                    extensionPosition = 1750;
+                }else if(numExtends == 4){
+                    extensionPosition = 2250;
+                }
+            }
+
+            while(opModeIsActive()){
+                mineralExtension.setTargetPosition(2250);
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
+
 
 
         }else if(mineralLocation == location.CENTER){
             //Drop team marker
-            mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineral_rotation.setTargetPosition(1000);
-            mineral_rotation.setPower(0.4);
-            while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
+            mineralExtension.setTargetPosition(50);
+            mineral_rotation.setTargetPosition(200);
+            waitMilliseconds(500, runtime);
+            intake.setPower(intakeOutPower);
             waitMilliseconds(1000, runtime);
 
-            mineral_rotation.setTargetPosition(0);
-            mineral_rotation.setPower(0.3);
+            intake.setPower(0);
+            mineral_rotation.setTargetPosition(-350);
+            mineralExtension.setTargetPosition(350);
+            mineral_rotation.setPower(0.5);
 
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -930,12 +1029,47 @@ public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpM
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
             mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineralExtension.setTargetPosition(1000);
+            mineralExtension.setTargetPosition(750);
             mineralExtension.setPower(1);
+
+            while(mineralExtension.isBusy() && opModeIsActive());
+
+            intakeRotation.setTargetPosition(535);
+            intakeRotation.setPower(1);
+
+            intake.setPower(intakeInPower);
+
+            while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
+
+            int extensionPosition = 1250; int numExtends = 0;
+            while(opModeIsActive() && gameTime.milliseconds() < 27500){
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+
+                mineralExtension.setTargetPosition(extensionPosition);
+                while(mineralExtension.isBusy() && opModeIsActive());
+                mineralExtension.setTargetPosition(500);
+                while(mineralExtension.isBusy() && opModeIsActive());
+                numExtends++;
+
+                if(numExtends == 2){
+                    extensionPosition = 1750;
+                }else if(numExtends == 4){
+                    extensionPosition = 2250;
+                }
+            }
+
+            while(opModeIsActive()){
+                mineralExtension.setTargetPosition(2250);
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
 
         }
 
         while (opModeIsActive()){
+            intake.setPower(intakeInPower);
+            mineralExtension.setTargetPosition(2250);
             ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
             ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));

@@ -63,10 +63,10 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     DcMotor intakeRotation;
 
     CRServo intake;
-    final double intakeInPower = .73, intakeOutPower = -.73;
+    final double intakeInPower = .73, intakeOutPower = -.2;
 
     DcMotor hang;
-    final int hangReadyPosition = 3600;
+    final int hangReadyPosition = 3330;
 
     ModernRoboticsI2cRangeSensor leftWallPing, rightWallPing;
 
@@ -391,6 +391,9 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         waitForStart();
 
+        ElapsedTime gameTime = new ElapsedTime();
+        gameTime.reset();
+
         runtime.reset();
 
         /**
@@ -419,21 +422,13 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //hang.setTargetPosition(6500);
         hang.setPower(1);
-        mineral_rotation.setTargetPosition(80);
-        mineral_rotation.setPower(1);
-
-        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setTargetPosition(100);
-        intakeRotation.setPower(1);
 
         runtime.reset();
         while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
-            if(runtime.milliseconds() > 1250 && opModeIsActive()){
+            /*if(runtime.milliseconds() > 1250 && opModeIsActive()){
                 mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                mineral_rotation.setPower(-0.3);
+                mineral_rotation.setPower(-1);
             }
             /*if(!mineral_rotation.isBusy()){
                 if(rotation_limit.getState()){
@@ -541,7 +536,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
                 break;
         }
         drive.stop();
-        mineral_rotation.setPower(0);
+        //mineral_rotation.setPower(0);
         globalCoordinatePositionUpdate();
 
         for(int i = 0; i < depot.length; i++){
@@ -583,33 +578,58 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
                     0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
+                    ,0.5*COUNTS_PER_INCH, 0)){
+                globalCoordinatePositionUpdate();
+            }
             drive.stop();
         }else if (wallCorrection < -0.75){
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
                     0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
+                    ,0.5*COUNTS_PER_INCH, 0)){
+                globalCoordinatePositionUpdate();
+            }
             drive.stop();
         }
 
+        //Unlatch mineral arm
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineral_rotation.setTargetPosition(0);
+        mineral_rotation.setPower(1);
+
+        //Rotate intake rotaiton up to secure team marker
+        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        intakeRotation.setTargetPosition(100);
+        intakeRotation.setPower(1);
+
+        //Extend mineral extension
+        mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setTargetPosition(300);
+        mineralExtension.setPower(1);
+
+        mineral_rotation.setTargetPosition(-100);
+        mineral_rotation.setPower(0.5);
+
         //Drive to alliance depot
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setTargetPosition(75);
+        //intakeRotation.setTargetPosition(75);
         intakeRotation.setPower(1);
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 20*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 18*COUNTS_PER_INCH,
                 0, 25*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0));
+                ,1*COUNTS_PER_INCH, 0)){
+            globalCoordinatePositionUpdate();
+        }
         drive.stop();
 
         //Drop team marker
-        mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineral_rotation.setTargetPosition(1000);
-        mineral_rotation.setPower(0.4);
-        while(mineral_rotation.getCurrentPosition() < 700 && opModeIsActive());
+        mineralExtension.setTargetPosition(50);
+        mineral_rotation.setTargetPosition(200);
+        waitMilliseconds(500, runtime);
+        intake.setPower(intakeOutPower);
         waitMilliseconds(1000, runtime);
+        intake.setPower(0);
 
         hang.setPower(0);
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -618,17 +638,22 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
 
         //Drive to crater to park
-        mineral_rotation.setTargetPosition(0);
-        mineral_rotation.setPower(0.3);
+        mineral_rotation.setTargetPosition(-350);
+        mineral_rotation.setPower(0.75);
+        mineralExtension.setTargetPosition(300);
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 49*COUNTS_PER_INCH, 40*COUNTS_PER_INCH,
-                0, 50*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 35*COUNTS_PER_INCH,
+                0, 42*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0)){
+            globalCoordinatePositionUpdate();
             if(drive.getEncoderDistance() > 25 * COUNTS_PER_INCH){
                 teamMarker.hold();
             }
             telemetry.addData("Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
             telemetry.update();
+            if(gameTime.milliseconds() > 27500){
+                mineralExtension.setTargetPosition(2250);
+            }
         }
         drive.stop();
 
@@ -646,7 +671,10 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
 
         int extensionPosition = 1250; int numExtends = 0;
-        while(opModeIsActive()){
+        while(opModeIsActive() && gameTime.milliseconds() < 27500){
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+
             mineralExtension.setTargetPosition(extensionPosition);
             while(mineralExtension.isBusy() && opModeIsActive());
             mineralExtension.setTargetPosition(500);
@@ -658,6 +686,12 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             }else if(numExtends == 4){
                 extensionPosition = 2250;
             }
+        }
+
+        while(opModeIsActive()){
+            mineralExtension.setTargetPosition(2250);
+            globalCoordinatePositionUpdate();
+            telemetry.update();
         }
 
         intake.setPower(0);
