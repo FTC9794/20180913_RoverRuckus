@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 
 import java.io.File;
 
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_FrameOfReference.depositingPositionState.ROTATION1;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_FrameOfReference.depositingPositionState.EXTENSIONINTAKEROTATION;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_FrameOfReference.intakingPositionState.NOTHING;
 import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V2_FrameOfReference.intakingPositionState.ROTATING;
 
@@ -56,7 +56,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
     DigitalChannel hangLimit;
     int hangCurrentPosition;
     double hangUpPower, hangDownPower;
-    final int hangReadyPosition = 2640, hangMaxPosition = 5000, hangLatchPosition = 5150, hangHungPosition = 13;
+    final int hangReadyPosition = 2640, hangMaxPosition = 5000, hangLatchPosition = 5675, hangHungPosition = 20, hangAlignPosition = 3330;
     final double hangStopperStoredPosition = 0.5;
     public enum hangState {NOTHING, LATCHING, HANGING};
     hangState currentHangingState = hangState.NOTHING;
@@ -106,6 +106,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
     boolean intakePressed = false;
     boolean intaking = false;
+    boolean reset = false;
 
     double mineralRotationMechPower = 0.175;
 
@@ -193,9 +194,9 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
         mineralRotationPosition = 0;
 
         int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1580,
-                extensionDumpPositionBlocks = 1700,
-                rotationExtendPosition = 725, mineralRotationDumpBallPosition = 950, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 24,
-                rotationMaxPosition = 1200, rotationDrivePosition = 880;
+                extensionDumpPositionBlocks = 1700, extensionDrivePosition = 700, extensionRetractPosition = 500,
+                rotationExtendPosition = 725, mineralRotationDumpBallPosition = 1175, mineralRotationDumpBlocksPosition = 2140, mineralRotationIncrement = 50,
+                rotationMaxPosition = 1200, rotationDrivePosition = 620, rotationIntakePosition = 0;
 
         final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
         /*
@@ -287,7 +288,11 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             if(hand.equals("left")){
                 joystickY = -gamepad1.left_stick_y;
                 joystickX = gamepad1.left_stick_x;
-                pivot = gamepad1.right_stick_x*(turnMultiplier*mineralExtensionPosition+1);
+                if(mineralRotation.getCurrentPosition() < 300) {
+                    pivot = gamepad1.right_stick_x * (turnMultiplier * mineralExtensionPosition + 1);
+                }else{
+                    pivot = gamepad1.right_stick_x;
+                }
                 if(pivot < 0 && pivot > -0.1){
                     pivot = -0.25;
                 }else if (pivot > 0 && pivot < 0.1){
@@ -296,7 +301,11 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
             }else{
                 joystickY = -gamepad1.right_stick_y;
                 joystickX = gamepad1.right_stick_x;
-                pivot = gamepad1.left_stick_x*(turnMultiplier*mineralExtensionPosition+1);
+                if(mineralRotation.getCurrentPosition() < 300) {
+                    pivot = gamepad1.left_stick_x * (turnMultiplier * mineralExtensionPosition + 1);
+                }else{
+                    pivot = gamepad1.left_stick_x;
+                }
                 if(pivot < 0 && pivot > -0.1){
                     pivot = -0.25;
                 }else if (pivot > 0 && pivot < 0.1){
@@ -374,8 +383,8 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
              */
 
-            hangUpPower = gamepad2.right_trigger;
-            hangDownPower = gamepad2.left_trigger;
+            hangUpPower = gamepad1.right_trigger;
+            hangDownPower = gamepad1.left_trigger;
 
             if(hangUpPower>0){
                 hangCurrentPosition = hang.getCurrentPosition();
@@ -385,7 +394,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 //}else{
                     hang.setPower(hangUpPower);
                 //}
-                hangReady = false;
+                //hangReady = false;
                 currentHangingState = hangState.NOTHING;
             }else if(hangDownPower>0){
                 hangCurrentPosition = hang.getCurrentPosition();
@@ -396,7 +405,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     hang.setPower(0);
                 }
-                hangReady = false;
+                //hangReady = false;
                 latchReady = false;
                 currentHangingState = hangState.NOTHING;
 
@@ -410,12 +419,17 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 hang.setPower(1);
             }
 
-            yPressed = gamepad2.y;
+            yPressed = gamepad1.x;
             if(yPressed&&!yPressedToggle&&!hangReady){
                 hangCurrentPosition = hangLatchPosition;
                 hangReady = true;
             }
             yPressedToggle = yPressed;
+
+            if(gamepad1.y){
+                hangCurrentPosition = hangAlignPosition;
+                hangReady = false;
+            }
             /*if(yPressed&&!yPressedToggle&&!latchReady){
                 hangCurrentPosition = hangReadyPosition;
                 latchReady = true;
@@ -432,12 +446,12 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
              */
 
-            if(gamepad2.right_bumper){
-                mineralExtensionPosition = 0;
-                intakeCurrentPosition = 0;
-                mineralRotationPosition = 0;
-                drivePositionState = drivingPositionState.NOTHING;
-            }
+//            if(gamepad2.right_bumper){
+//                mineralExtensionPosition = 0;
+//                intakeCurrentPosition = 0;
+//                mineralRotationPosition = 0;
+//                drivePositionState = drivingPositionState.NOTHING;
+//            }
 
             if(gamepad2.dpad_up){
                 mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -476,21 +490,38 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
             }
 
-            telemetry.addData("Extension Position", mineralExtension.getCurrentPosition());
-            telemetry.addData("Rotation Position", mineralRotation.getCurrentPosition());
+            telemetry.addData("Extension Current Position", mineralExtension.getCurrentPosition());
+            telemetry.addData("Extension Target Position", mineralExtensionPosition);
+            telemetry.addData("Raw Rotation Position", mineralRotation.getCurrentPosition());
+            telemetry.addData("Rotation Target Position ", mineralRotationPosition);
+            telemetry.addData("Rotation Intake Position", rotationIntakePosition);
 
             mineralRotationPower = -gamepad2.right_stick_y;
             if(mineralRotationPower!=0){
+                mineralRotationMechPower = 0.75;
                 depositBlocksState = depositingBlocksPositionState.NOTHING;
                 depositPositionState = depositingPositionState.NOTHING;
                 intakePositionState = NOTHING;
                 drivePositionState = drivingPositionState.NOTHING;
                 if(mineralRotationPower<0&&!rotationLimit.getState()){
-                    mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                    mineralRotation.setPower(0);
-                    mineralRotationPosition = 0;
-
+                    if(!reset){
+                        mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                        reset = true;
+                    }else{
+                        mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        mineralRotationPosition = 0;
+                    }
+                    //mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    //mineralRotation.setPower(0);
+                    /*
+                    rotationIntakePosition = mineralRotation.getCurrentPosition();
+                    rotationDrivePosition = rotationDrivePosition - rotationIntakePosition;
+                    mineralRotationDumpBallPosition = mineralRotationDumpBallPosition - rotationIntakePosition;
+                    rotationExtendPosition = rotationExtendPosition - rotationIntakePosition;
+                    mineralRotationPosition = rotationIntakePosition;
+                    */
                 }else{
+                    reset = false;
                     mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     if(mineralRotationPower<0){
 
@@ -545,7 +576,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 intakeDumpReadyPositionBlocks = intakeIntakePosition - 215;
             }
 
-            if(gamepad1.left_trigger>.01){
+            if(gamepad2.left_trigger>.01){
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 intakeCurrentPosition = intakeRotation.getCurrentPosition();
                 intakeRotation.setPower(intakeRotationPower);
@@ -553,7 +584,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                 depositPositionState = depositingPositionState.NOTHING;
                 intakePositionState = NOTHING;
                 drivePositionState = drivingPositionState.NOTHING;
-            }else if(gamepad1.right_trigger>.01){
+            }else if(gamepad2.right_trigger>.01){
                 intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 intakeCurrentPosition = intakeRotation.getCurrentPosition();
                 intakeRotation.setPower(-intakeRotationPower);
@@ -630,54 +661,84 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
 
             switch(intakePositionState){
                 case NOTHING:
-                    if(gamepad1.x){
+                    if(gamepad2.a){
                         intakePositionState = ROTATING;
                         intakeCurrentPosition = intakeIntakePosition;
-                        mineralExtension.setTargetPosition(0);
+                        mineralRotationPosition = rotationIntakePosition;
+                        mineralRotationMechPower = 0.8;
+                        if(mineralExtension.getCurrentPosition() > 1200){
+                            mineralExtensionPosition = 1200;
+                        }
+                        depositBlocksState = depositingBlocksPositionState.NOTHING;
+                        depositPositionState = depositingPositionState.NOTHING;
+                        drivePositionState = drivingPositionState.NOTHING;
+                        intaking = true;
+                    }/*else if(gamepad1.y){
+                        intakePositionState = ROTATING;
+                        intakeCurrentPosition = intakeIntakePosition;
+                        mineralExtensionPosition = 0;
                         mineralRotationPosition = 0;
                         mineralRotationMechPower = 0.3;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
                         intaking = true;
-                    }
+                    }*/
                     break;
 
                 case ROTATING:
-                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy() && !mineralExtension.isBusy()){
+                    if(!rotationLimit.getState()){
+                        mineralRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                        mineralRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        mineralRotation.setTargetPosition(0);
                         intakePositionState = NOTHING;
-                        mineralRotationMechPower = 0.175;
+                        mineralRotationMechPower = 0.25;
+                    }else{
+                        mineralRotationPosition -= 50;
                     }
+//                    if(!intakeRotation.isBusy()&&!mineralRotation.isBusy() && !mineralExtension.isBusy()){
+//                        intakePositionState = NOTHING;
+//                        mineralRotationMechPower = 0.175;
+//                    }
 
             }
 
             switch(depositPositionState){
                 case NOTHING:
                     if(gamepad2.x){
-                        intakeCurrentPosition = intakeIntakePosition;
-                        mineralRotationPosition = rotationExtendPosition;
-                        mineralRotationMechPower = 0.5;
-                        depositPositionState = ROTATION1;
+                        intaking = false;
+                        intakeCurrentPosition = intakeDumpReadyPosition;
+                        if(mineralRotation.getCurrentPosition() < 100) {
+                            mineralExtensionPosition = extensionRetractPosition;
+                        }else{
+                            mineralRotationPosition = mineralRotationDumpBallPosition;
+                            mineralExtensionPosition = extensionDumpPositionBalls;
+                            mineralRotationMechPower = 0.8;
+                        }
+
+                        depositPositionState = EXTENSIONINTAKEROTATION;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         intakePositionState = NOTHING;
                         drivePositionState = drivingPositionState.NOTHING;
                     }
                     break;
                 case ROTATION1:
-                    if(mineralRotation.getCurrentPosition() < 750 && mineralRotation.getCurrentPosition() > 600){
+                    /*if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/4)){
+                        mineralRotationPosition = mineralRotationDumpBallPosition;
+                    }*/
+                    if(mineralRotation.getCurrentPosition() > rotationDrivePosition){
                         mineralExtensionPosition = extensionDumpPositionBalls;
-                        mineralRotationMechPower = 0.2;
-                        depositPositionState = depositingPositionState.EXTENSIONINTAKEROTATION;
+                    }
+                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
+                        depositPositionState = depositPositionState.NOTHING;
                     }
                     break;
 
                 case EXTENSIONINTAKEROTATION:
-                    if(mineralExtension.getCurrentPosition() > (extensionDumpPositionBalls/4)){
+                    if(Math.abs(mineralExtension.getCurrentPosition() - extensionRetractPosition) < 100 && mineralRotation.getCurrentPosition() < 200){
                         mineralRotationPosition = mineralRotationDumpBallPosition;
-                        intakeCurrentPosition = intakeDumpReadyPosition;
-                    }
-                    if(!mineralRotation.isBusy()&&!intakeRotation.isBusy()&&!mineralExtension.isBusy()){
-                        depositPositionState = depositPositionState.NOTHING;
+                        mineralRotationMechPower = 0.8;
+                        depositPositionState = depositPositionState.ROTATION1;
                     }
                     break;
             }
@@ -713,44 +774,47 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
                     break;
             }
 
-            if(gamepad1.y && mineralRotation.getCurrentPosition() < 390){
+            if(gamepad2.right_bumper && mineralRotation.getCurrentPosition() < rotationDrivePosition){
                 depositBlocksState = depositingBlocksPositionState.NOTHING;
                 depositPositionState = depositingPositionState.NOTHING;
                 intakePositionState = NOTHING;
                 drivePositionState = drivePositionState.NOTHING;
+                intakeCurrentPosition = intakeDumpReadyPosition;
                 intaking = false;
-                mineralExtensionPosition = 0;
+                if(mineralExtension.getCurrentPosition() > 1200) {
+                    mineralExtensionPosition = 1200;
+                }
                 mineralRotationPosition = 390;
             }
 
             switch(drivePositionState){
                 case NOTHING:
-                    if(gamepad1.b){
+                    if(gamepad2.y){
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
                         intaking = false;
-                        mineralRotationPosition = rotationExtendPosition+100;
+                        mineralRotationPosition = rotationDrivePosition;
                         if(mineralRotation.getCurrentPosition() < rotationExtendPosition){
                             mineralRotationMechPower = 0.5;
                         }else{
-                            mineralRotationMechPower = 0.2;
+                            mineralRotationMechPower = 0.35;
                         }
                         if(mineralExtension.getCurrentPosition() > extensionDumpPositionBalls){
                             mineralExtensionPosition = extensionDumpPositionBalls;
                         }
-                        intakeCurrentPosition = intakeIntakePosition;
+                        intakeCurrentPosition = intakeDumpReadyPosition;
                         drivePositionState = drivingPositionState.ROTATION1;
                     }
                     break;
 
                 case ROTATION1:
-                    if(mineralRotation.getCurrentPosition() < 865){
-                        mineralExtensionPosition = 0;
+                    if(mineralRotation.getCurrentPosition() < 925){
+                        mineralExtensionPosition = extensionDrivePosition;
                     }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotationPosition = rotationDrivePosition;
-                        intakeCurrentPosition = intakeIntakePosition;
+                        intakeCurrentPosition = intakeDumpReadyPosition;
                         drivePositionState = drivingPositionState.FINALPOSITION;
                     }
                     break;
@@ -768,7 +832,7 @@ public class Master_Teleop_V2_FrameOfReference extends LinearOpMode {
              */
             switch(currentHangingState){
                 case NOTHING:
-                    if(gamepad2.a&&hangReady){
+                    if(gamepad1.b&&hangReady){
                         currentHangingState = hangState.HANGING;
                         hangCurrentPosition = 0;
                     }
