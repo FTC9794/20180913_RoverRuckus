@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode.sample_test;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
@@ -12,7 +13,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
-import org.firstinspires.ftc.teamcode.DataLogger;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
@@ -22,45 +22,48 @@ import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
 
 /**
- * Created by Sarthak on 10/26/2018.
+ * Created by Sarthak on 10/29/2018.
  */
 @Autonomous(name = "Autonomous Testing", group = "Autonomous")
-@Disabled
 public class AutonomousTesting extends LinearOpMode {
-
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
+    DcMotor mineral_rotation, mineralExtension;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
-    DcMotor mineral_rotation;
     ArrayList motors, encoders;
 
-    ITeamMarker teamMarker;
-    Servo team_marker;
+    DcMotor intakeRotation;
 
-    Servo scanner;
-    Servo hang_latch;
-
-    DigitalChannel rotation_limit;
+    CRServo intake;
 
     DcMotor hang;
+
+    ModernRoboticsI2cRangeSensor leftWallPing, rightWallPing;
+
+    DigitalChannel rotation_limit;
 
     IIMU imu;
     BNO055IMU boschIMU;
 
-    //Declare OpMode timers
-    private ElapsedTime runtime = new ElapsedTime();
+    Servo hang_latch;
+
+    ITeamMarker teamMarker;
+    Servo teamMarkerServo;
+
+    Servo scanner;
+
+    final int ANGLE_INDEX = 0;
+    final int RF_LB_INDEX = 2;
+    final int LF_RB_INDEX = 1;
 
     //Define possible mineral locations in enum
     enum location {
         LEFT, CENTER, RIGHT, UNKNOWN
     };
 
-    final double DEFAULT_ERROR_DISTANCE = 10;
-
-    final double[] DEFAULT_PID = {.05};
+    final double[] DEFAULT_PID = {.035};
     final double COUNTS_PER_INCH = 307.699557;
 
     //Position variables
@@ -69,14 +72,9 @@ public class AutonomousTesting extends LinearOpMode {
 
     double previousVerticalRightEncoderWheelPosition = 0, previousVerticalLeftEncoderWheelPosition = 0, prevNormalEncoderWheelPosition = 0;
     double robotEncoderWheelDistance = 12.75 * COUNTS_PER_INCH;
-    final double normalEncoderWheelPositionAngleFromRotationAxis = 20.63;
+    final double normalEncoderWheelPositionAngleFromRotationAxis = -20.63;
 
     double changeInRobotOrientation = 0;
-
-    double motorPowerRampDownStartPosition = 10 * COUNTS_PER_INCH;
-    double motorPowerRampDownEndPosition = 5 * COUNTS_PER_INCH;
-
-    final double DEFAULT_MAX_POWER = 0.75, DEFAULT_MIN_POWER = 0.15, DEFAULT_MIN_POWER_STRAFE = 0.25;
 
     final int X_POS_INDEX = 0;
     final int Y_POS_INDEX = 1;
@@ -85,23 +83,17 @@ public class AutonomousTesting extends LinearOpMode {
     final int MIN_POWER_INDEX = 4;
 
     double[][] testCoordinates;
+    double[][] motorPowerLookup;
 
-    File moveAngle = AppUtil.getInstance().getSettingsFile("moveAngle.txt");
     File testCoordinatesFile = AppUtil.getInstance().getSettingsFile("testCoordinates.txt");
+    File motorPowersFile = AppUtil.getInstance().getSettingsFile("Drivetrain Motor Powers.txt");
 
-
-    DataLogger dataLogger;
-    Date date;
+    int delay = 0;
 
     @Override
     public void runOpMode() throws InterruptedException {
-        //Init motor hardware map and behaviors
-        setMotorBehaviors();
 
-        String fileText = ReadWriteFile.readFile(moveAngle);
-        int moveAngle = Integer.parseInt(fileText.trim());
-
-        fileText = ReadWriteFile.readFile(testCoordinatesFile);
+        String fileText = ReadWriteFile.readFile(testCoordinatesFile);
         String[] inputs = fileText.split("~");
         testCoordinates = new double[inputs.length][5];
         for(int i = 0; i < inputs.length; i++){
@@ -114,6 +106,24 @@ public class AutonomousTesting extends LinearOpMode {
         telemetry.addData("Status", "Read Test Position File");
         telemetry.update();
 
+        fileText = ReadWriteFile.readFile(motorPowersFile);
+        inputs = fileText.split("~");
+        motorPowerLookup = new double[inputs.length][3];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                motorPowerLookup[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Motor Power File");
+        telemetry.update();
+
+        //Init motor hardware map and behaviors
+        setMotorBehaviors();
+
+        telemetry.addData("Status", "Vision Initialized.");
+
         //Initialize IMU
         boschIMU = hardwareMap.get(BNO055IMU.class, "imu");
         imu = new BoschIMU(boschIMU);
@@ -124,21 +134,14 @@ public class AutonomousTesting extends LinearOpMode {
 
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
+
         telemetry.addData("Status", "Init Complete");
-        telemetry.addData("Move Angle", moveAngle);
+        telemetry.addData("Move Angle", motorPowerLookup[0][0]);
+        telemetry.addData("LF_RB Power", motorPowerLookup[0][1]);
+        telemetry.addData("RF_LB Power", motorPowerLookup[0][2]);
         telemetry.update();
 
-        /*date = new Date();
-        dataLogger = new DataLogger(date.toString() + "Autonomous Motion Testing Calculations Move Angle " + moveAngle);
-        dataLogger.addField("X (Inches)");
-        dataLogger.addField("Y (Inches)");
-        dataLogger.addField("Raw Encoder Distance (Inches)");
-        dataLogger.addField("Power");
-        dataLogger.addField("Orientation");
-        dataLogger.newLine();*/
-
         waitForStart();
-        runtime.reset();
 
         /**
          * *****************************************************************************************
@@ -147,8 +150,6 @@ public class AutonomousTesting extends LinearOpMode {
          * *****************************************************************************************
          * *****************************************************************************************
          */
-
-        globalCoordinatePositionUpdate();
 
         for(int i = 0; i < testCoordinates.length; i++){
             double x = testCoordinates[i][X_POS_INDEX];
@@ -164,39 +165,23 @@ public class AutonomousTesting extends LinearOpMode {
                 telemetry.update();
             }
             drive.stop();
-            waitMilliseconds(500, runtime);
             globalCoordinatePositionUpdate();
+            while(gamepad1.atRest() && gamepad2.atRest() && opModeIsActive()){
+                telemetry.addData("Status", "Move Joysticks to Move to Next Position");
+                telemetry.update();
+            }
         }
 
-        /*globalCoordinatePositionUpdate();
-        drive.softResetEncoder();
-        while (drive.getEncoderDistance() < 24*COUNTS_PER_INCH && opModeIsActive()) {
-            drive.move(drive.getEncoderDistance(), 30 * COUNTS_PER_INCH, 30 * COUNTS_PER_INCH, 0,
-                    30 * COUNTS_PER_INCH, 1, 1, moveAngle, DEFAULT_PID, 0, DEFAULT_ERROR_DISTANCE, 0);
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-            dataLogger.addField((float) (this.robotGlobalXPosition/COUNTS_PER_INCH));
-            dataLogger.addField((float) (this.robotGlobalYPosition/COUNTS_PER_INCH));
-            dataLogger.addField((float) (drive.getEncoderDistance()/COUNTS_PER_INCH));
-            dataLogger.addField((float) 1);
-            dataLogger.addField((float) imu.getZAngle());
-        }
-        globalCoordinatePositionUpdate();
         drive.stop();
-        globalCoordinatePositionUpdate();*/
 
-        while(opModeIsActive()){
-            //telemetry.addData("Encoder Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
+        while (opModeIsActive()){
+            drive.stop();
             globalCoordinatePositionUpdate();
             telemetry.update();
-            /*dataLogger.addField((float) (this.robotGlobalXPosition/COUNTS_PER_INCH));
-            dataLogger.addField((float) (this.robotGlobalYPosition/COUNTS_PER_INCH));
-            dataLogger.addField((float) (drive.getEncoderDistance()/COUNTS_PER_INCH));
-            dataLogger.addField((float) 1);
-            dataLogger.addField((float) imu.getZAngle());*/
         }
 
     }
+
     /**
      * Stop all actions for a specified amount of time (in milliseconds)
      * @param milliseconds amount of time to wait
@@ -206,9 +191,7 @@ public class AutonomousTesting extends LinearOpMode {
         //Reset the timer
         timer.reset();
         //Wait until the time inputted has fully elapsed
-        while(opModeIsActive() && timer.milliseconds() < milliseconds){
-            globalCoordinatePositionUpdate();
-        }
+        while(opModeIsActive() && timer.milliseconds() < milliseconds);
     }
 
     /**
@@ -226,24 +209,42 @@ public class AutonomousTesting extends LinearOpMode {
         horizontal = hardwareMap.dcMotor.get("lf");
         horizontal2 = hardwareMap.dcMotor.get("lb");
 
+        intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         mineral_rotation = hardwareMap.dcMotor.get("mineral_rotation");
         mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         mineral_rotation.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        team_marker = hardwareMap.servo.get("marker_servo");
-        teamMarker = new ServoArmDrop(team_marker);
+        mineralExtension = hardwareMap.dcMotor.get("mineral_extension");
+        mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+
+        teamMarkerServo = hardwareMap.servo.get("marker_servo");
+        teamMarker = new ServoArmDrop(teamMarkerServo);
+        teamMarker.hold();
 
         scanner = hardwareMap.servo.get("scanner");
         scanner.setPosition(0.5);
 
+        rotation_limit = hardwareMap.digitalChannel.get("rotation_limit");
+
         hang_latch = hardwareMap.servo.get("hang_stopper");
         hang_latch.setPosition(0);
 
-        rotation_limit = hardwareMap.digitalChannel.get("rotation_limit");
+        leftWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("left_us");
+        rightWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("right_us");
+
+        intake = hardwareMap.crservo.get("intake");
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         hang = hardwareMap.dcMotor.get("hang");
-        hang.setDirection(DcMotorSimple.Direction.REVERSE);
+        //hang.setDirection(DcMotorSimple.Direction.REVERSE);
         hang.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         hang.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         hang.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -300,18 +301,6 @@ public class AutonomousTesting extends LinearOpMode {
 
         double robotOrientationDifference = targetOrientation - imu.getZAngle();
 
-        //double power = maxPower;
-        double power;
-        if(distance > motorPowerRampDownStartPosition){
-            power = maxPower;
-        }else if (distance < motorPowerRampDownEndPosition){
-            power = minPower;
-        }else{
-            double motorRampDownPositionDifference = motorPowerRampDownStartPosition - motorPowerRampDownEndPosition;
-            double distanceRampDownDifference = distance - motorPowerRampDownEndPosition;
-            power = -((minPower-maxPower)/(motorRampDownPositionDifference))*(distanceRampDownDifference) + minPower;
-        }
-
         double robotMoveAngle;
         robotMoveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
         if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
@@ -319,21 +308,25 @@ public class AutonomousTesting extends LinearOpMode {
         }
         robotMoveAngle = (robotMoveAngle % 360);
 
-        /*dataLogger.addField((float) robotGlobalXPosition);
-        dataLogger.addField((float) robotGlobalYPosition);
-        dataLogger.addField((float) xDistance);
-        dataLogger.addField((float) yDistance);
-        dataLogger.addField((float) power);
-        dataLogger.addField((float) imu.getZAngle());
-        dataLogger.addField((float) robotOrientationDifference);
-        dataLogger.addField((float) robotMoveAngle);
-        dataLogger.addField((float) (robotMoveAngle - imu.getZAngle()));
-        dataLogger.newLine();*/
-
         if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
                 && Math.abs(robotOrientationDifference) < 5)){
-            drive.move(0, distance, distance, 0, distance, power, power,
-                    robotMoveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
+            double currentAngle = imu.getZAngle(targetOrientation);
+
+            double[] currentMotorPowers = getMotorPowers(robotMoveAngle);
+            double pivotCorrection = ((currentAngle - targetOrientation) * DEFAULT_PID[0]);
+            double lfrbPower = (currentMotorPowers[0] - pivotCorrection);
+            double rflbPower = (currentMotorPowers[1] + pivotCorrection);
+
+            if(Math.abs(xDistance) < 5*COUNTS_PER_INCH && Math.abs(yDistance) < 5*COUNTS_PER_INCH){
+                rflbPower *= 0.75;
+                lfrbPower *= 0.75;
+            }
+
+            right_front.setPower(rflbPower);
+            left_back.setPower(rflbPower);
+            left_front.setPower(lfrbPower);
+            right_back.setPower(lfrbPower);
+
             telemetry.addData("Encoder Distance", distance/COUNTS_PER_INCH);
             telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
             telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
@@ -345,6 +338,7 @@ public class AutonomousTesting extends LinearOpMode {
         }
 
     }
+
 
     private void globalCoordinatePositionUpdate(){
         //Get Current Positions
@@ -371,6 +365,53 @@ public class AutonomousTesting extends LinearOpMode {
 
         telemetry.addData("X Position", robotGlobalXPosition / COUNTS_PER_INCH);
         telemetry.addData("Y Position", robotGlobalYPosition / COUNTS_PER_INCH);
+    }
+
+    public double[] getMotorPowers(double moveAngle){
+        double[] motorPowers = new double[2];
+
+        double rflbPower = 0;
+        double lfrbPower = 0;
+
+        int lowerIndex = 0;
+        int higherIndex = 0;
+
+        boolean exactAngle = false;
+        int index = 0;
+
+        for(int i = 0; i < motorPowerLookup.length; i++) {
+            double currentMoveAngle = motorPowerLookup[i][ANGLE_INDEX];
+            if(moveAngle == currentMoveAngle) {
+                exactAngle = true;
+                rflbPower = motorPowerLookup[i][RF_LB_INDEX];
+                lfrbPower = motorPowerLookup[i][LF_RB_INDEX];
+                break;
+            }else if(moveAngle > currentMoveAngle) {
+                lowerIndex = i;
+            }else {
+                higherIndex = i;
+                break;
+            }
+        }
+
+        if(!exactAngle){
+            double lowRFLBPower = motorPowerLookup[lowerIndex][RF_LB_INDEX];
+            double highRFLBPower = motorPowerLookup[higherIndex][RF_LB_INDEX];
+
+            double lowLFRBPower = motorPowerLookup[lowerIndex][LF_RB_INDEX];
+            double highLFRBPower = motorPowerLookup[higherIndex][LF_RB_INDEX];
+
+            double lowAngle = motorPowerLookup[lowerIndex][ANGLE_INDEX];
+            double highAngle = motorPowerLookup[higherIndex][ANGLE_INDEX];
+
+            rflbPower = ((moveAngle - lowAngle)*(highRFLBPower - lowRFLBPower)/(highAngle - lowAngle)) + lowRFLBPower;
+            lfrbPower = ((moveAngle - lowAngle)*(highLFRBPower - lowLFRBPower)/(highAngle - lowAngle)) + lowLFRBPower;
+        }
+
+        motorPowers[0] = rflbPower;
+        motorPowers[1] = lfrbPower;
+
+        return motorPowers;
     }
 
     public double distanceFormula(double x, double y){
