@@ -50,6 +50,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Created by Sarthak on 10/26/2018.
  */
 @Autonomous(name = "Depot Autonomous", group = "Autonomous")
+@Deprecated
 @Disabled
 public class RoverRuckusDepotAutonomousProgram extends LinearOpMode {
 
