@@ -81,7 +81,6 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
     Team Marker variables
 
      */
-    Servo teamMarker;
     final double teamMarkerStoredPosition = 1, teamMarkerDepositPosition = 1;
 
     /*
@@ -169,7 +168,6 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
         team marker initialization
 
         */
-        teamMarker = hardwareMap.servo.get("marker_servo");
 
         /*
 
@@ -193,10 +191,10 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
         mineralExtensionPosition = 0;
         mineralRotationPosition = 0;
 
-        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1580,
+        int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1350,
                 extensionDumpPositionBlocks = 1700, extensionDrivePosition = 100,
                 rotationExtendPosition = 725, mineralRotationIncrement = 50,
-                rotationMaxPosition = 1100, rotationDrivePosition = 620, rotationIntakePosition = 0, rotationVerticalPosition = 740;
+                rotationMaxPosition = 1100, rotationIntakePosition = 0, rotationVerticalPosition = 840;
 
         final double mineralExtensionPower = 1, turnMultiplier = (1-rotationMinPower)/(-extensionMaxPosition);
         /*
@@ -262,7 +260,6 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
         //initialize servo positions after start is pressed to be legal
         hangStopper.setPosition(hangStopperStoredPosition);
-        teamMarker.setPosition(teamMarkerStoredPosition);
         phoneServo.setPosition(phoneStoredPosition);
 
         while (opModeIsActive()){
@@ -640,11 +637,11 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
              Team Marker code
 
              */
-            if(gamepad1.y){
-                teamMarker.setPosition(teamMarkerDepositPosition);
-            }else{
-                teamMarker.setPosition(teamMarkerStoredPosition);
-            }
+//            if(gamepad1.y){
+//                teamMarker.setPosition(teamMarkerDepositPosition);
+//            }else{
+//                teamMarker.setPosition(teamMarkerStoredPosition);
+//            }
 
             telemetry.addData("Intake Rotation Position", intakeRotation.getCurrentPosition());
             telemetry.addData("Intake Intake Position", intakeIntakePosition);
@@ -768,11 +765,10 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                         depositPositionState = depositingPositionState.NOTHING;
                         intakePositionState = NOTHING;
-                        intaking = false;
                         mineralRotationPosition = rotationVerticalPosition;
                         mineralRotationMechPower = mineralRotationDefaultPower;
 
-                        intakeCurrentPosition = intakeDumpReadyPosition;
+                        intakeCurrentPosition = intakeIntakePosition;
                         mineralExtensionPosition = extensionDrivePosition;
                         drivePositionState = drivingPositionState.ROTATION1;
                     }
@@ -786,12 +782,13 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                     }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotationPosition = rotationVerticalPosition;
-                        intakeCurrentPosition = intakeDumpReadyPosition;
+                        intakeCurrentPosition = intakeIntakePosition;
                         drivePositionState = drivingPositionState.FINALPOSITION;
                     }
                     break;
                 case FINALPOSITION:
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
+                        intaking = false;
                         mineralRotationPosition = rotationVerticalPosition;
                         mineralRotationMechPower = 0.2;
                         drivePositionState = drivingPositionState.NOTHING;
