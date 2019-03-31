@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.DataLogger;
+import org.firstinspires.ftc.teamcode.Enums.Direction;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
@@ -55,8 +56,9 @@ public class MotorPowerAngleCalibration extends LinearOpMode {
 
     double changeInRobotOrientation = 0;
 
-    final double constantMaxPower = 0.75;
-    final double[] variableMotorPowers = {0.75, 0.6, 0.45, 0.3, 0.15, 0.075, 0, -0.075, -0.15, -0.3, -0.45,-0.6, -0.75};
+    final double constantMaxPower = 0.5;
+    final double[] variableMotorPowers = {constantMaxPower, 0.45, 0.3, 0.175, 0.075, 0, -0.075, -0.175, -0.3, -0.45,
+            -constantMaxPower};
 
     double previousXRecordedPosition = 0;
     double previousYRecordedPosition = 0;
@@ -66,7 +68,7 @@ public class MotorPowerAngleCalibration extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         //Initialize data logger
-        data = new DataLogger("Drivetrain Motor Power Calibration");
+        data = new DataLogger("Drivetrain Motor Power Calibration " + constantMaxPower);
         data.addField("angle");
         data.addField("X Displacement");
         data.addField("Y Displacement");
@@ -131,6 +133,22 @@ public class MotorPowerAngleCalibration extends LinearOpMode {
             data.addField((float) rflbPower);
             data.addField((float) lfrbPower);
             data.newLine();
+
+            //Return to starting location
+            drive.softResetEncoder();
+            while(drive.getEncoderDistance() < 24*COUNTS_PER_INCH && opModeIsActive()){
+                //globalCoordinatePositionUpdate();
+
+                right_front.setPower(-constantMaxPower);
+                left_back.setPower(-constantMaxPower);
+
+                left_front.setPower(-variableMotorPower);
+                right_back.setPower(-variableMotorPower);
+            }
+            drive.stop();
+            while (drive.pivot(0, 0, 0.15, 0.15, 250, 2,
+                    Direction.FASTEST) && opModeIsActive());
+            drive.stop();
 
             //Wait for user to confirm measurements and calculations
             while(gamepad1.atRest() && opModeIsActive()){
@@ -217,6 +235,22 @@ public class MotorPowerAngleCalibration extends LinearOpMode {
             data.addField((float) lfrbPower);
             data.newLine();
 
+            //Return to starting location
+            drive.softResetEncoder();
+            while(drive.getEncoderDistance() < 24*COUNTS_PER_INCH && opModeIsActive()){
+                //globalCoordinatePositionUpdate();
+
+                right_front.setPower(constantMaxPower);
+                left_back.setPower(constantMaxPower);
+
+                left_front.setPower(-variableMotorPower);
+                right_back.setPower(-variableMotorPower);
+            }
+            drive.stop();
+            while (drive.pivot(0, 0, 0.15, 0.15, 250, 2,
+                    Direction.FASTEST) && opModeIsActive());
+            drive.stop();
+
             //Wait for user to confirm measurements and calculations
             while(gamepad1.atRest() && opModeIsActive()){
                 telemetry.addData("Recorded Angle", angle);
@@ -302,6 +336,22 @@ public class MotorPowerAngleCalibration extends LinearOpMode {
             data.addField((float) lfrbPower);
             data.newLine();
 
+            //Return to starting location
+            drive.softResetEncoder();
+            while(drive.getEncoderDistance() < 24*COUNTS_PER_INCH && opModeIsActive()){
+                globalCoordinatePositionUpdate();
+
+                right_front.setPower(-variableMotorPower);
+                left_back.setPower(-variableMotorPower);
+
+                left_front.setPower(-constantMaxPower);
+                right_back.setPower(-constantMaxPower);
+            }
+            drive.stop();
+            while (drive.pivot(0, 0, 0.15, 0.15, 250, 2,
+                    Direction.FASTEST) && opModeIsActive());
+            drive.stop();
+
             //Wait for user to confirm measurements and calculations
             while(gamepad1.atRest() && opModeIsActive()){
                 telemetry.addData("Recorded Angle", angle);
@@ -386,6 +436,22 @@ public class MotorPowerAngleCalibration extends LinearOpMode {
             data.addField((float) rflbPower);
             data.addField((float) lfrbPower);
             data.newLine();
+
+            //Return to starting location
+            drive.softResetEncoder();
+            while(drive.getEncoderDistance() < 24*COUNTS_PER_INCH && opModeIsActive()){
+                globalCoordinatePositionUpdate();
+
+                right_front.setPower(-variableMotorPower);
+                left_back.setPower(-variableMotorPower);
+
+                left_front.setPower(constantMaxPower);
+                right_back.setPower(constantMaxPower);
+            }
+            drive.stop();
+            while (drive.pivot(0, 0, 0.15, 0.15, 250, 2,
+                    Direction.FASTEST) && opModeIsActive());
+            drive.stop();
 
             //Wait for user to confirm measurements and calculations
             while(gamepad1.atRest() && opModeIsActive()){

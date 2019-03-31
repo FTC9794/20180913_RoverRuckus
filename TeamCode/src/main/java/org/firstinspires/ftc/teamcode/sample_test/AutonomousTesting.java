@@ -17,8 +17,6 @@ import org.firstinspires.ftc.teamcode.subsystems.drivetrain.IDrivetrain;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
-import org.firstinspires.ftc.teamcode.subsystems.team_marker.ITeamMarker;
-import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,9 +46,6 @@ public class AutonomousTesting extends LinearOpMode {
     BNO055IMU boschIMU;
 
     Servo hang_latch;
-
-    ITeamMarker teamMarker;
-    Servo teamMarkerServo;
 
     Servo scanner;
 
@@ -84,11 +79,11 @@ public class AutonomousTesting extends LinearOpMode {
 
     double[][] testCoordinates;
     double[][] motorPowerLookup;
+    double[][] lowMotorPowerLookup;
 
     File testCoordinatesFile = AppUtil.getInstance().getSettingsFile("testCoordinates.txt");
     File motorPowersFile = AppUtil.getInstance().getSettingsFile("Drivetrain Motor Powers.txt");
-
-    int delay = 0;
+    File lowMotorPowerFile = AppUtil.getInstance().getSettingsFile("Drivetrain Motor Power Medium.txt");
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -113,6 +108,16 @@ public class AutonomousTesting extends LinearOpMode {
             String[] params = inputs[i].split(",");
             for(int j = 0; j < params.length; j++){
                 motorPowerLookup[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        fileText = ReadWriteFile.readFile(lowMotorPowerFile);
+        inputs = fileText.split("~");
+        lowMotorPowerLookup = new double[inputs.length][3];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                lowMotorPowerLookup[i][j] = Double.parseDouble(params[j]);
             }
         }
 
@@ -224,11 +229,6 @@ public class AutonomousTesting extends LinearOpMode {
         mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-
-        teamMarkerServo = hardwareMap.servo.get("marker_servo");
-        teamMarker = new ServoArmDrop(teamMarkerServo);
-        teamMarker.hold();
-
         scanner = hardwareMap.servo.get("scanner");
         scanner.setPosition(0.5);
 
@@ -312,15 +312,20 @@ public class AutonomousTesting extends LinearOpMode {
                 && Math.abs(robotOrientationDifference) < 5)){
             double currentAngle = imu.getZAngle(targetOrientation);
 
-            double[] currentMotorPowers = getMotorPowers(robotMoveAngle);
-            double pivotCorrection = ((currentAngle - targetOrientation) * DEFAULT_PID[0]);
-            double lfrbPower = (currentMotorPowers[0] - pivotCorrection);
-            double rflbPower = (currentMotorPowers[1] + pivotCorrection);
-
-            if(Math.abs(xDistance) < 5*COUNTS_PER_INCH && Math.abs(yDistance) < 5*COUNTS_PER_INCH){
-                rflbPower *= 0.75;
-                lfrbPower *= 0.75;
+            double[] currentMotorPowers = null;
+            double lfrbPower = 0, rflbPower = 0;
+            if(distance > 3*COUNTS_PER_INCH){
+                currentMotorPowers = getMotorPowers(robotMoveAngle);
+                double pivotCorrection = ((currentAngle - targetOrientation) * DEFAULT_PID[0]);
+                lfrbPower = (currentMotorPowers[0] - pivotCorrection);
+                rflbPower = (currentMotorPowers[1] + pivotCorrection);
+            }else{
+                currentMotorPowers = getMotorPowers(robotMoveAngle);
+                double pivotCorrection = ((currentAngle - targetOrientation) * DEFAULT_PID[0]) * 0.5;
+                lfrbPower = (currentMotorPowers[0] - pivotCorrection) * 0.5;
+                rflbPower = (currentMotorPowers[1] + pivotCorrection) * 0.5;
             }
+
 
             right_front.setPower(rflbPower);
             left_back.setPower(rflbPower);
@@ -334,6 +339,10 @@ public class AutonomousTesting extends LinearOpMode {
 
             return true;
         }else{
+            right_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            left_front.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            right_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            left_back.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             return false;
         }
 
@@ -403,6 +412,53 @@ public class AutonomousTesting extends LinearOpMode {
 
             double lowAngle = motorPowerLookup[lowerIndex][ANGLE_INDEX];
             double highAngle = motorPowerLookup[higherIndex][ANGLE_INDEX];
+
+            rflbPower = ((moveAngle - lowAngle)*(highRFLBPower - lowRFLBPower)/(highAngle - lowAngle)) + lowRFLBPower;
+            lfrbPower = ((moveAngle - lowAngle)*(highLFRBPower - lowLFRBPower)/(highAngle - lowAngle)) + lowLFRBPower;
+        }
+
+        motorPowers[0] = rflbPower;
+        motorPowers[1] = lfrbPower;
+
+        return motorPowers;
+    }
+
+    public double[] getLowMotorPowers(double moveAngle){
+        double[] motorPowers = new double[2];
+
+        double rflbPower = 0;
+        double lfrbPower = 0;
+
+        int lowerIndex = 0;
+        int higherIndex = 0;
+
+        boolean exactAngle = false;
+        int index = 0;
+
+        for(int i = 0; i < lowMotorPowerLookup.length; i++) {
+            double currentMoveAngle = lowMotorPowerLookup[i][ANGLE_INDEX];
+            if(moveAngle == currentMoveAngle) {
+                exactAngle = true;
+                rflbPower = lowMotorPowerLookup[i][RF_LB_INDEX];
+                lfrbPower = lowMotorPowerLookup[i][LF_RB_INDEX];
+                break;
+            }else if(moveAngle > currentMoveAngle) {
+                lowerIndex = i;
+            }else {
+                higherIndex = i;
+                break;
+            }
+        }
+
+        if(!exactAngle){
+            double lowRFLBPower = lowMotorPowerLookup[lowerIndex][RF_LB_INDEX];
+            double highRFLBPower = lowMotorPowerLookup[higherIndex][RF_LB_INDEX];
+
+            double lowLFRBPower = lowMotorPowerLookup[lowerIndex][LF_RB_INDEX];
+            double highLFRBPower = lowMotorPowerLookup[higherIndex][LF_RB_INDEX];
+
+            double lowAngle = lowMotorPowerLookup[lowerIndex][ANGLE_INDEX];
+            double highAngle = lowMotorPowerLookup[higherIndex][ANGLE_INDEX];
 
             rflbPower = ((moveAngle - lowAngle)*(highRFLBPower - lowRFLBPower)/(highAngle - lowAngle)) + lowRFLBPower;
             lfrbPower = ((moveAngle - lowAngle)*(highLFRBPower - lowLFRBPower)/(highAngle - lowAngle)) + lowLFRBPower;
