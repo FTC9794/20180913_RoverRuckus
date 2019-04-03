@@ -662,7 +662,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                         intakePositionState = ROTATING;
                         intakeCurrentPosition = intakeIntakePosition;
                         mineralRotationPosition = rotationIntakePosition;
-                        mineralRotationMechPower = mineralRotationDefaultPower;
+                        mineralRotationMechPower = 0.5;
                         if(mineralExtension.getCurrentPosition() > 1200){
                             mineralExtensionPosition = 1200;
                         }
