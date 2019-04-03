@@ -413,7 +413,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         mineral_rotation.setPower(0.25);
         mineralExtension.setTargetPosition(300);
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 35*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 46*COUNTS_PER_INCH, 30 *COUNTS_PER_INCH,
                 0, 42*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0)){
             globalCoordinatePositionUpdate();
@@ -458,8 +458,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Align to the perimeter wall using ultrasonic sensors
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 3*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
-                0, 3*COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, -45
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 1.5*COUNTS_PER_INCH, 1.5*COUNTS_PER_INCH,
+                0, 1.5*COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, -45
                 ,0.5*COUNTS_PER_INCH, 0)) {
             globalCoordinatePositionUpdate();
         }
@@ -480,8 +480,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         intake.setPower(0);
 
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 20*COUNTS_PER_INCH, 15*COUNTS_PER_INCH,
-                0, 20*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 0, DEFAULT_PID, -90
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 13*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+                0, 10*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 10, DEFAULT_PID, -90
                 ,0.5*COUNTS_PER_INCH, 0)) {
             globalCoordinatePositionUpdate();
         }
@@ -503,11 +503,11 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         while(mineral_rotation.getCurrentPosition() < rotationVerticalPosition-50 && opModeIsActive());
         mineral_rotation.setTargetPosition(rotationVerticalPosition+100);
 
-        mineralExtension.setTargetPosition(extensionDumpPositionBlocks);
+        mineralExtension.setTargetPosition(extensionDumpPositionBalls);
         while(mineralExtension.isBusy() && opModeIsActive());
 
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 12*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 8*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
                 0, 3*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 90 , DEFAULT_PID, -90
                 ,0.5*COUNTS_PER_INCH, 0)){
             globalCoordinatePositionUpdate();
@@ -515,21 +515,33 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         intakeGate.setPosition(GATE_OPEN);
         waitMilliseconds(500, runtime);
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 10*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 6*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
                 0, 3*COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, -90 , DEFAULT_PID, -90
                 ,0.5*COUNTS_PER_INCH, 0)){
             globalCoordinatePositionUpdate();
         }
+        drive.stop();
+
         mineralExtension.setTargetPosition(extensionDrivePosition);
-        if(mineralExtension.getCurrentPosition() < extensionDrivePosition+100){
-            mineral_rotation.setTargetPosition(0);
-            mineral_rotation.setPower(0.3);
-        }
+
+        waitMilliseconds(500, runtime);
+
+        mineral_rotation.setTargetPosition(0);
+        mineral_rotation.setPower(0.5);
+        while(mineral_rotation.getCurrentPosition() > 100 && opModeIsActive());
+
+        mineralExtension.setTargetPosition(2000);
+        waitMilliseconds(250, runtime);
+        intakeRotation.setTargetPosition(intakeIntakePosition);
+        intake.setPower(intakeInPower);
 
         ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
         while (opModeIsActive()){
             drive.stop();
+            telemetry.addData("Extension Position", mineralExtension.getCurrentPosition());
+            telemetry.addData("Mineral Rotation Position", mineral_rotation.getCurrentPosition());
+            telemetry.addData("Mineral Rotation Target Position", mineral_rotation.getTargetPosition());
             globalCoordinatePositionUpdate();
             telemetry.addData("Status", "Program Finished");
             telemetry.update();
@@ -659,7 +671,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
             robotMoveAngle += 180;
         }
-        robotMoveAngle = (robotMoveAngle % 360);
+        robotMoveAngle = ((robotMoveAngle - imu.getZAngle()) % 360);
 
         if(!(Math.abs(yDistance) < 1.25 * COUNTS_PER_INCH && Math.abs(xDistance) < 1.25 * COUNTS_PER_INCH)){
             double currentAngle = imu.getZAngle(targetOrientation);
@@ -675,8 +687,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             }else{
                 currentMotorPowers = getMotorPowers(robotMoveAngle);
                 double pivotCorrection = ((currentAngle - targetOrientation) * DEFAULT_PID[0]);
-                lfrbPower = (currentMotorPowers[0] - pivotCorrection) * 0.3;
-                rflbPower = (currentMotorPowers[1] + pivotCorrection) * 0.3;
+                lfrbPower = (currentMotorPowers[0] - pivotCorrection) * 0.35;
+                rflbPower = (currentMotorPowers[1] + pivotCorrection) * 0.35;
             }
 
 
