@@ -450,92 +450,96 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Intake minerals from the crater
         intakeMinerals();
-        mineralExtension.setTargetPosition(0);
-        mineralExtension.setPower(1);
-        intakeRotation.setTargetPosition(100);
-        intakeRotation.setPower(1);
-        waitMilliseconds(750, runtime);
+        if(gameTime.milliseconds() < 24500) {
+            mineralExtension.setTargetPosition(0);
+            mineralExtension.setPower(1);
+            intakeRotation.setTargetPosition(100);
+            intakeRotation.setPower(1);
+            intakeGate.setPosition(GATE_CLOSED);
+            waitMilliseconds(750, runtime);
 
-        //Align to the perimeter wall using ultrasonic sensors
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 1.5*COUNTS_PER_INCH, 1.5*COUNTS_PER_INCH,
-                0, 1.5*COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, -45
-                ,0.5*COUNTS_PER_INCH, 0)) {
+            //Align to the perimeter wall using ultrasonic sensors
+            drive.softResetEncoder();
+            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 1.5 * COUNTS_PER_INCH, 1.5 * COUNTS_PER_INCH,
+                    0, 1.5 * COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, 135, DEFAULT_PID, -45
+                    , 0.5 * COUNTS_PER_INCH, 0)) {
+                globalCoordinatePositionUpdate();
+            }
+            drive.stop();
+
+            intakeGate.setPosition(GATE_CLOSED);
+            alignWithUltrasonic(55);
+
+            //Pivot to face alliance depot
+            while (opModeIsActive() && drive.pivot(-90, -75, 0.6, 0.15,
+                    750, 5, Direction.FASTEST)) {
+                globalCoordinatePositionUpdate();
+                telemetry.update();
+            }
+            drive.stop();
             globalCoordinatePositionUpdate();
+
+            intake.setPower(0);
+
+            drive.softResetEncoder();
+            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 13 * COUNTS_PER_INCH, 5 * COUNTS_PER_INCH,
+                    0, 10 * COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 10, DEFAULT_PID, -90
+                    , 0.5 * COUNTS_PER_INCH, 0)) {
+                globalCoordinatePositionUpdate();
+            }
+            drive.stop();
+
+            //Retract arm and get ready to deposit the mineral
+            mineralExtension.setTargetPosition(extensionDrivePosition);
+            mineralExtension.setPower(1);
+            while (mineralExtension.getCurrentPosition() > extensionDrivePosition + 100 && opModeIsActive()) {
+                telemetry.addData("Mineral Extension Current Position", mineralExtension.getCurrentPosition());
+            }
+            mineral_rotation.setTargetPosition(rotationVerticalPosition);
+            mineral_rotation.setPower(0.65);
+            intakeRotation.setTargetPosition(intakeDumpReadyPosition);
+            intakeRotation.setPower(1);
+
+            while (mineral_rotation.getCurrentPosition() < 300 && opModeIsActive()) ;
+            mineral_rotation.setPower(0.2);
+            while (mineral_rotation.getCurrentPosition() < rotationVerticalPosition - 50 && opModeIsActive())
+                ;
+            mineral_rotation.setTargetPosition(rotationVerticalPosition + 100);
+
+            mineralExtension.setTargetPosition(extensionDumpPositionBalls);
+            while (mineralExtension.isBusy() && opModeIsActive()) ;
+
+            drive.softResetEncoder();
+            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 8 * COUNTS_PER_INCH, 3 * COUNTS_PER_INCH,
+                    0, 3 * COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 90, DEFAULT_PID, -90
+                    , 0.5 * COUNTS_PER_INCH, 0)) {
+                globalCoordinatePositionUpdate();
+            }
+            intakeGate.setPosition(GATE_OPEN);
+            waitMilliseconds(500, runtime);
+            drive.softResetEncoder();
+            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 6 * COUNTS_PER_INCH, 3 * COUNTS_PER_INCH,
+                    0, 3 * COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, -90, DEFAULT_PID, -90
+                    , 0.5 * COUNTS_PER_INCH, 0)) {
+                globalCoordinatePositionUpdate();
+            }
+            drive.stop();
+
+            mineralExtension.setTargetPosition(extensionDrivePosition);
+
+            waitMilliseconds(500, runtime);
+
+            mineral_rotation.setTargetPosition(0);
+            mineral_rotation.setPower(0.5);
+            while (mineral_rotation.getCurrentPosition() > 100 && opModeIsActive()) ;
+
+            mineralExtension.setTargetPosition(2000);
+            waitMilliseconds(250, runtime);
+            intakeRotation.setTargetPosition(intakeIntakePosition);
+            intake.setPower(intakeInPower);
+
+            ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
         }
-        drive.stop();
-
-        intakeGate.setPosition(GATE_CLOSED);
-        alignWithUltrasonic(55);
-
-        //Pivot to face alliance depot
-        while (opModeIsActive() && drive.pivot(-90, -75, 0.6, 0.15,
-                750, 5, Direction.FASTEST)){
-            globalCoordinatePositionUpdate();
-            telemetry.update();
-        }
-        drive.stop();
-        globalCoordinatePositionUpdate();
-
-        intake.setPower(0);
-
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 13*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                0, 10*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 10, DEFAULT_PID, -90
-                ,0.5*COUNTS_PER_INCH, 0)) {
-            globalCoordinatePositionUpdate();
-        }
-        drive.stop();
-
-        //Retract arm and get ready to deposit the mineral
-        mineralExtension.setTargetPosition(extensionDrivePosition);
-        mineralExtension.setPower(1);
-        while(mineralExtension.getCurrentPosition() > extensionDrivePosition+100 && opModeIsActive()){
-            telemetry.addData("Mineral Extension Current Position", mineralExtension.getCurrentPosition());
-        }
-        mineral_rotation.setTargetPosition(rotationVerticalPosition);
-        mineral_rotation.setPower(0.65);
-        intakeRotation.setTargetPosition(intakeDumpReadyPosition);
-        intakeRotation.setPower(1);
-
-        while(mineral_rotation.getCurrentPosition() < 300 && opModeIsActive());
-        mineral_rotation.setPower(0.2);
-        while(mineral_rotation.getCurrentPosition() < rotationVerticalPosition-50 && opModeIsActive());
-        mineral_rotation.setTargetPosition(rotationVerticalPosition+100);
-
-        mineralExtension.setTargetPosition(extensionDumpPositionBalls);
-        while(mineralExtension.isBusy() && opModeIsActive());
-
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 8*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
-                0, 3*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 90 , DEFAULT_PID, -90
-                ,0.5*COUNTS_PER_INCH, 0)){
-            globalCoordinatePositionUpdate();
-        }
-        intakeGate.setPosition(GATE_OPEN);
-        waitMilliseconds(500, runtime);
-        drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 6*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
-                0, 3*COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, -90 , DEFAULT_PID, -90
-                ,0.5*COUNTS_PER_INCH, 0)){
-            globalCoordinatePositionUpdate();
-        }
-        drive.stop();
-
-        mineralExtension.setTargetPosition(extensionDrivePosition);
-
-        waitMilliseconds(500, runtime);
-
-        mineral_rotation.setTargetPosition(0);
-        mineral_rotation.setPower(0.5);
-        while(mineral_rotation.getCurrentPosition() > 100 && opModeIsActive());
-
-        mineralExtension.setTargetPosition(2000);
-        waitMilliseconds(250, runtime);
-        intakeRotation.setTargetPosition(intakeIntakePosition);
-        intake.setPower(intakeInPower);
-
-        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
         while (opModeIsActive()){
             drive.stop();
@@ -719,6 +723,12 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         int higherIndex = 0;
 
         boolean exactAngle = false;
+
+        if(moveAngle < motorPowerLookup[0][ANGLE_INDEX]) {
+            moveAngle += 360;
+        }else if (moveAngle >= motorPowerLookup[motorPowerLookup.length-1][ANGLE_INDEX]) {
+            moveAngle -= 360;
+        }
 
         for(int i = 0; i < motorPowerLookup.length; i++) {
             double currentMoveAngle = motorPowerLookup[i][ANGLE_INDEX];
@@ -1065,6 +1075,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     }
 
     public void intakeMinerals(){
+        intake.setPower(intakeInPower);
         int extensionPosition = 1250; int numExtends = 0; int retractionPosition = 750;
         while(opModeIsActive() && numExtends < 3){
             globalCoordinatePositionUpdate();
