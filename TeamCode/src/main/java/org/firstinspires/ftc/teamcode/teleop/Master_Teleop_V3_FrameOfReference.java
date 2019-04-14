@@ -194,7 +194,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
         mineralRotationPosition = 0;
 
         int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1270,
-                extensionDumpPositionBlocks = 1700, extensionDrivePosition = 300,
+                extensionDumpPositionBlocks = 1470, extensionDrivePosition = 300,
                 rotationExtendPosition = 725, mineralRotationIncrement = 50,
                 rotationMaxPosition = 1100, rotationIntakePosition = 0, rotationVerticalPosition = 840;
 
@@ -379,12 +379,11 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             lf.setPower(drivePower[2]);
             lb.setPower(drivePower[3]);
 
-            if(intakeRotation.getCurrentPosition() < (intakeIntakePosition-485)){
-                intakeGate.setPosition(GATE_CLOSED);
+            if(intakeRotation.getCurrentPosition() < (intakeIntakePosition-200)){
+                intakeGate.setPosition(0.5);
             }else if(gamepad1.a){
-                intaking = false;
-                intake.setPower(intakeOutPower/3);
                 intakeGate.setPosition(GATE_CLOSED);
+
             }else{
                 intakeGate.setPosition(GATE_OPEN);
             }
@@ -628,7 +627,11 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             }
 
             if(gamepad1.left_bumper){
-                intake.setPower(intakeOutPower);
+                if(gamepad1.a){
+                    intake.setPower(intakeOutPower/2.5);
+                }else {
+                    intake.setPower(intakeOutPower);
+                }
                 intaking = false;
             }
             else if(intaking){
@@ -676,7 +679,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
             switch(intakePositionState){
                 case NOTHING:
-                    if(gamepad2.a){
+                    if(gamepad2.a && mineralExtension.getCurrentPosition() < extensionDrivePosition+100){
                         intakePositionState = ROTATING;
                         intakeCurrentPosition = intakeIntakePosition;
                         mineralRotationPosition = rotationIntakePosition;
@@ -739,8 +742,11 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             switch (depositBlocksState){
                 case NOTHING:
                     if(gamepad2.b){
-                        intakeCurrentPosition = intakeDumpReadyPositionBlocks;
+                        intaking = true;
+                        intakeCurrentPosition = intakeDumpReadyPosition;
                         mineralRotationMechPower = mineralRotationDefaultPower;
+
+                        mineralExtensionPosition = extensionDrivePosition;
                         mineralRotationPosition = rotationVerticalPosition;
 
                         depositBlocksState = depositingBlocksPositionState.ROTATION1;
@@ -750,6 +756,11 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                     }
                     break;
                 case ROTATION1:
+                    if(mineralRotation.getCurrentPosition() < 200){
+                        mineralRotationMechPower = 1;
+                    }else if (mineralRotation.getCurrentPosition() >= 300){
+                        mineralRotationMechPower = 0.85;
+                    }
                     if(mineralRotation.getCurrentPosition() > (rotationVerticalPosition-100)){
                         mineralExtensionPosition = extensionDumpPositionBlocks;
                         depositBlocksState = depositingBlocksPositionState.EXTENSIONINTAKEROTATION;
@@ -758,7 +769,8 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
                 case EXTENSIONINTAKEROTATION:
                     if(!mineralRotation.isBusy() && !mineralExtension.isBusy() && !intakeRotation.isBusy()){
-                        mineralRotationMechPower = 0.2;
+                        mineralRotationMechPower = mineralRotationDefaultPower;
+                        intaking = false;
                         depositBlocksState = depositingBlocksPositionState.NOTHING;
                     }
                     break;
