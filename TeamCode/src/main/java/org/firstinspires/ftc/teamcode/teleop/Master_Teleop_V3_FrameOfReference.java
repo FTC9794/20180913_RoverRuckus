@@ -261,8 +261,8 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
         PIDCoefficients pidOrig = intakeRotation.getPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
         double newP = 10;
-        double newI = 0.0005;
-        double newD = 0.1;
+        double newI = 0;
+        double newD = 0;
         PIDCoefficients newPID = new PIDCoefficients(newP, newI, newD);
         intakeRotation.setPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION, newPID);
         pidOrig = intakeRotation.getPIDCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
@@ -382,6 +382,8 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             if(intakeRotation.getCurrentPosition() < (intakeIntakePosition-485)){
                 intakeGate.setPosition(GATE_CLOSED);
             }else if(gamepad1.a){
+                intaking = false;
+                intake.setPower(intakeOutPower/3);
                 intakeGate.setPosition(GATE_CLOSED);
             }else{
                 intakeGate.setPosition(GATE_OPEN);
@@ -783,7 +785,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                         mineralRotationPosition = rotationVerticalPosition;
                         mineralRotationMechPower = mineralRotationDefaultPower;
 
-                        intakeCurrentPosition = intakeIntakePosition;
+                        intakeCurrentPosition = intakeIntakePosition-30;
                         mineralExtensionPosition = extensionDrivePosition;
                         drivePositionState = drivingPositionState.ROTATION1;
                     }
@@ -797,7 +799,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                     }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotationPosition = rotationVerticalPosition;
-                        intakeCurrentPosition = intakeIntakePosition;
+                        intakeCurrentPosition = intakeIntakePosition-30;
                         drivePositionState = drivingPositionState.FINALPOSITION;
                     }
                     break;
