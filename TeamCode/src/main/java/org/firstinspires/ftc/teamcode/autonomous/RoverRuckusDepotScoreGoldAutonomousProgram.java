@@ -53,13 +53,13 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
     DcMotor mineral_rotation, mineralExtension;
     ArrayList motors, encoders;
 
-    final double GATE_OPEN = 1, GATE_CLOSED = 0.425;
+    final double GATE_OPEN = 1, GATE_CLOSED = 0;
     Servo intakeGate;
 
     final int hangReadyPosition = 3330;
 
     CRServo intake;
-    final double intakeInPower = .73, intakeOutPower = -.73;
+    final double intakeInPower = -.73, intakeOutPower = .73;
 
     DcMotor intakeRotation;
 
@@ -111,11 +111,11 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
     private GoldMineralDetector detector = null;
 
     //Mineral rotaiton and extension constants for default positions
-    int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1580,
-            extensionDumpPositionBlocks = 1700, extensionDrivePosition = 100,
+    int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1300,
+            extensionDumpPositionBlocks = 1700, extensionDrivePosition = 150,
             rotationExtendPosition = 725, mineralRotationIncrement = 50,
             rotationMaxPosition = 1100, rotationDrivePosition = 620, rotationIntakePosition = 0, rotationVerticalPosition = 835;
-    int intakeDumpReadyPosition = 290, intakeDumpReadyPositionBlocks = 330, intakeIntakePosition = 535;
+    int intakeDumpReadyPosition = 235, intakeDumpReadyPositionBlocks = 330, intakeIntakePosition = 310;
 
     //define constants for drive movement parameters
     final double DEFAULT_MAX_POWER = .75;
@@ -236,8 +236,8 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
             case CENTER:
                 //Intake the block
                 intakeGate.setPosition(GATE_CLOSED);
-                intake.setPower(0.73);
-                intakeRotation.setTargetPosition(535);
+                intake.setPower(intakeInPower);
+                intakeRotation.setTargetPosition(intakeIntakePosition);
                 intakeRotation.setPower(1);
                 while (opModeIsActive() && drive.pivot(-88, -45, 1, 0.15,
                         500, 5, Direction.FASTEST)){
@@ -249,7 +249,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
                 intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                while(intakeRotation.getCurrentPosition() < 535 && opModeIsActive());
+                while(intakeRotation.getCurrentPosition() < intakeIntakePosition-50 && opModeIsActive());
 
                 //Extend mineral arm to intake gold mineral
                 mineralExtension.setTargetPosition(1000);
@@ -262,8 +262,8 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
             case LEFT:
                 //Intake the block
                 intakeGate.setPosition(GATE_CLOSED);
-                intake.setPower(0.73);
-                intakeRotation.setTargetPosition(535);
+                intake.setPower(intakeInPower);
+                intakeRotation.setTargetPosition(intakeIntakePosition);
                 intakeRotation.setPower(1);
                 while (opModeIsActive() && drive.pivot(-120, -90, 0.75, 0.15,
                         500, 5, Direction.FASTEST)){
@@ -280,7 +280,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
                 intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                while(intakeRotation.getCurrentPosition() < 535 && opModeIsActive());
+                while(intakeRotation.getCurrentPosition() < intakeIntakePosition-50 && opModeIsActive());
 
                 mineralExtension.setTargetPosition(1100);
                 mineralExtension.setPower(1);
@@ -306,8 +306,8 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
             case RIGHT:
                 //Intake the block
                 intakeGate.setPosition(GATE_CLOSED);
-                intake.setPower(0.73);
-                intakeRotation.setTargetPosition(535);
+                intake.setPower(intakeInPower);
+                intakeRotation.setTargetPosition(intakeIntakePosition);
                 intakeRotation.setPower(1);
                 while (opModeIsActive() && drive.pivot(-56, -30, 0.75, 0.15,
                         500, 5, Direction.FASTEST)){
@@ -320,7 +320,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
                 intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                while(intakeRotation.getCurrentPosition() < 535 && opModeIsActive());
+                while(intakeRotation.getCurrentPosition() < intakeIntakePosition-50 && opModeIsActive());
 
                 mineralExtension.setTargetPosition(1100);
                 mineralExtension.setPower(1);
@@ -358,7 +358,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
             telemetry.addData("Mineral Extension Current Position", mineralExtension.getCurrentPosition());
         }
         mineral_rotation.setTargetPosition(rotationVerticalPosition);
-        mineral_rotation.setPower(0.65);
+        mineral_rotation.setPower(0.8);
         intakeRotation.setTargetPosition(intakeDumpReadyPosition);
         intakeRotation.setPower(1);
 
@@ -384,7 +384,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         mineralExtension.setTargetPosition(extensionDrivePosition);
         while(mineralExtension.getCurrentPosition() > extensionDrivePosition + 100 && opModeIsActive());
         mineral_rotation.setTargetPosition(0);
-        mineral_rotation.setPower(0.25);
+        mineral_rotation.setPower(0.5);
 
         waitMilliseconds(500, runtime);
         intakeRotation.setTargetPosition(0);
@@ -407,13 +407,13 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
                 telemetry.addData("Target Angle", theta);
                 telemetry.update();
             }
-            if(!rotation_limit.getState()){
+            /*if(!rotation_limit.getState()){
                 mineral_rotation.setPower(0);
                 double mineralArmPosition = mineral_rotation.getCurrentPosition();
                 mineral_rotation.setTargetPosition((int) mineralArmPosition);
             }else{
                 mineral_rotation.setTargetPosition(mineral_rotation.getCurrentPosition() - 15);
-            }
+            }*/
             drive.stop();
             globalCoordinatePositionUpdate();
         }
@@ -449,7 +449,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         mineralExtension.setTargetPosition(300);
         mineral_rotation.setTargetPosition(0);
         mineral_rotation.setPower(0.75);
-        intakeRotation.setTargetPosition(535);
+        intakeRotation.setTargetPosition(intakeIntakePosition);
 
         //Park in crater
         drive.softResetEncoder();
@@ -458,9 +458,11 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
                 ,0.5*COUNTS_PER_INCH, 0));
         drive.stop();
 
-        intake.setPower(0.73);
-        intakeRotation.setTargetPosition(535);
+        intake.setPower(intakeInPower);
+        intakeGate.setPosition(GATE_CLOSED);
+        intakeRotation.setTargetPosition(intakeIntakePosition);
 
+        ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 135));
         intakeMinerals();
 
         while(opModeIsActive()){
@@ -511,11 +513,12 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+        intakeRotation.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         intakeGate = hardwareMap.servo.get("intake_gate");
-        intakeGate.setPosition(GATE_OPEN);
+        intakeGate.setPosition(0.5);
 
         scanner = hardwareMap.servo.get("scanner");
         scanner.setPosition(0.5);
@@ -946,8 +949,11 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
     public void scanMineralAndDelatch(){
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineral_rotation.setTargetPosition(75);
-        mineral_rotation.setPower(0.25);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setTargetPosition(100);
+        mineralExtension.setPower(1);
+        mineral_rotation.setTargetPosition(200);
+        mineral_rotation.setPower(0.5);
 
         //Initial Vision Scan of Mineral
         vuforia.enableDogeCV();
@@ -969,11 +975,13 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         //Delatch from hanger
         hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         hang.setPower(1);
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        mineral_rotation.setPower(-0.25);
 
         runtime.reset();
         while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
+            if(runtime.milliseconds() > 1000){
+                mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                mineral_rotation.setPower(-0.25);
+            }
             telemetry.addData("Hang Current Position", hang.getCurrentPosition());
             telemetry.update();
             if(!rotation_limit.getState()){
@@ -1056,7 +1064,8 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
     public void depositTeamMarker(){
         //Pivot to face alliance depot
-        while (opModeIsActive() && drive.pivot(-75, -45, 0.75, 0.15,
+        intake.setPower(intakeInPower/4);
+        while (opModeIsActive() && drive.pivot(-75, -45, 0.45, 0.15,
                 750, 5, Direction.FASTEST)){
             globalCoordinatePositionUpdate();
             telemetry.update();
@@ -1075,14 +1084,14 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         mineral_rotation.setPower(0.5);
 
         //Rotate intake rotation outwards
-        intakeRotation.setTargetPosition(275);
+        intakeRotation.setTargetPosition(intakeDumpReadyPosition);
         intakeRotation.setPower(1);
         while(intakeRotation.getCurrentPosition() < 225 && opModeIsActive());
 
         //Release team marker
-        intake.setPower(-0.4);
+        intake.setPower(0.4);
         waitMilliseconds(750, runtime);
-        intakeRotation.setTargetPosition(80);
+        intakeRotation.setTargetPosition(20);
         mineralExtension.setTargetPosition(50);
         while(mineralExtension.getCurrentPosition() > 100 && opModeIsActive());
 
