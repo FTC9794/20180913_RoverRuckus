@@ -56,6 +56,7 @@ import static org.firstinspires.ftc.teamcode.autonomous.RoverRuckusDoubleSamplin
  */
 @Autonomous(name = "\uD83E\uDD16 Double Sampling Far Crater Park Autonomous", group = "Autonomous")
 @Disabled
+@Deprecated
 public class RoverRuckusDoubleSamplingFarParkAutonomousProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;

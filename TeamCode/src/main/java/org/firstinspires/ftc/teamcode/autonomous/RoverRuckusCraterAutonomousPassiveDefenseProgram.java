@@ -46,7 +46,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "Crater Autonomous Passive Defense", group = "Autonomous")
+@Autonomous(name = "\uD83E\uDD16 Crater Autonomous Passive Defense", group = "Autonomous")
 public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;
@@ -533,7 +533,7 @@ public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMo
         scanner.setPosition(0.5);
 
         intakeGate = hardwareMap.servo.get("intake_gate");
-        intakeGate.setPosition(0.4);
+        intakeGate.setPosition(0.45);
 
         rotation_limit = hardwareMap.digitalChannel.get("rotation_limit");
 

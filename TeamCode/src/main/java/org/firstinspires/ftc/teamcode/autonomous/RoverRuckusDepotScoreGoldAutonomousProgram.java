@@ -44,7 +44,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@Autonomous(name = "Depot Autonomous Score Gold", group = "Autonomous")
+@Autonomous(name = "\uD83E\uDD16 Depot Autonomous Score Gold", group = "Autonomous")
 public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
     IDrivetrain drive;
@@ -518,7 +518,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         intakeGate = hardwareMap.servo.get("intake_gate");
-        intakeGate.setPosition(0.5);
+        intakeGate.setPosition(0.45);
 
         scanner = hardwareMap.servo.get("scanner");
         scanner.setPosition(0.5);

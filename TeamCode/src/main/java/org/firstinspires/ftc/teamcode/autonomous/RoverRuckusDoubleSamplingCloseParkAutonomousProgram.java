@@ -34,8 +34,6 @@ import org.firstinspires.ftc.teamcode.subsystems.drivetrain.omnidirectional.Meca
 import org.firstinspires.ftc.teamcode.subsystems.imu.BoschIMU;
 import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 import org.firstinspires.ftc.teamcode.subsystems.sampling.GoldMineralDetector;
-import org.firstinspires.ftc.teamcode.subsystems.team_marker.ITeamMarker;
-import org.firstinspires.ftc.teamcode.subsystems.team_marker.ServoArmDrop;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -61,6 +59,8 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
 
+    Servo intakeGate;
+
     DcMotor intakeRotation;
 
     CRServo intake;
@@ -75,9 +75,6 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
     BNO055IMU boschIMU;
 
     Servo hang_latch;
-
-    ITeamMarker teamMarker;
-    Servo teamMarkerServo;
 
     ModernRoboticsI2cRangeSensor leftWallPing;
     ModernRoboticsI2cRangeSensor rightWallPing;
@@ -155,18 +152,23 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
     final int THETA_INDEX = 2;
     final int MAX_POWER_INDEX = 3;
     final int MIN_POWER_INDEX = 4;
+    final int ANGLE_INDEX = 0;
+    final int RF_LB_INDEX = 2;
+    final int LF_RB_INDEX = 1;
 
     double[][] leftMineral;
     double[][] centerMineral;
     double[][] rightMineral;
     double[][] depotMain;
     double[][] depotRight;
+    double[][] motorPowerLookup;
 
     File leftMineralPositionFile = AppUtil.getInstance().getSettingsFile("leftMineralDoubleAuto.txt");
     File middleMineralPositionFile = AppUtil.getInstance().getSettingsFile("centerMineralDoubleAuto.txt");
     File rightMineralPositionFile = AppUtil.getInstance().getSettingsFile("rightMineralDoubleAuto.txt");
     File depotFileMain = AppUtil.getInstance().getSettingsFile("depotDoubleAutoMain.txt");
     File depotFileRight = AppUtil.getInstance().getSettingsFile("depotDoubleAutoRight.txt");
+    File motorPowersFile = AppUtil.getInstance().getSettingsFile("Drivetrain Motor Powers.txt");
 
     File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
@@ -186,6 +188,19 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         }
 
         telemetry.addData("Status", "Read Left Mineral Position File");
+        telemetry.update();
+
+        fileText = ReadWriteFile.readFile(motorPowersFile);
+        inputs = fileText.split("~");
+        motorPowerLookup = new double[inputs.length][3];
+        for(int i = 0; i < inputs.length; i++){
+            String[] params = inputs[i].split(",");
+            for(int j = 0; j < params.length; j++){
+                motorPowerLookup[i][j] = Double.parseDouble(params[j]);
+            }
+        }
+
+        telemetry.addData("Status", "Read Motor Power File");
         telemetry.update();
 
         fileText = ReadWriteFile.readFile(middleMineralPositionFile);
@@ -242,6 +257,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
         sound = new SoundPool(1, AudioManager.STREAM_MUSIC, 0);
         beepID = sound.load(hardwareMap.appContext, R.raw.supermariobros, 1);
+
         //Init motor hardware map and behaviors
         setMotorBehaviors();
 
@@ -355,17 +371,17 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         //Setup Drivetrain Subsystem
         drive = new MecanumDrive(motors, imu, telemetry, encoders);
 
-        date = new Date();
-        data = new DataLogger(date.toString() + "Crater Autonomous Calculations");
-        data.addField("X");
-        data.addField("Y");
-        data.addField("Orientation Difference");
-        data.addField("X Distance");
-        data.addField("Y Distance");
-        data.addField("Move Angle");
-        data.addField("Power");
-        data.addField("Distance");
-        data.newLine();
+//        date = new Date();
+//        data = new DataLogger(date.toString() + "Crater Autonomous Calculations");
+//        data.addField("X");
+//        data.addField("Y");
+//        data.addField("Orientation Difference");
+//        data.addField("X Distance");
+//        data.addField("Y Distance");
+//        data.addField("Move Angle");
+//        data.addField("Power");
+//        data.addField("Distance");
+//        data.newLine();
 
         ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
@@ -386,73 +402,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
          * *****************************************************************************************
          * *****************************************************************************************
          */
-        vuforia.enableDogeCV();
-        waitMilliseconds(500, runtime);
-        boolean found = detector.isFound();
-        boolean selected = false;
-        if(found && detector.getScreenPosition().y > 150) {
-            mineralLocation = location.CENTER;
-            selected = true;
-            vuforia.disableDogeCV();
-        }else{
-            scanner.setPosition(leftPosition);
-        }
-
-        //Release Hang Latch
-        hang_latch.setPosition(1);
-        waitMilliseconds(250, runtime);
-
-        //Release Hang Latch
-        hang_latch.setPosition(1);
-        waitMilliseconds(250, runtime);
-
-        //Delatch from hanger
-        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        hang.setPower(1);
-
-        runtime.reset();
-        while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
-            /*if(runtime.milliseconds() > 1250 && opModeIsActive()){
-                mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                mineral_rotation.setPower(-0.4);
-            }
-            /*if(!mineral_rotation.isBusy()){
-                if(rotation_limit.getState()){
-                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    mineral_rotation.setPower(-0.15);
-                }else{
-                    mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    mineral_rotation.setPower(0);
-                }
-            }*/
-            telemetry.addData("hang pos", hang.getCurrentPosition());
-            telemetry.update();
-        }
-        hang.setPower(0);
-        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        //Scan for mineral
-        globalCoordinatePositionUpdate();
-
-        //Scan for mineral
-        globalCoordinatePositionUpdate();
-        if(!selected){
-            found = detector.isFound();
-            if(found && detector.getScreenPosition().y > 140) {
-                mineralLocation = location.LEFT;
-            }else {
-                mineralLocation = location.RIGHT;
-            }
-
-            vuforia.disableDogeCV();
-
-        }
-        ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-        ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-
-        globalCoordinatePositionUpdate();
-        scanner.setPosition(0.5);
-        teamMarkerServo.setPosition(0.5);
+        scanMineralAndDelatch();
 
         switch (mineralLocation){
             case LEFT:
@@ -574,29 +524,6 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         hang.setTargetPosition(hangReadyPosition);
         hang.setPower(0.5);
 
-        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setTargetPosition(75);
-        intakeRotation.setPower(1);
-
-        //Unlatch mineral arm
-        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineral_rotation.setTargetPosition(0);
-        mineral_rotation.setPower(1);
-
-        //Rotate intake rotaiton up to secure team marker
-        intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        intakeRotation.setTargetPosition(100);
-        intakeRotation.setPower(1);
-
-        //Extend mineral extension
-        mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        mineralExtension.setTargetPosition(300);
-        mineralExtension.setPower(1);
-
-        mineral_rotation.setTargetPosition(-100);
-        mineral_rotation.setPower(0.5);
-
         //Drive to alliance depot
         if(mineralLocation == RIGHT){
             //Drive to alliance depot and knock second mineral
@@ -608,6 +535,14 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
             }
             drive.stop();
         }else{
+            mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            mineralExtension.setTargetPosition(300);
+            mineralExtension.setPower(1);
+
+            intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            intakeRotation.setTargetPosition(75);
+            intakeRotation.setPower(1);
+
             double wallReading = leftWallPing.cmUltrasonic();
             while (wallReading == 255){
                 wallReading = leftWallPing.cmUltrasonic();
@@ -633,8 +568,8 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
             }
 
             drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 38*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
-                    0, 35*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 33*COUNTS_PER_INCH, 5*COUNTS_PER_INCH,
+                    0, 33*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -225 , DEFAULT_PID, -45
                     ,0.5*COUNTS_PER_INCH, 0)){
                 globalCoordinatePositionUpdate();
             }
@@ -643,6 +578,14 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
 
         if(mineralLocation == RIGHT){
+            mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            mineralExtension.setTargetPosition(300);
+            mineralExtension.setPower(1);
+
+            intakeRotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            intakeRotation.setTargetPosition(75);
+            intakeRotation.setPower(1);
+
             double wallReading = leftWallPing.cmUltrasonic();
             while (wallReading == 255){
                 wallReading = leftWallPing.cmUltrasonic();
@@ -666,42 +609,23 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
                 }
                 drive.stop();
             }
-            //Pivot to face alliance depot
-            /*while (opModeIsActive() && drive.pivot(-25, -35, 0.75, 0.15,
-                    250, 5, Direction.FASTEST)){
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-            }*/
+
             drive.stop();
             globalCoordinatePositionUpdate();
 
             //Drop team marker
-            mineralExtension.setTargetPosition(50);
-            mineral_rotation.setTargetPosition(200);
-            waitMilliseconds(500, runtime);
-            intake.setPower(intakeOutPower);
-            waitMilliseconds(1000, runtime);
-            intake.setPower(0);
-
-            mineral_rotation.setTargetPosition(-350);
-            mineral_rotation.setPower(0.5);
-            mineralExtension.setTargetPosition(350);
-            mineral_rotation.setPower(0.5);
+            depositTeamMarker();
 
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-            ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-            ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-
+            mineral_rotation.setTargetPosition(0);
+            mineral_rotation.setPower(0.8);
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 48*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                    0, 46*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -50 , DEFAULT_PID, -45
+                    0, 46*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
                     ,0.5*COUNTS_PER_INCH, 0)){
                 globalCoordinatePositionUpdate();
-                if(drive.getEncoderDistance() > 25 * COUNTS_PER_INCH){
-                    teamMarker.hold();
-                }
                 telemetry.addData("Distance", drive.getEncoderDistance()/COUNTS_PER_INCH);
                 telemetry.update();
             }
@@ -713,57 +637,22 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
             while(mineralExtension.isBusy() && opModeIsActive());
 
-            intakeRotation.setTargetPosition(535);
+            intakeRotation.setTargetPosition(310);
             intakeRotation.setPower(1);
 
             intake.setPower(intakeInPower);
 
-            while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
-
-            int extensionPosition = 1250; int numExtends = 0;
-            while(opModeIsActive() && gameTime.milliseconds() < 27500){
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-
-                mineralExtension.setTargetPosition(extensionPosition);
-                while(mineralExtension.isBusy() && opModeIsActive());
-                mineralExtension.setTargetPosition(500);
-                while(mineralExtension.isBusy() && opModeIsActive());
-                numExtends++;
-
-                if(numExtends == 2){
-                    extensionPosition = 1750;
-                }else if(numExtends == 4){
-                    extensionPosition = 2250;
-                }
-            }
-
-            while(opModeIsActive()){
-                mineralExtension.setTargetPosition(2250);
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-            }
+            intakeMinerals();
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
 
-            globalCoordinatePositionUpdate();
-
         }else if (mineralLocation == location.LEFT){
-            //Drop team marker
-            mineralExtension.setTargetPosition(50);
-            mineral_rotation.setTargetPosition(200);
-            waitMilliseconds(500, runtime);
-            intake.setPower(intakeOutPower);
-            waitMilliseconds(1000, runtime);
-            intake.setPower(0);
-
-            mineral_rotation.setTargetPosition(-350);
-            mineralExtension.setTargetPosition(350);
-            mineral_rotation.setPower(0.5);
+            depositTeamMarker();
 
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            teamMarker.hold();
+            mineralExtension.setTargetPosition(300);
+            mineral_rotation.setTargetPosition(0);
 
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 5*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
@@ -783,8 +672,8 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
             waitMilliseconds(500, runtime);
 
             drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 36*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                    0, 36*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, -45
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 34*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
+                    0, 34*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, -45
                     ,0.5*COUNTS_PER_INCH, 0)){
                 globalCoordinatePositionUpdate();
             }
@@ -805,106 +694,27 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
             while(mineralExtension.isBusy() && opModeIsActive());
 
-            intakeRotation.setTargetPosition(535);
+            intakeRotation.setTargetPosition(310);
             intakeRotation.setPower(1);
 
             intake.setPower(intakeInPower);
 
-            while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
-
-            int extensionPosition = 1250; int numExtends = 0;
-            while(opModeIsActive() && gameTime.milliseconds() < 27500){
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-
-                mineralExtension.setTargetPosition(extensionPosition);
-                while(mineralExtension.isBusy() && opModeIsActive());
-                mineralExtension.setTargetPosition(500);
-                while(mineralExtension.isBusy() && opModeIsActive());
-                numExtends++;
-
-                if(numExtends == 2){
-                    extensionPosition = 1750;
-                }else if(numExtends == 4){
-                    extensionPosition = 2250;
-                }
-            }
-
-            while(opModeIsActive()){
-                mineralExtension.setTargetPosition(2250);
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-            }
-
-            while(opModeIsActive());
-/*
-            //Ultrasonic alignment to get closer to wall
-            wallReading = rightWallPing.cmUltrasonic();
-            while (wallReading == 255){
-                wallReading = rightWallPing.cmUltrasonic();
-            }
-            wallCorrection = (10 - wallReading) / 2.54;
-
-            if(wallCorrection > 0.75){
-                drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, 45
-                        ,0.5*COUNTS_PER_INCH, 0)){
-                    globalCoordinatePositionUpdate();
-                }
-                drive.stop();
-            }else if (wallCorrection < -0.75){
-                drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, 45
-                        ,0.5*COUNTS_PER_INCH, 0)){
-                    globalCoordinatePositionUpdate();
-                }
-                drive.stop();
-            }
-
-            ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-            ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-
-            //Park in crater
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 28*COUNTS_PER_INCH, 12*COUNTS_PER_INCH,
-                    0, 30*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 45
-                    ,0.5*COUNTS_PER_INCH, 0)){
-                globalCoordinatePositionUpdate();
-            }
-            drive.stop();*/
+            intakeMinerals();
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
-            mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineralExtension.setTargetPosition(1000);
-            mineralExtension.setPower(1);
 
 
         }else if(mineralLocation == location.CENTER){
             //Drop team marker
-            mineralExtension.setTargetPosition(50);
-            mineral_rotation.setTargetPosition(200);
-            waitMilliseconds(500, runtime);
-            intake.setPower(intakeOutPower);
-            waitMilliseconds(1000, runtime);
+            depositTeamMarker();
 
             intake.setPower(0);
-            mineral_rotation.setTargetPosition(-350);
+            mineral_rotation.setTargetPosition(0);
             mineralExtension.setTargetPosition(350);
-            mineral_rotation.setPower(0.5);
+            mineral_rotation.setPower(0.8);
 
             hang.setPower(0);
             hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            teamMarker.hold();
-
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 3*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
-                    0, 3*COUNTS_PER_INCH, DEFAULT_MIN_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0)){
-                globalCoordinatePositionUpdate();
-            }
-            drive.stop();
 
             drive.softResetEncoder();
             while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
@@ -925,9 +735,9 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
             //Drive to park in close crater
             drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 52*COUNTS_PER_INCH, 40*COUNTS_PER_INCH,
-                    0, 57*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -50 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0)){
+            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 48*COUNTS_PER_INCH, 40*COUNTS_PER_INCH,
+                    0, 48*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
+                    ,1.5*COUNTS_PER_INCH, 0)){
                 globalCoordinatePositionUpdate();
             }
             drive.stop();
@@ -938,148 +748,14 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
             while(mineralExtension.isBusy() && opModeIsActive());
 
-            intakeRotation.setTargetPosition(535);
+            intakeRotation.setTargetPosition(310);
             intakeRotation.setPower(1);
 
             intake.setPower(intakeInPower);
 
-            while(intakeRotation.getCurrentPosition() < 520 && opModeIsActive());
-
-            int extensionPosition = 1250; int numExtends = 0;
-            while(opModeIsActive() && gameTime.milliseconds() < 27500){
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-
-                mineralExtension.setTargetPosition(extensionPosition);
-                while(mineralExtension.isBusy() && opModeIsActive());
-                mineralExtension.setTargetPosition(500);
-                while(mineralExtension.isBusy() && opModeIsActive());
-                numExtends++;
-
-                if(numExtends == 2){
-                    extensionPosition = 1750;
-                }else if(numExtends == 4){
-                    extensionPosition = 2250;
-                }
-            }
-
-            while(opModeIsActive()){
-                mineralExtension.setTargetPosition(2250);
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-            }
-
-
-            /*//Drive to crater to park
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 25*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                    0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 62*COUNTS_PER_INCH, 25*COUNTS_PER_INCH,
-                    0, 60*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -47 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0));
-            drive.stop();*/
-
-            //Pivot to face alliance depot
-            while (opModeIsActive() && drive.pivot(225, 115, 1, 0.15,
-                    250, 5, Direction.FASTEST)){
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-            }
-            drive.stop();
-            globalCoordinatePositionUpdate();
-
-            double wallReading = leftWallPing.cmUltrasonic();
-            while (wallReading == 255){
-                wallReading = leftWallPing.cmUltrasonic();
-            }
-
-            double wallCorrection = (53 - wallReading) / 2.54;
-            if(wallCorrection < 0.75){
-                drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 135 , DEFAULT_PID, 225
-                        ,0.5*COUNTS_PER_INCH, 0)){
-                    globalCoordinatePositionUpdate();
-                }
-                drive.stop();
-            }else if (wallCorrection > -0.75){
-                drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, 225
-                        ,0.5*COUNTS_PER_INCH, 0)){
-                    globalCoordinatePositionUpdate();
-                }
-                drive.stop();
-            }
-
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 18*COUNTS_PER_INCH, 6*COUNTS_PER_INCH,
-                    0, 15*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, 225
-                    ,0.5*COUNTS_PER_INCH, 0)){
-                globalCoordinatePositionUpdate();
-            }
-            drive.stop();
-
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 15*COUNTS_PER_INCH, 6*COUNTS_PER_INCH,
-                    0, 10*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 225 , DEFAULT_PID, 225
-                    ,0.5*COUNTS_PER_INCH, 0)){
-                globalCoordinatePositionUpdate();
-            }
-            drive.stop();
-
-            waitMilliseconds(500, runtime);
-
-            while (opModeIsActive() && drive.pivot(-45, -60, 1, 0.15,
-                    250, 5, Direction.FASTEST)){
-                globalCoordinatePositionUpdate();
-                telemetry.update();
-            }
-            drive.stop();
-            globalCoordinatePositionUpdate();
-
-            ReadWriteFile.writeFile(mineralExtensionEncoderPosition, String.valueOf(mineralExtension.getCurrentPosition()));
-            ReadWriteFile.writeFile(mineralRotationEncoderPosition, String.valueOf(mineral_rotation.getCurrentPosition()));
-
-            wallReading = leftWallPing.cmUltrasonic();
-            while (wallReading == 255){
-                wallReading = leftWallPing.cmUltrasonic();
-            }
-
-            wallCorrection = (10 - wallReading) / 2.54;
-            if(wallCorrection > 0.75){
-                drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), wallCorrection*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 45 , DEFAULT_PID, -45
-                        ,0.5*COUNTS_PER_INCH, 0)){
-                    globalCoordinatePositionUpdate();
-                }
-                drive.stop();
-            }else if (wallCorrection < -0.75){
-                drive.softResetEncoder();
-                while(opModeIsActive() && drive.move(drive.getEncoderDistance(), Math.abs(wallCorrection)*COUNTS_PER_INCH, wallCorrection*COUNTS_PER_INCH,
-                        0, wallCorrection*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -135 , DEFAULT_PID, -45
-                        ,0.5*COUNTS_PER_INCH, 0)){
-                    globalCoordinatePositionUpdate();
-                }
-                drive.stop();
-            }
-
-
-            drive.softResetEncoder();
-            while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 48*COUNTS_PER_INCH, 24*COUNTS_PER_INCH,
-                    0, 45*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -45 , DEFAULT_PID, -45
-                    ,0.5*COUNTS_PER_INCH, 0)){
-                globalCoordinatePositionUpdate();
-            }
-            drive.stop();
+            intakeMinerals();
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
-            mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            mineralExtension.setTargetPosition(1000);
-            mineralExtension.setPower(1);
-
         }
 
         while (opModeIsActive()){
@@ -1113,6 +789,253 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
     /**
      * Setup the hardware map and the motor modes, zero power behaviors, and direction
      */
+
+    private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower){
+
+        double xDistance = targetX - robotGlobalXPosition;
+        double yDistance = targetY - robotGlobalYPosition;
+
+        double distance = distanceFormula(xDistance, yDistance);
+
+        double robotOrientationDifference = targetOrientation - imu.getZAngle();
+
+        double robotMoveAngle;
+        robotMoveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
+        if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
+            robotMoveAngle += 180;
+        }
+        robotMoveAngle = ((robotMoveAngle - imu.getZAngle()) % 360);
+
+        if(!(Math.abs(yDistance) < 1.25 * COUNTS_PER_INCH && Math.abs(xDistance) < 1.25 * COUNTS_PER_INCH)){
+            double currentAngle = imu.getZAngle(targetOrientation);
+
+            double[] currentMotorPowers = null;
+            double lfrbPower = 0, rflbPower = 0;
+
+            if(distance > 3*COUNTS_PER_INCH){
+                currentMotorPowers = getMotorPowers(robotMoveAngle);
+                double pivotCorrection = ((currentAngle - targetOrientation) * DEFAULT_PID[0]);
+                lfrbPower = (currentMotorPowers[0] - pivotCorrection);
+                rflbPower = (currentMotorPowers[1] + pivotCorrection);
+            }else{
+                currentMotorPowers = getMotorPowers(robotMoveAngle);
+                double pivotCorrection = ((currentAngle - targetOrientation) * DEFAULT_PID[0]);
+                lfrbPower = (currentMotorPowers[0] - pivotCorrection) * 0.35;
+                rflbPower = (currentMotorPowers[1] + pivotCorrection) * 0.35;
+            }
+
+
+            right_front.setPower(rflbPower);
+            left_back.setPower(rflbPower);
+            left_front.setPower(lfrbPower);
+            right_back.setPower(lfrbPower);
+
+            telemetry.addData("Encoder Distance", distance/COUNTS_PER_INCH);
+            telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
+            telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
+            telemetry.addData("Move Angle", robotMoveAngle);
+
+            return true;
+        }else{
+            return false;
+        }
+
+    }
+
+    public double[] getMotorPowers(double moveAngle){
+        double[] motorPowers = new double[2];
+
+        double rflbPower = 0;
+        double lfrbPower = 0;
+
+        int lowerIndex = 0;
+        int higherIndex = 0;
+
+        boolean exactAngle = false;
+
+        if(moveAngle < motorPowerLookup[0][ANGLE_INDEX]) {
+            moveAngle += 360;
+        }else if (moveAngle >= motorPowerLookup[motorPowerLookup.length-1][ANGLE_INDEX]) {
+            moveAngle -= 360;
+        }
+
+        for(int i = 0; i < motorPowerLookup.length; i++) {
+            double currentMoveAngle = motorPowerLookup[i][ANGLE_INDEX];
+            if(moveAngle == currentMoveAngle) {
+                exactAngle = true;
+                rflbPower = motorPowerLookup[i][RF_LB_INDEX];
+                lfrbPower = motorPowerLookup[i][LF_RB_INDEX];
+                break;
+            }else if(moveAngle > currentMoveAngle) {
+                lowerIndex = i;
+            }else {
+                higherIndex = i;
+                break;
+            }
+        }
+
+        if(!exactAngle){
+            double lowRFLBPower = motorPowerLookup[lowerIndex][RF_LB_INDEX];
+            double highRFLBPower = motorPowerLookup[higherIndex][RF_LB_INDEX];
+
+            double lowLFRBPower = motorPowerLookup[lowerIndex][LF_RB_INDEX];
+            double highLFRBPower = motorPowerLookup[higherIndex][LF_RB_INDEX];
+
+            double lowAngle = motorPowerLookup[lowerIndex][ANGLE_INDEX];
+            double highAngle = motorPowerLookup[higherIndex][ANGLE_INDEX];
+
+            rflbPower = ((moveAngle - lowAngle)*(highRFLBPower - lowRFLBPower)/(highAngle - lowAngle)) + lowRFLBPower;
+            lfrbPower = ((moveAngle - lowAngle)*(highLFRBPower - lowLFRBPower)/(highAngle - lowAngle)) + lowLFRBPower;
+        }
+
+        motorPowers[0] = rflbPower;
+        motorPowers[1] = lfrbPower;
+
+        return motorPowers;
+    }
+
+    private void globalCoordinatePositionUpdate(){
+        //Get Current Positions
+        verticalLeftEncoderWheelPosition = verticalLeft.getCurrentPosition();
+        verticalRightEncoderWheelPosition = -verticalRight.getCurrentPosition();
+        normalEncoderWheelPosition = horizontal.getCurrentPosition();
+
+        double leftChange = verticalLeftEncoderWheelPosition - previousVerticalLeftEncoderWheelPosition;
+        double rightChange = verticalRightEncoderWheelPosition - previousVerticalRightEncoderWheelPosition;
+        double horizontalChange = normalEncoderWheelPosition - prevNormalEncoderWheelPosition;
+
+        //Calculate Angle
+        changeInRobotOrientation = (leftChange - rightChange) / (robotEncoderWheelDistance);
+        robotOrientationRadians = ((robotOrientationRadians + changeInRobotOrientation));
+
+        double p = ((rightChange + leftChange) / 2);
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(normalEncoderWheelPositionAngleFromRotationAxis));
+        robotGlobalXPosition = robotGlobalXPosition + (p*Math.sin(robotOrientationRadians) + n*Math.cos(robotOrientationRadians));
+        robotGlobalYPosition = robotGlobalYPosition + -(p*Math.cos(robotOrientationRadians) - n*Math.sin(robotOrientationRadians));
+
+        previousVerticalLeftEncoderWheelPosition = verticalLeftEncoderWheelPosition;
+        previousVerticalRightEncoderWheelPosition = verticalRightEncoderWheelPosition;
+        prevNormalEncoderWheelPosition = normalEncoderWheelPosition;
+
+        telemetry.addData("X Position", robotGlobalXPosition / COUNTS_PER_INCH);
+        telemetry.addData("Y Position", robotGlobalYPosition / COUNTS_PER_INCH);
+    }
+
+    public double distanceFormula(double x, double y){
+        double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        return distance;
+    }
+
+    public void scanMineralAndDelatch(){
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineralExtension.setTargetPosition(100);
+        mineralExtension.setPower(1);
+        mineral_rotation.setTargetPosition(150);
+        mineral_rotation.setPower(0.8);
+
+        //Initial Vision Scan of Mineral
+        vuforia.enableDogeCV();
+        waitMilliseconds(500, runtime);
+        boolean found = detector.isFound();
+        boolean selected = false;
+        if(found && detector.getScreenPosition().y > 150) {
+            mineralLocation = location.CENTER;
+            selected = true;
+            vuforia.disableDogeCV();
+        }else{
+            scanner.setPosition(leftPosition);
+        }
+
+        //Release Hang Latch
+        hang_latch.setPosition(1);
+        waitMilliseconds(250, runtime);
+
+        //Delatch from hanger
+        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        hang.setPower(1);
+
+        runtime.reset();
+        while(hang.getCurrentPosition() < 6500 && opModeIsActive()){
+            if(runtime.milliseconds() > 500){
+                mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                mineral_rotation.setPower(-0.25);
+            }
+            telemetry.addData("Hang Current Position", hang.getCurrentPosition());
+            telemetry.update();
+            if(!rotation_limit.getState()){
+                mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                mineral_rotation.setPower(0);
+                double mineralArmPosition = mineral_rotation.getCurrentPosition();
+                mineral_rotation.setTargetPosition((int) mineralArmPosition);
+            }
+            globalCoordinatePositionUpdate();
+            telemetry.addData("Hang Current Position", hang.getCurrentPosition());
+            telemetry.addData("Rotation Limit State", rotation_limit.getState());
+            telemetry.update();
+        }
+
+        hang.setPower(0);
+        hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        mineral_rotation.setPower(0);
+        mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        //Scan for mineral
+        globalCoordinatePositionUpdate();
+
+        //Scan for mineral
+        globalCoordinatePositionUpdate();
+        if(!selected){
+            found = detector.isFound();
+            if(found && detector.getScreenPosition().y > 140) {
+                mineralLocation = location.LEFT;
+            }else {
+                mineralLocation = location.RIGHT;
+            }
+            vuforia.disableDogeCV();
+        }
+
+        globalCoordinatePositionUpdate();
+
+        scanner.setPosition(0.5);
+    }
+
+    public void depositTeamMarker(){
+        mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        mineral_rotation.setTargetPosition(800);
+        mineral_rotation.setPower(0.6);
+        waitMilliseconds(750, runtime);
+        intake.setPower(intakeOutPower);
+        waitMilliseconds(750, runtime);
+        intake.setPower(0);
+    }
+
+    public void intakeMinerals(){
+        intake.setPower(intakeInPower);
+        int extensionPosition = 1250; int numExtends = 0; int retractionPosition = 750;
+        while(opModeIsActive() && numExtends < 3){
+            globalCoordinatePositionUpdate();
+            telemetry.update();
+
+            mineralExtension.setTargetPosition(extensionPosition);
+            while(mineralExtension.isBusy() && opModeIsActive());
+            mineralExtension.setTargetPosition(retractionPosition-100);
+            while(mineralExtension.isBusy() && opModeIsActive());
+            numExtends++;
+
+            if(numExtends == 1){
+                extensionPosition = 1750;
+                retractionPosition = 1250;
+            }else if(numExtends == 2){
+                extensionPosition = 2000;
+                retractionPosition = 1750;
+            }
+        }
+    }
+
     private void setMotorBehaviors(){
         //Hardware Map
         right_front = hardwareMap.dcMotor.get("rf");
@@ -1126,12 +1049,10 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         horizontal2 = hardwareMap.dcMotor.get("lb");
 
         intakeRotation = hardwareMap.dcMotor.get("intake_rotation");
+        intakeRotation.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intakeRotation.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        intake = hardwareMap.crservo.get("intake");
-        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         mineral_rotation = hardwareMap.dcMotor.get("mineral_rotation");
         mineral_rotation.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -1143,12 +1064,11 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        teamMarkerServo = hardwareMap.servo.get("marker_servo");
-        teamMarker = new ServoArmDrop(teamMarkerServo);
-        teamMarker.hold();
-
         scanner = hardwareMap.servo.get("scanner");
         scanner.setPosition(0.5);
+
+        intakeGate = hardwareMap.servo.get("intake_gate");
+        intakeGate.setPosition(0.4);
 
         rotation_limit = hardwareMap.digitalChannel.get("rotation_limit");
 
@@ -1157,6 +1077,8 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 
         leftWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("left_us");
         rightWallPing = (ModernRoboticsI2cRangeSensor) hardwareMap.get("right_us");
+
+        intake = hardwareMap.crservo.get("intake");
 
         hang = hardwareMap.dcMotor.get("hang");
         //hang.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -1205,93 +1127,6 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
         //Status update
         telemetry.addData("Status", "Motor Hardware Initialized");
         telemetry.update();
-    }
-
-    private boolean goToPosition(double targetX, double targetY, double targetOrientation, double maxPower, double minPower){
-
-        double xDistance = targetX - robotGlobalXPosition;
-        double yDistance = targetY - robotGlobalYPosition;
-
-        double distance = distanceFormula(xDistance, yDistance);
-
-        double robotOrientationDifference = targetOrientation - imu.getZAngle();
-
-        //double power = maxPower;
-        double power;
-        if(distance > motorPowerRampDownStartPosition){
-            power = maxPower;
-        }else if (distance < motorPowerRampDownEndPosition){
-            power = minPower;
-        }else{
-            double motorRampDownPositionDifference = motorPowerRampDownStartPosition - motorPowerRampDownEndPosition;
-            double distanceRampDownDifference = distance - motorPowerRampDownEndPosition;
-            power = -((minPower-maxPower)/(motorRampDownPositionDifference))*(distanceRampDownDifference) + minPower;
-        }
-
-        double robotMoveAngle;
-        robotMoveAngle = Math.toDegrees(Math.atan(xDistance/yDistance));
-        if((xDistance < 0 && yDistance < 0) || (xDistance > 0 && yDistance < 0)){
-            robotMoveAngle += 180;
-        }
-        robotMoveAngle = (robotMoveAngle % 360);
-
-        /*dataLogger.addField((float) robotGlobalXPosition);
-        dataLogger.addField((float) robotGlobalYPosition);
-        dataLogger.addField((float) xDistance);
-        dataLogger.addField((float) yDistance);
-        dataLogger.addField((float) power);
-        dataLogger.addField((float) imu.getZAngle());
-        dataLogger.addField((float) robotOrientationDifference);
-        dataLogger.addField((float) robotMoveAngle);
-        dataLogger.addField((float) (robotMoveAngle - imu.getZAngle()));
-        dataLogger.newLine();*/
-
-        if(!(Math.abs(yDistance) < 0.75 * COUNTS_PER_INCH && Math.abs(xDistance) < 0.75 * COUNTS_PER_INCH
-                && Math.abs(robotOrientationDifference) < 5)){
-            drive.move(0, distance, distance, 0, distance, power, power,
-                    robotMoveAngle, DEFAULT_PID, targetOrientation, DEFAULT_ERROR_DISTANCE, 500);
-            telemetry.addData("Encoder Distance", distance/COUNTS_PER_INCH);
-            telemetry.addData("X Distance", xDistance/COUNTS_PER_INCH);
-            telemetry.addData("Y Distance", yDistance/COUNTS_PER_INCH);
-            telemetry.addData("Move Angle", robotMoveAngle);
-
-            return true;
-        }else{
-            return false;
-        }
-
-    }
-
-    private void globalCoordinatePositionUpdate(){
-        //Get Current Positions
-        verticalLeftEncoderWheelPosition = verticalLeft.getCurrentPosition();
-        verticalRightEncoderWheelPosition = -verticalRight.getCurrentPosition();
-        normalEncoderWheelPosition = horizontal.getCurrentPosition();
-
-        double leftChange = verticalLeftEncoderWheelPosition - previousVerticalLeftEncoderWheelPosition;
-        double rightChange = verticalRightEncoderWheelPosition - previousVerticalRightEncoderWheelPosition;
-        double horizontalChange = normalEncoderWheelPosition - prevNormalEncoderWheelPosition;
-
-        //Calculate Angle
-        changeInRobotOrientation = (leftChange - rightChange) / (robotEncoderWheelDistance);
-        robotOrientationRadians = ((robotOrientationRadians + changeInRobotOrientation));
-
-        double p = ((rightChange + leftChange) / 2);
-        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(normalEncoderWheelPositionAngleFromRotationAxis));
-        robotGlobalXPosition = robotGlobalXPosition + (p*Math.sin(robotOrientationRadians) + n*Math.cos(robotOrientationRadians));
-        robotGlobalYPosition = robotGlobalYPosition + -(p*Math.cos(robotOrientationRadians) - n*Math.sin(robotOrientationRadians));
-
-        previousVerticalLeftEncoderWheelPosition = verticalLeftEncoderWheelPosition;
-        previousVerticalRightEncoderWheelPosition = verticalRightEncoderWheelPosition;
-        prevNormalEncoderWheelPosition = normalEncoderWheelPosition;
-
-        telemetry.addData("X Position", robotGlobalXPosition / COUNTS_PER_INCH);
-        telemetry.addData("Y Position", robotGlobalYPosition / COUNTS_PER_INCH);
-    }
-
-    public double distanceFormula(double x, double y){
-        double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
-        return distance;
     }
 
 }
