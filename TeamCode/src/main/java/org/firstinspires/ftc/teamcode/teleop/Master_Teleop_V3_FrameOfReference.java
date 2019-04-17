@@ -194,7 +194,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
         mineralRotationPosition = 0;
 
         int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1270,
-                extensionDumpPositionBlocks = 1470, extensionDrivePosition = 300,
+                extensionDumpPositionBlocks = 1650, extensionDrivePosition = 250,
                 rotationExtendPosition = 725, mineralRotationIncrement = 50,
                 rotationMaxPosition = 1100, rotationIntakePosition = 0, rotationVerticalPosition = 840;
 
@@ -775,18 +775,6 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                     }
                     break;
             }
-
-            /*if(gamepad2.right_bumper && mineralRotation.getCurrentPosition() < rotationVerticalPosition){
-                depositBlocksState = depositingBlocksPositionState.NOTHING;
-                depositPositionState = depositingPositionState.NOTHING;
-                intakePositionState = NOTHING;
-                drivePositionState = drivePositionState.NOTHING;
-                intakeCurrentPosition = intakeDumpReadyPosition;
-                if(mineralExtension.getCurrentPosition() > 1200) {
-                    mineralExtensionPosition = 1200;
-                }
-                mineralRotationPosition = 390;
-            }*/
 
             switch(drivePositionState){
                 case NOTHING:

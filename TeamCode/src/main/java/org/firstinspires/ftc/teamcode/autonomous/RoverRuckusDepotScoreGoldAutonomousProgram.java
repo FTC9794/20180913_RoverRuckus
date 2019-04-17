@@ -346,7 +346,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         drive.softResetEncoder();
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 3*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
                 0, 3*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, -90 , DEFAULT_PID, -90
-                ,0.5*COUNTS_PER_INCH, 0)){
+                ,1*COUNTS_PER_INCH, 0)){
             globalCoordinatePositionUpdate();
         }
         drive.stop();
@@ -372,7 +372,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         drive.softResetEncoder();
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 5*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
                 0, 3*COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 90 , DEFAULT_PID, -90
-                ,0.5*COUNTS_PER_INCH, 0)){
+                ,1*COUNTS_PER_INCH, 0)){
             globalCoordinatePositionUpdate();
         }
         drive.stop();
@@ -381,10 +381,11 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
         intakeRotation.setTargetPosition(intakeIntakePosition);
         waitMilliseconds(500, runtime);
+        intakeGate.setPosition(0.45);
         mineralExtension.setTargetPosition(extensionDrivePosition);
         while(mineralExtension.getCurrentPosition() > extensionDrivePosition + 100 && opModeIsActive());
         mineral_rotation.setTargetPosition(0);
-        mineral_rotation.setPower(0.5);
+        mineral_rotation.setPower(0.8);
 
         waitMilliseconds(500, runtime);
         intakeRotation.setTargetPosition(0);
@@ -455,7 +456,7 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         drive.softResetEncoder();
         while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 5*COUNTS_PER_INCH, 4*COUNTS_PER_INCH,
                 0, 4*COUNTS_PER_INCH, 0.5, 0.5, 135 , DEFAULT_PID, 135
-                ,0.5*COUNTS_PER_INCH, 0));
+                ,1*COUNTS_PER_INCH, 0));
         drive.stop();
 
         intake.setPower(intakeInPower);
