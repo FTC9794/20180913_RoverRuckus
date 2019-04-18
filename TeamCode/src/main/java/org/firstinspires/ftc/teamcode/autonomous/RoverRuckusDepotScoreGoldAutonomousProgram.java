@@ -44,7 +44,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@Autonomous(name = "\uD83E\uDD16 Depot Autonomous Score Gold", group = "Autonomous")
+@Autonomous(name = "\uD83D\uDCAF Depot Autonomous Score Gold", group = "Autonomous")
 public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
 
     IDrivetrain drive;

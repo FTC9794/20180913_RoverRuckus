@@ -46,7 +46,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 /**
  * Created by Sarthak on 10/29/2018.
  */
-@Autonomous(name = "\uD83E\uDD16 Crater Autonomous Passive Defense", group = "Autonomous")
+@Autonomous(name = "\uD83D\uDED1 Crater Autonomous Passive Defense", group = "Autonomous")
 public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMode {
     IDrivetrain drive;
     DcMotor right_front, right_back, left_front, left_back;

@@ -22,16 +22,16 @@ import org.firstinspires.ftc.teamcode.subsystems.imu.IIMU;
 
 import java.io.File;
 
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference.depositingPositionState.EXTENSIONINTAKEROTATION;
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference.depositingPositionState.ROTATION1;
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference.intakingPositionState.NOTHING;
-import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference.intakingPositionState.ROTATING;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference_Slow.depositingPositionState.EXTENSIONINTAKEROTATION;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference_Slow.depositingPositionState.ROTATION1;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference_Slow.intakingPositionState.NOTHING;
+import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfReference_Slow.intakingPositionState.ROTATING;
 
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@TeleOp(name = "\uD83C\uDFAE Master Teleop V3 Frame of Reference Depot", group = "ATeleop")
-public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
+@TeleOp(name = "\uD83C\uDFAE Master Teleop V3 Frame of Reference Crater", group = "ATeleop")
+public class Master_Teleop_V3_FrameOfReference_Slow extends LinearOpMode {
 
     /*
 
@@ -44,7 +44,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
     Servo intakeGate;
     final double GATE_OPEN = 0, GATE_CLOSED = 1;
     double[] drivePower = new double[4];
-    final double reducedPower = .65, fastPower = 1, phoneStoredPosition = .5, rotationMinPower = .1;
+    final double reducedPower = .75, fastPower = 1, phoneStoredPosition = .5, rotationMinPower = .1;
 
     double speedMultipler = reducedPower;
 
@@ -325,27 +325,6 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             if(gameTime.seconds() > 110){
                 led.setPattern(RevBlinkinLedDriver.BlinkinPattern.STROBE_WHITE);
             }
-            globalCoordinatePositionUpdate();
-
-            double zoneDistance = distanceFormula((targetXPosition - robotGlobalXPosition), (targetYPosition-robotGlobalYPosition));
-            if(gamepad1.dpad_left){
-                targetXPosition = robotGlobalXPosition;
-                targetYPosition = robotGlobalYPosition;
-            }
-
-            if(zoneDistance < 18*COUNTS_PER_INCH){
-                phoneServo.setPosition(0.3);
-                if(gameTime.seconds() < 110) {
-                    led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
-                }
-                speedMultipler = reducedPower;
-            }else{
-                if(gameTime.seconds() < 110) {
-                    led.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
-                }
-                speedMultipler = fastPower;
-            }
-            telemetry.addData("Distance from Zone", zoneDistance/COUNTS_PER_INCH);
 
             /*
 
@@ -433,15 +412,15 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             }
 
             //reduce power if desired
-            /*if((gamepad1.right_stick_button||gamepad1.left_stick_button)){
-                for(int i=0; i<drivePower.length; i++){
-                    drivePower[i] = drivePower[i]*reducedPower;
-                }
-            }else{
+            if((gamepad1.right_stick_button||gamepad1.left_stick_button)){
                 for(int i=0; i<drivePower.length; i++){
                     drivePower[i] = drivePower[i]*fastPower;
                 }
-            }*/
+            }else{
+                for(int i=0; i<drivePower.length; i++){
+                    drivePower[i] = drivePower[i]*reducedPower;
+                }
+            }
 
             for(int i=0; i<drivePower.length; i++){
                 drivePower[i] = drivePower[i]*speedMultipler;
@@ -478,9 +457,9 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                 hangCurrentPosition = hang.getCurrentPosition();
                 hang.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 //if(hangCurrentPosition>hangMaxPosition){
-                  //  hang.setPower(0);
+                //  hang.setPower(0);
                 //}else{
-                    hang.setPower(hangUpPower);
+                hang.setPower(hangUpPower);
                 //}
                 //hangReady = false;
                 currentHangingState = hangState.NOTHING;
