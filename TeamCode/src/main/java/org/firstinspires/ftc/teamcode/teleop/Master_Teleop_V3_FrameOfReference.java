@@ -38,11 +38,14 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
      */
     DcMotor rf, rb, lf, lb;
+    DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     Servo phoneServo;
     Servo intakeGate;
     final double GATE_OPEN = 0, GATE_CLOSED = 1;
     double[] drivePower = new double[4];
-    final double reducedPower = .75, phoneStoredPosition = .5, rotationMinPower = .1;
+    final double reducedPower = .65, fastPower = 1, phoneStoredPosition = .5, rotationMinPower = .1;
+
+    double speedMultipler = reducedPower;
 
     IIMU imu;
     BNO055IMU boschIMU;
@@ -120,6 +123,21 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
     ElapsedTime extensionTimer = new ElapsedTime();
 
+    //Position variables
+    final double COUNTS_PER_INCH = 307.699557;
+
+    double verticalRightEncoderWheelPosition = 0, verticalLeftEncoderWheelPosition = 0, normalEncoderWheelPosition = 0;
+    double robotGlobalXPosition = 0, robotGlobalYPosition = 0, robotOrientationRadians = 0;
+
+    double previousVerticalRightEncoderWheelPosition = 0, previousVerticalLeftEncoderWheelPosition = 0, prevNormalEncoderWheelPosition = 0;
+    double robotEncoderWheelDistance = 12.75 * COUNTS_PER_INCH;
+    final double normalEncoderWheelPositionAngleFromRotationAxis = 20.63;
+
+    double changeInRobotOrientation = 0;
+
+    double targetXPosition = -48*COUNTS_PER_INCH;
+    double targetYPosition = -10*COUNTS_PER_INCH;
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -132,6 +150,22 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
         rb = hardwareMap.dcMotor.get("rb");
         lf = hardwareMap.dcMotor.get("lf");
         lb = hardwareMap.dcMotor.get("lb");
+
+        verticalLeft = hardwareMap.dcMotor.get("rf");
+        verticalRight = hardwareMap.dcMotor.get("rb");
+        horizontal = hardwareMap.dcMotor.get("lf");
+        horizontal2 = hardwareMap.dcMotor.get("lb");
+
+        verticalLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        verticalRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        horizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        horizontal2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        verticalLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        verticalRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        horizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        horizontal2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         phoneServo = hardwareMap.servo.get("scanner");
 
         lf.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -194,7 +228,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
         mineralRotationPosition = 0;
 
         int extensionMaxPosition = 2700, extensionDumpPositionBalls = 1270,
-                extensionDumpPositionBlocks = 1650, extensionDrivePosition = 250,
+                extensionDumpPositionBlocks = 1650, extensionDrivePosition = 100,
                 rotationExtendPosition = 725, mineralRotationIncrement = 50,
                 rotationMaxPosition = 1100, rotationIntakePosition = 0, rotationVerticalPosition = 840;
 
@@ -279,6 +313,22 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
         phoneServo.setPosition(phoneStoredPosition);
 
         while (opModeIsActive()){
+            globalCoordinatePositionUpdate();
+
+            double zoneDistance = distanceFormula((targetXPosition - robotGlobalXPosition), (targetYPosition-robotGlobalYPosition));
+            if(gamepad1.dpad_left){
+                targetXPosition = robotGlobalXPosition;
+                targetYPosition = robotGlobalYPosition;
+            }
+
+            if(zoneDistance < 18*COUNTS_PER_INCH){
+                phoneServo.setPosition(0.3);
+                speedMultipler = reducedPower;
+            }else{
+                phoneServo.setPosition(0.7);
+                speedMultipler = fastPower;
+            }
+            telemetry.addData("Distance from Zone", zoneDistance/COUNTS_PER_INCH);
 
             /*
 
@@ -366,12 +416,19 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             }
 
             //reduce power if desired
-            if(!(gamepad1.right_stick_button||gamepad1.left_stick_button)){
+            /*if((gamepad1.right_stick_button||gamepad1.left_stick_button)){
                 for(int i=0; i<drivePower.length; i++){
                     drivePower[i] = drivePower[i]*reducedPower;
                 }
-            }
+            }else{
+                for(int i=0; i<drivePower.length; i++){
+                    drivePower[i] = drivePower[i]*fastPower;
+                }
+            }*/
 
+            for(int i=0; i<drivePower.length; i++){
+                drivePower[i] = drivePower[i]*speedMultipler;
+            }
 
             //set motor power
             rf.setPower(drivePower[0]);
@@ -379,7 +436,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             lf.setPower(drivePower[2]);
             lb.setPower(drivePower[3]);
 
-            if(intakeRotation.getCurrentPosition() < (intakeIntakePosition-200)){
+            if(intakeRotation.getCurrentPosition() < (intakeIntakePosition-260)){
                 intakeGate.setPosition(0.5);
             }else if(gamepad1.a){
                 intakeGate.setPosition(GATE_CLOSED);
@@ -484,11 +541,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             }else if(gamepad2.dpad_down){
                 mineralExtension.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 mineralExtensionPosition = mineralExtension.getCurrentPosition();
-                if(mineralExtensionPosition>0){
-                    mineralExtension.setPower(-mineralExtensionPower);
-                }else{
-                    mineralExtension.setPower(0);
-                }
+                mineralExtension.setPower(-mineralExtensionPower);
                 depositBlocksState = depositingBlocksPositionState.NOTHING;
                 depositPositionState = depositingPositionState.NOTHING;
                 intakePositionState = NOTHING;
@@ -502,6 +555,12 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                 mineralExtension.setTargetPosition(mineralExtensionPosition);
                 mineralExtension.setPower(1);
 
+            }
+
+            if(gamepad2.right_bumper){
+                mineralExtension.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                mineralExtension.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                mineralExtensionPosition = 0;
             }
 
             telemetry.addData("Extension Current Position", mineralExtension.getCurrentPosition());
@@ -722,7 +781,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                     if(mineralRotation.getCurrentPosition() < 200){
                         mineralRotationMechPower = 1;
                     }else if (mineralRotation.getCurrentPosition() >= 300){
-                        mineralRotationMechPower = 0.85;
+                        mineralRotationMechPower = 1;
                     }
                     if(mineralRotation.getCurrentPosition() > (rotationVerticalPosition-100)){
                         mineralExtensionPosition = extensionDumpPositionBalls;
@@ -795,7 +854,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                     if(mineralRotation.getCurrentPosition() < 200){
                         mineralRotationMechPower = 1;
                     }else if (mineralRotation.getCurrentPosition() >= 300){
-                        mineralRotationMechPower = 0.85;
+                        mineralRotationMechPower = 1;
                     }
                     if(!mineralRotation.isBusy()&&!mineralExtension.isBusy()){
                         mineralRotationPosition = rotationVerticalPosition;
@@ -833,5 +892,37 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(robotAngle));
 
         }
+    }
+
+    private void globalCoordinatePositionUpdate(){
+        //Get Current Positions
+        verticalLeftEncoderWheelPosition = verticalLeft.getCurrentPosition();
+        verticalRightEncoderWheelPosition = -verticalRight.getCurrentPosition();
+        normalEncoderWheelPosition = horizontal.getCurrentPosition();
+
+        double leftChange = verticalLeftEncoderWheelPosition - previousVerticalLeftEncoderWheelPosition;
+        double rightChange = verticalRightEncoderWheelPosition - previousVerticalRightEncoderWheelPosition;
+        double horizontalChange = normalEncoderWheelPosition - prevNormalEncoderWheelPosition;
+
+        //Calculate Angle
+        changeInRobotOrientation = (leftChange - rightChange) / (robotEncoderWheelDistance);
+        robotOrientationRadians = (robotOrientationRadians + changeInRobotOrientation);
+
+        double p = ((rightChange + leftChange) / 2);
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(normalEncoderWheelPositionAngleFromRotationAxis));
+        robotGlobalXPosition = robotGlobalXPosition + (p*Math.sin(robotOrientationRadians) + n*Math.cos(robotOrientationRadians));
+        robotGlobalYPosition = robotGlobalYPosition + -(p*Math.cos(robotOrientationRadians) - n*Math.sin(robotOrientationRadians));
+
+        previousVerticalLeftEncoderWheelPosition = verticalLeftEncoderWheelPosition;
+        previousVerticalRightEncoderWheelPosition = verticalRightEncoderWheelPosition;
+        prevNormalEncoderWheelPosition = normalEncoderWheelPosition;
+
+        telemetry.addData("X Position", robotGlobalXPosition / COUNTS_PER_INCH);
+        telemetry.addData("Y Position", robotGlobalYPosition / COUNTS_PER_INCH);
+    }
+
+    public double distanceFormula(double x, double y){
+        double distance = Math.sqrt(Math.pow(y, 2) + Math.pow(x, 2));
+        return distance;
     }
 }
