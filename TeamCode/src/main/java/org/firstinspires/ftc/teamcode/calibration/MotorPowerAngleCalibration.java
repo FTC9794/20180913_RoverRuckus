@@ -56,9 +56,8 @@ public class MotorPowerAngleCalibration extends LinearOpMode {
 
     double changeInRobotOrientation = 0;
 
-    final double constantMaxPower = 0.5;
-    final double[] variableMotorPowers = {constantMaxPower, 0.45, 0.3, 0.175, 0.075, 0, -0.075, -0.175, -0.3, -0.45,
-            -constantMaxPower};
+    final double constantMaxPower = 0.75;
+    final double[] variableMotorPowers = {constantMaxPower, 0.6, 0.45, 0.3, 0.15, 0.075, 0, -0.075, -0.15, -0.3, -0.45,-0.6, -constantMaxPower};
 
     double previousXRecordedPosition = 0;
     double previousYRecordedPosition = 0;
