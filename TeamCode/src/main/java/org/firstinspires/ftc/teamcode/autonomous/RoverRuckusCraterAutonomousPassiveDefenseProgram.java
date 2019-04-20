@@ -360,7 +360,7 @@ public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMo
         globalCoordinatePositionUpdate();
 
         //Align to the perimeter wall using ultrasonic sensors
-        alignWithUltrasonic(10, leftWallPing);
+        alignWithUltrasonic(8, leftWallPing);
 
         //Unlatch mineral arm
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
