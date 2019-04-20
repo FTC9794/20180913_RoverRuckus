@@ -30,7 +30,7 @@ import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfRefe
 /**
  * Created by Sarthak on 10/26/2018.
  */
-@TeleOp(name = "\uD83C\uDFAE Master Teleop V3 Frame of Reference Depot", group = "ATeleop")
+@TeleOp(name = "\uD83C\uDFAE Master Teleop V3 Frame of Reference", group = "ATeleop")
 public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
     /*
@@ -67,7 +67,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
     double hangUpPower, hangDownPower;
     final int hangLatchPosition = 5675, hangHungPosition = 20, hangAlignPosition = 3330;
     final double hangStopperStoredPosition = 0.5;
-    public enum hangState {NOTHING, LATCHING, HANGING};
+    public enum hangState {NOTHING, LATCHING, HANGING, FINISHED};
     hangState currentHangingState = hangState.NOTHING;
     boolean hangReady = false;
     boolean yPressedToggle  = false, yPressed = false, latchReady = false;
@@ -122,6 +122,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
     double mineralRotationMechPower = 0.175;
 
     File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
+    File autoCoordinatePositionEnd = AppUtil.getInstance().getSettingsFile("xycoordinate.txt");
     double imuOffset = 0;
 
     ElapsedTime extensionTimer = new ElapsedTime();
@@ -142,9 +143,18 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
     double targetYPosition = -10*COUNTS_PER_INCH;
 
     ElapsedTime gameTime = new ElapsedTime();
+    boolean hangFinished = false;
+    boolean hangPositionSet = false;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
+
+        String xyCoordinate = ReadWriteFile.readFile(autoCoordinatePositionEnd);
+        if(xyCoordinate.equals("crater")){
+            targetYPosition = -10*COUNTS_PER_INCH;
+            targetXPosition = -3*COUNTS_PER_INCH;
+        }
 
         led = (RevBlinkinLedDriver) hardwareMap.get("led");
 
@@ -285,9 +295,11 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             if(gamepad1.dpad_left){
                 hand = "left";
                 selected = true;
+                fieldCentric = true;
             }else if(gamepad1.dpad_right){
                 hand = "right";
                 selected = true;
+                fieldCentric = false;
             }
         }
 
@@ -315,33 +327,47 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
 
         waitForStart();
         gameTime.reset();
+        hangCurrentPosition = 100;
 
         //initialize servo positions after start is pressed to be legal
         hangStopper.setPosition(hangStopperStoredPosition);
         phoneServo.setPosition(phoneStoredPosition);
 
         while (opModeIsActive()){
+            if(gamepad1.dpad_left){
+                fieldCentric = true;
+                hand = "left";
+            }else if(gamepad1.dpad_right){
+                fieldCentric = false;
+                hand = "right";
+            }
             telemetry.addData("Time Left in the Match", 120-gameTime.seconds());
-            if(gameTime.seconds() > 110){
+            if(hangFinished){
+                led.setPattern(RevBlinkinLedDriver.BlinkinPattern.RAINBOW_WITH_GLITTER);
+            }else if(gameTime.seconds() > 105){
                 led.setPattern(RevBlinkinLedDriver.BlinkinPattern.STROBE_WHITE);
+            }
+            if(gameTime.seconds() > 90 && !hangPositionSet){
+                hangCurrentPosition = hangAlignPosition;
+                hangPositionSet = true;
             }
             globalCoordinatePositionUpdate();
 
             double zoneDistance = distanceFormula((targetXPosition - robotGlobalXPosition), (targetYPosition-robotGlobalYPosition));
-            if(gamepad1.dpad_left){
+            if(gamepad1.a){
                 targetXPosition = robotGlobalXPosition;
                 targetYPosition = robotGlobalYPosition;
             }
 
             if(zoneDistance < 18*COUNTS_PER_INCH){
                 phoneServo.setPosition(0.3);
-                if(gameTime.seconds() < 110) {
-                    led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BLUE);
+                if(gameTime.seconds() < 105) {
+                    led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BEATS_PER_MINUTE_OCEAN_PALETTE);
                 }
                 speedMultipler = reducedPower;
             }else{
-                if(gameTime.seconds() < 110) {
-                    led.setPattern(RevBlinkinLedDriver.BlinkinPattern.RED);
+                if(gameTime.seconds() < 105) {
+                    led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BEATS_PER_MINUTE_LAVA_PALETTE);
                 }
                 speedMultipler = fastPower;
             }
@@ -510,6 +536,7 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
             yPressed = gamepad1.x;
             if(yPressed&&!yPressedToggle&&!hangReady){
                 hangCurrentPosition = hangLatchPosition;
+                hangFinished = false;
                 hangReady = true;
             }
             yPressedToggle = yPressed;
@@ -901,9 +928,13 @@ public class Master_Teleop_V3_FrameOfReference extends LinearOpMode {
                     break;
                 case HANGING:
                     if(latch_detector.getDistance(DistanceUnit.CM) > hangHungPosition){
-                        currentHangingState = hangState.NOTHING;
+                        currentHangingState = hangState.FINISHED;
                         hangCurrentPosition = hang.getCurrentPosition();
                     }
+                case FINISHED:
+                    hangFinished = true;
+                    currentHangingState = hangState.NOTHING;
+                    break;
             }
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(robotAngle));

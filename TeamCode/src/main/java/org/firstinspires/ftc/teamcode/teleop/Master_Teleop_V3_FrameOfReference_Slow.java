@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -31,6 +32,7 @@ import static org.firstinspires.ftc.teamcode.teleop.Master_Teleop_V3_FrameOfRefe
  * Created by Sarthak on 10/26/2018.
  */
 @TeleOp(name = "\uD83C\uDFAE Master Teleop V3 Frame of Reference Crater", group = "ATeleop")
+@Disabled
 public class Master_Teleop_V3_FrameOfReference_Slow extends LinearOpMode {
 
     /*

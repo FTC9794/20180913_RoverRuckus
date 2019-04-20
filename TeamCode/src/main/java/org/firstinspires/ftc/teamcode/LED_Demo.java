@@ -16,7 +16,7 @@ public class LED_Demo extends LinearOpMode {
         led = (RevBlinkinLedDriver) hardwareMap.get("led");
         waitForStart();
         while(opModeIsActive()) {
-            led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BEATS_PER_MINUTE_LAVA_PALETTE);
+            led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BEATS_PER_MINUTE_RAINBOW_PALETTE);
         }
     }
 }

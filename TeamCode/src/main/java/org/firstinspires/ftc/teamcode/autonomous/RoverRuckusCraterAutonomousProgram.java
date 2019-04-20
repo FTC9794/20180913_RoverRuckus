@@ -7,6 +7,7 @@ import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -55,6 +56,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     DcMotor mineral_rotation, mineralExtension;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
+
+    RevBlinkinLedDriver led;
 
     Servo intakeGate;
 
@@ -174,6 +177,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
     File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
 
+    File autoCoordinatePositionEnd = AppUtil.getInstance().getSettingsFile("xycoordinate.txt");
+
     int delay = 0;
 
     @Override
@@ -244,12 +249,15 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             telemetry.update();
         }
 
+        ReadWriteFile.writeFile(autoCoordinatePositionEnd, String.valueOf("crater"));
+
         telemetry.addData("Status", "Init Complete");
         telemetry.addData("Delay (Seconds)", delay);
         telemetry.update();
 
         waitForStart();
 
+        led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BEATS_PER_MINUTE_RAINBOW_PALETTE);
         gameTime = new ElapsedTime();
         gameTime.reset();
         runtime.reset();
@@ -372,7 +380,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         globalCoordinatePositionUpdate();
 
         //Align to the perimeter wall using ultrasonic sensors
-        alignWithUltrasonic(10);
+        alignWithUltrasonic(8);
 
         //Unlatch mineral arm
         mineral_rotation.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -450,7 +458,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Intake minerals from the crater
         intakeMinerals();
-        if(gameTime.milliseconds() < 24500) {
+        if(gameTime.milliseconds() < 20000) {
             mineralExtension.setTargetPosition(0);
             mineralExtension.setPower(1);
             intakeRotation.setTargetPosition(100);
@@ -484,7 +492,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             intake.setPower(0);
 
             drive.softResetEncoder();
-            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 10 * COUNTS_PER_INCH, 7 * COUNTS_PER_INCH,
+            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 10.5 * COUNTS_PER_INCH, 7 * COUNTS_PER_INCH,
                     0, 10 * COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 10, DEFAULT_PID, -90
                     , 0.5 * COUNTS_PER_INCH, 0)) {
                 globalCoordinatePositionUpdate();
@@ -510,7 +518,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             waitMilliseconds(500, runtime);
 
             drive.softResetEncoder();
-            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 11 * COUNTS_PER_INCH, 3 * COUNTS_PER_INCH,
+            while (opModeIsActive() && drive.move(drive.getEncoderDistance(), 10.5 * COUNTS_PER_INCH, 3 * COUNTS_PER_INCH,
                     0, 5 * COUNTS_PER_INCH, DEFAULT_MAX_POWER, DEFAULT_MIN_POWER, 90, DEFAULT_PID, -90
                     , 0.5 * COUNTS_PER_INCH, 0)) {
                 globalCoordinatePositionUpdate();
@@ -553,9 +561,11 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             intake.setPower(intakeInPower);
 
             ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
+            ReadWriteFile.writeFile(autoCoordinatePositionEnd, String.valueOf("crater"));
         }
 
         while (opModeIsActive()){
+            ReadWriteFile.writeFile(autoCoordinatePositionEnd, String.valueOf("crater"));
             drive.stop();
             telemetry.addData("Extension Position", mineralExtension.getCurrentPosition());
             telemetry.addData("Mineral Rotation Position", mineral_rotation.getCurrentPosition());
@@ -583,6 +593,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
      * Setup the hardware map and the motor modes, zero power behaviors, and direction
      */
     private void setMotorBehaviors(){
+        led = (RevBlinkinLedDriver) hardwareMap.get("led");
+
         //Hardware Map
         right_front = hardwareMap.dcMotor.get("rf");
         right_back = hardwareMap.dcMotor.get("rb");
@@ -804,6 +816,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
         previousVerticalRightEncoderWheelPosition = verticalRightEncoderWheelPosition;
         prevNormalEncoderWheelPosition = normalEncoderWheelPosition;
 
+        ReadWriteFile.writeFile(autoCoordinatePositionEnd, String.valueOf("crater"));
         telemetry.addData("X Position", robotGlobalXPosition / COUNTS_PER_INCH);
         telemetry.addData("Y Position", robotGlobalYPosition / COUNTS_PER_INCH);
     }
@@ -1103,7 +1116,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
     public void intakeMinerals(){
         intake.setPower(intakeInPower);
         int extensionPosition = 1250; int numExtends = 0; int retractionPosition = 750;
-        while(opModeIsActive() && numExtends < 3){
+        while(opModeIsActive() && numExtends < 2){
             globalCoordinatePositionUpdate();
             telemetry.update();
 
@@ -1114,8 +1127,8 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
             numExtends++;
 
             if(numExtends == 1){
-                extensionPosition = 1750;
-                retractionPosition = 1250;
+                extensionPosition = 2100;
+                retractionPosition = 1000;
             }else if(numExtends == 2){
                 extensionPosition = 2000;
                 retractionPosition = 1750;

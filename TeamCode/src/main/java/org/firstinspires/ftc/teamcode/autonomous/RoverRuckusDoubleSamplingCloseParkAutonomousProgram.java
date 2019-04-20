@@ -8,6 +8,7 @@ import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -58,6 +59,8 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
     DcMotor mineral_rotation, mineralExtension;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
+
+    RevBlinkinLedDriver led;
 
     Servo intakeGate;
 
@@ -173,6 +176,7 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
     File mineralExtensionEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralExtensionEncoderPosition.txt");
     File mineralRotationEncoderPosition = AppUtil.getInstance().getSettingsFile("mineralRotationEncoderPosition.txt");
     File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
+    File autoCoordinatePositionEnd = AppUtil.getInstance().getSettingsFile("xycoordinate.txt");
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -384,11 +388,14 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
 //        data.newLine();
 
         ReadWriteFile.writeFile(autoIMUOffset, String.valueOf(imu.getZAngle() - 45));
+        ReadWriteFile.writeFile(autoCoordinatePositionEnd, String.valueOf("crater"));
 
         telemetry.addData("Status", "Init Complete");
         telemetry.update();
 
         waitForStart();
+
+        led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BEATS_PER_MINUTE_RAINBOW_PALETTE);
 
         ElapsedTime gameTime = new ElapsedTime();
         gameTime.reset();
@@ -1037,6 +1044,8 @@ public class RoverRuckusDoubleSamplingCloseParkAutonomousProgram extends LinearO
     }
 
     private void setMotorBehaviors(){
+        led = (RevBlinkinLedDriver) hardwareMap.get("led");
+
         //Hardware Map
         right_front = hardwareMap.dcMotor.get("rf");
         right_back = hardwareMap.dcMotor.get("rb");

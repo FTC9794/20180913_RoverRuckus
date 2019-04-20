@@ -5,6 +5,7 @@ import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
+import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -53,6 +54,8 @@ public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMo
     DcMotor mineral_rotation, mineralExtension;
     DcMotor verticalLeft, verticalRight, horizontal, horizontal2;
     ArrayList motors, encoders;
+
+    RevBlinkinLedDriver led;
 
     Servo intakeGate;
 
@@ -153,6 +156,7 @@ public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMo
     File motorPowersFile = AppUtil.getInstance().getSettingsFile("Drivetrain Motor Powers.txt");
 
     File autoIMUOffset = AppUtil.getInstance().getSettingsFile("autoAngle.txt");
+    File autoCoordinatePositionEnd = AppUtil.getInstance().getSettingsFile("xycoordinate.txt");
 
     int delay = 0;
 
@@ -223,12 +227,16 @@ public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMo
             telemetry.addData("Delay (Seconds)", delay);
             telemetry.update();
         }
+        ReadWriteFile.writeFile(autoCoordinatePositionEnd, String.valueOf("crater"));
+
 
         telemetry.addData("Status", "Init Complete");
         telemetry.addData("Delay (Seconds)", delay);
         telemetry.update();
 
         waitForStart();
+
+        led.setPattern(RevBlinkinLedDriver.BlinkinPattern.BEATS_PER_MINUTE_RAINBOW_PALETTE);
 
         gameTime = new ElapsedTime();
         gameTime.reset();
@@ -502,6 +510,8 @@ public class RoverRuckusCraterAutonomousPassiveDefenseProgram extends LinearOpMo
      * Setup the hardware map and the motor modes, zero power behaviors, and direction
      */
     private void setMotorBehaviors(){
+        led = (RevBlinkinLedDriver) hardwareMap.get("led");
+
         //Hardware Map
         right_front = hardwareMap.dcMotor.get("rf");
         right_back = hardwareMap.dcMotor.get("rb");
