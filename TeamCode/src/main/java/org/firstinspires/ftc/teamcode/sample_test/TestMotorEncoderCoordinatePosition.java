@@ -101,7 +101,7 @@ public class TestMotorEncoderCoordinatePosition extends LinearOpMode {
         angle = ((angle + changeInAngle));
 
         double p = ((rightChange + leftChange) / 2);
-        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(alpha));
+        double n = horizontalChange + (((leftChange-rightChange)/2) * Math.sin(Math.toRadians(alpha)));
         x = x + (p*Math.sin(angle) + n*Math.cos(angle));
         y = y + p*Math.cos(angle) - n*Math.sin(angle);
 

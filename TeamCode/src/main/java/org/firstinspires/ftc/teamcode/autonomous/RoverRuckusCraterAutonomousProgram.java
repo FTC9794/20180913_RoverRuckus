@@ -458,7 +458,7 @@ public class RoverRuckusCraterAutonomousProgram extends LinearOpMode {
 
         //Intake minerals from the crater
         intakeMinerals();
-        if(gameTime.milliseconds() < 20000) {
+        if(gameTime.milliseconds() < 0) {
             mineralExtension.setTargetPosition(0);
             mineralExtension.setPower(1);
             intakeRotation.setTargetPosition(100);

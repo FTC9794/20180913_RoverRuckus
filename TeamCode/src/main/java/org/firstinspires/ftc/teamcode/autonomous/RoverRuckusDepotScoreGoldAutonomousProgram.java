@@ -378,8 +378,8 @@ public class RoverRuckusDepotScoreGoldAutonomousProgram extends LinearOpMode {
         mineralExtension.setTargetPosition(extensionDumpPositionBalls);
         while(mineralExtension.isBusy() && opModeIsActive());
         drive.softResetEncoder();
-        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 6.5*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
-                0, 3*COUNTS_PER_INCH, 0.5, DEFAULT_MIN_POWER, 90 , DEFAULT_PID, -90
+        while(opModeIsActive() && drive.move(drive.getEncoderDistance(), 7.5*COUNTS_PER_INCH, 3*COUNTS_PER_INCH,
+                0, 7.5*COUNTS_PER_INCH, 0.5, DEFAULT_MIN_POWER, 90 , DEFAULT_PID, -90
                 ,1*COUNTS_PER_INCH, 0)){
             globalCoordinatePositionUpdate();
         }
