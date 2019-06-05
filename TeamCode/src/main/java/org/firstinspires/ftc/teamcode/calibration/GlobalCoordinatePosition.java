@@ -40,15 +40,14 @@ public class GlobalCoordinatePosition implements Runnable{
      * @param horizontalEncoder horizontal odometry encoder, perpendicular to the other two odometry encoder wheels
      * @param threadSleepDelay delay in milliseconds for the GlobalPositionUpdate thread (50-75 milliseconds is suggested)
      */
-    public GlobalCoordinatePosition(DcMotor verticalEncoderLeft, DcMotor verticalEncoderRight, DcMotor horizontalEncoder,
-                                    double COUNTS_PER_INCH, int threadSleepDelay){
+    public GlobalCoordinatePosition(DcMotor verticalEncoderLeft, DcMotor verticalEncoderRight, DcMotor horizontalEncoder, double COUNTS_PER_INCH, int threadSleepDelay){
         this.verticalEncoderLeft = verticalEncoderLeft;
         this.verticalEncoderRight = verticalEncoderRight;
         this.horizontalEncoder = horizontalEncoder;
         sleepTime = threadSleepDelay;
 
-        robotEncoderWheelDistance = Double.parseDouble(ReadWriteFile.readFile(wheelBaseSeparationFile).trim());
-        this.horizontalEncoderTickPerDegreeOffset = Double.parseDouble(ReadWriteFile.readFile(horizontalTickOffsetFile).trim()) * COUNTS_PER_INCH;
+        robotEncoderWheelDistance = Double.parseDouble(ReadWriteFile.readFile(wheelBaseSeparationFile).trim()) * COUNTS_PER_INCH;
+        this.horizontalEncoderTickPerDegreeOffset = Double.parseDouble(ReadWriteFile.readFile(horizontalTickOffsetFile).trim());
 
     }
 
