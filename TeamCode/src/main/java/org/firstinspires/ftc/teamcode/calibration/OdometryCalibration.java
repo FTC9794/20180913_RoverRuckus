@@ -97,6 +97,12 @@ public class OdometryCalibration extends LinearOpMode {
 
         //Record imu and encoder values to calculate the constants for the global position algorithm
         double angle = getZAngle();
+
+        /*
+        Encoder Difference is calculated by the formula (leftEncoder - rightEncoder)
+        Since the left encoder is also mapped to a drive motor, the encoder value needs to be reversed with the negative sign in front
+        THIS MAY NEED TO BE CHANGED FOR EACH ROBOT
+       */
         double encoderDifference = -verticalLeft.getCurrentPosition() - verticalRight.getCurrentPosition();
 
         double verticalEncoderTickOffsetPerDegree = encoderDifference/angle;
