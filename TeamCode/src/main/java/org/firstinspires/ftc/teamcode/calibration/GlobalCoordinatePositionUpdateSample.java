@@ -60,7 +60,7 @@ public class GlobalCoordinatePositionUpdateSample extends LinearOpMode {
          */
 
         //Create and start GlobalCoordinatePosition thread to constantly update the global coordinate positions\
-        GlobalCoordinatePosition globalPositionUpdate = new GlobalCoordinatePosition(verticalLeft, verticalRight, horizontal, COUNTS_PER_INCH, 75);
+        OdometryGlobalCoordinatePosition globalPositionUpdate = new OdometryGlobalCoordinatePosition(verticalLeft, verticalRight, horizontal, COUNTS_PER_INCH, 75);
         Thread positionThread = new Thread(globalPositionUpdate);
         positionThread.start();
 
